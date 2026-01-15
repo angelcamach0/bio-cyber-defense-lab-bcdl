@@ -117,6 +117,9 @@ See `biozero/ui/README.md` for UI-specific run steps and notes about the Nginx p
 ## Flow Guide
 See `biozero/docs/PROJECT_FLOW_GUIDE.md` for a Mermaid flow chart, pipeline explanation, and real‑world use cases.
 
+## License
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See `LICENSE` and `NOTICE`.
+
 ## Proxmox VM Usage (Pull + Run)
 1) Install dependencies (inside the VM):\n
 ```bash\nsudo apt update\nsudo apt install -y git docker.io python3 fastp minimap2 bcftools samtools\n```\n
