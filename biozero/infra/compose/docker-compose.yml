@@ -1,0 +1,78 @@
+services:
+  upload-api:
+    build:
+      context: ../../services/upload-api
+    user: "0:0"
+    environment:
+      BIOZERO_DATA_DIR: /data
+      BIOZERO_UPLOAD_ADDR: :8081
+      BIOZERO_MAX_UPLOAD_BYTES: 26214400
+      BIOZERO_RATE_LIMIT: 60
+      BIOZERO_TLS_CERT: /pki/server.crt
+      BIOZERO_TLS_KEY: /pki/server.key
+      BIOZERO_TLS_CA: /pki/ca.crt
+    ports:
+      - "8081:8081"
+    volumes:
+      - biozero-data:/data
+      - ../PKI/pki:/pki:ro
+
+  results-api:
+    build:
+      context: ../../services/results-api
+    user: "0:0"
+    environment:
+      BIOZERO_DATA_DIR: /data
+      BIOZERO_RESULTS_ADDR: :8082
+      BIOZERO_RATE_LIMIT: 120
+      BIOZERO_TLS_CERT: /pki/server.crt
+      BIOZERO_TLS_KEY: /pki/server.key
+      BIOZERO_TLS_CA: /pki/ca.crt
+    ports:
+      - "8082:8082"
+    volumes:
+      - biozero-data:/data
+      - ../PKI/pki:/pki:ro
+
+  enclave-runner:
+    build:
+      context: ../../services/enclave-runner
+    user: "0:0"
+    environment:
+      BIOZERO_DATA_DIR: /data
+      BIOZERO_RULES_PATH: /rules/rules.json
+      BIOZERO_PRIVATE_KEY: /pki/server.key
+      BIOZERO_SIGNER_CERT: /pki/signer.crt
+      BIOZERO_DECRYPT_DIR: /data/decrypted
+      BIOZERO_PIPELINE_PATH: /pipeline/pipeline.py
+      BIOZERO_REFERENCE_PATH: /reference/reference.fa
+    volumes:
+      - biozero-data:/data
+      - ../PKI/pki:/pki:ro
+      - ../../bio/reference-db:/rules:ro
+      - ../../bio/pipeline:/pipeline:ro
+      - ../../bio/reference-db:/reference:ro
+
+  zeroresponder:
+    build:
+      context: ../../services/zeroresponder
+    user: "0:0"
+    environment:
+      BIOZERO_DATA_DIR: /data
+      BIOZERO_RESPONDER_ADDR: :8090
+      BIOZERO_WEBHOOK_SECRET: change-me
+    ports:
+      - "8090:8090"
+    volumes:
+      - biozero-data:/data
+
+  ui:
+    build:
+      context: ../../ui
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../PKI/pki:/etc/nginx/pki:ro
+
+volumes:
+  biozero-data:

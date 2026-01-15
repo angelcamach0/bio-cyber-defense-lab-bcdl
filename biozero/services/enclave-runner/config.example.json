@@ -1,0 +1,5 @@
+{
+  "data_dir": "./data",
+  "rules_path": "../../bio/reference-db/rules.json",
+  "poll_seconds": 2
+}

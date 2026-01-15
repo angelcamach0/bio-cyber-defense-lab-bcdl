@@ -1,0 +1,8 @@
+{
+  "results_addr": ":8082",
+  "data_dir": "./data",
+  "rate_limit_per_minute": 120,
+  "tls_cert": "./pki/server.crt",
+  "tls_key": "./pki/server.key",
+  "tls_ca": "./pki/ca.crt"
+}

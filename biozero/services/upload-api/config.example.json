@@ -1,0 +1,9 @@
+{
+  "upload_addr": ":8081",
+  "data_dir": "./data",
+  "max_upload_bytes": 26214400,
+  "rate_limit_per_minute": 60,
+  "tls_cert": "./pki/server.crt",
+  "tls_key": "./pki/server.key",
+  "tls_ca": "./pki/ca.crt"
+}

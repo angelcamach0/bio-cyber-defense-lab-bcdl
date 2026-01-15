@@ -1,0 +1,13 @@
+{
+  "max_size_bytes": 5000000,
+  "suspicious_name_patterns": ["virus", "malware", "bad"],
+  "high_score": 0.9,
+  "low_score": 0.1,
+  "threat_panel_fasta": "/reference/reference.fa",
+  "threat_min_reads": 50,
+  "threat_min_fraction": 0.02,
+  "fastp_min_q30": 0.75,
+  "critical_warning_score_boost": 0.2,
+  "high_threshold": 0.8,
+  "medium_threshold": 0.5
+}

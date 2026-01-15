@@ -1,0 +1,34 @@
+# VM images
+*.qcow2
+*.vmdk
+*.ova
+
+# PKI artifacts
+biozero/infra/PKI/pki/
+
+# Runtime data and evidence
+biozero/docs/evidence/
+biozero/**/data/
+
+# Local logs and outputs
+output.txt
+*.log
+.env
+.env.*
+.secrets/
+**/.DS_Store
+biozero/infra/compose/output*.txt
+biozero/infra/compose/*.log
+biozero/infra/compose/.env
+biozero/infra/compose/.secrets/
+biozero/infra/compose/*cache*/
+biozero/infra/compose/*tmp*/
+biozero/**/tmp/
+biozero/**/cache/
+biozero/**/outputs/
+biozero/**/build/
+biozero/**/node_modules/
+biozero/**/__pycache__/
+biozero/**/*.pyc
+biozero/**/*.pyo
+biozero/**/*.pyd

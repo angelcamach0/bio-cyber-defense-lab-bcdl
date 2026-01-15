@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BioZero MVP Console</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>BioZero MVP Console</h1>
+      <p>Upload → Process → Results → Response</p>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Service Health</h2>
+        <div class="health" id="healthStatus">
+          <div><span>Upload API</span><span class="status" data-service="upload">unknown</span></div>
+          <div><span>Results API</span><span class="status" data-service="results">unknown</span></div>
+          <div><span>ZeroResponder</span><span class="status" data-service="zr">unknown</span></div>
+        </div>
+        <button id="refreshHealth">Refresh Health</button>
+      </section>
+
+      <section class="panel">
+        <h2>Upload FASTQ</h2>
+        <label>
+          Client ID
+          <input type="text" id="clientId" value="researcher-1" />
+        </label>
+        <label>
+          FASTQ File
+          <input type="file" id="fileInput" accept=".fastq,.fq,.txt" />
+        </label>
+        <button id="uploadBtn">Upload & Process</button>
+        <div class="status-line" id="uploadStatus">Idle</div>
+      </section>
+
+      <section class="panel">
+        <h2>Job Results</h2>
+        <div class="status-line" id="jobMeta">No job yet</div>
+        <pre id="resultsBox">{}</pre>
+      </section>
+
+      <section class="panel">
+        <h2>Trigger Alert</h2>
+        <button id="alertBtn">Send Test Alert</button>
+        <pre id="alertBox">{}</pre>
+      </section>
+    </main>
+
+    <footer>
+      <small>BioZero MVP UI (local demo)</small>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
