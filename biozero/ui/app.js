@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 const uploadBtn = document.getElementById("uploadBtn");
 const alertBtn = document.getElementById("alertBtn");
 const refreshHealth = document.getElementById("refreshHealth");
