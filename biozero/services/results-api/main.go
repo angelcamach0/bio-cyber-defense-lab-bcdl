@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Results API for BioZero: serves job status/results written by enclave-runner,
+// authenticates callers via client ID or mTLS cert serial, and exposes /health for the UI.
 package main
 
 import (
@@ -15,6 +17,11 @@ import (
 	"sync"
 	"time"
 )
+
+type errorResponse struct {
+	Error string `json:"error"`
+	Code  string `json:"code"`
+}
 
 type resultResponse struct {
 	Status string          `json:"status"`
@@ -43,6 +50,7 @@ func main() {
 	mustMkdirAll(jobsDir)
 
 	limiter := newRateLimiter(rateLimit, time.Minute)
+	go limiter.PruneStaleEntries(5 * time.Minute)
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -50,45 +58,57 @@ func main() {
 	})
 
 	http.HandleFunc("/results/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed")
+			return
+		}
 		if !limiter.Allow(clientIP(r)) {
-			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+			writeJSONError(w, http.StatusTooManyRequests, "rate_limited", "rate limit exceeded")
 			return
 		}
 
 		jobID := strings.TrimPrefix(r.URL.Path, "/results/")
 		if jobID == "" {
-			http.Error(w, "missing job id", http.StatusBadRequest)
+			writeJSONError(w, http.StatusBadRequest, "missing_job_id", "missing job id")
 			return
 		}
 		if !isValidJobID(jobID) {
-			http.Error(w, "invalid job id", http.StatusBadRequest)
+			writeJSONError(w, http.StatusBadRequest, "invalid_job_id", "invalid job id")
 			return
 		}
 
+		// Results are written by enclave-runner once processing is complete.
 		resultPath := filepath.Join(resultsDir, jobID+".json")
 		if data, err := os.ReadFile(resultPath); err == nil {
 			if !authorizedForJob(r, jobsDir, jobID) {
-				http.Error(w, "forbidden", http.StatusForbidden)
+				writeJSONError(w, http.StatusForbidden, "forbidden", "forbidden")
 				return
 			}
 			writeJSONResponse(w, resultResponse{Status: "processed", Data: data})
 			return
 		}
 
+		// Fall back to the job record to signal "pending" if processing isn't done.
 		jobPath := filepath.Join(jobsDir, jobID+".json")
 		if _, err := os.Stat(jobPath); err == nil {
 			if !authorizedForJob(r, jobsDir, jobID) {
-				http.Error(w, "forbidden", http.StatusForbidden)
+				writeJSONError(w, http.StatusForbidden, "forbidden", "forbidden")
 				return
 			}
 			writeJSONResponse(w, resultResponse{Status: "pending"})
 			return
 		}
 
-		http.Error(w, "job not found", http.StatusNotFound)
+		writeJSONError(w, http.StatusNotFound, "job_not_found", "job not found")
 	})
 
-	server := &http.Server{Addr: addr}
+	server := &http.Server{
+		Addr:              addr,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       30 * time.Second,
+		MaxHeaderBytes:    1 << 20,
+	}
 	if certPath != "" && keyPath != "" {
 		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 		if caPath != "" {
@@ -111,11 +131,24 @@ func main() {
 func writeJSONResponse(w http.ResponseWriter, v any) {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
-		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "encode_failed", "failed to encode response")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
+}
+
+func writeJSONError(w http.ResponseWriter, status int, code, message string) {
+	data, err := json.MarshalIndent(errorResponse{Error: message, Code: code}, "", "  ")
+	if err != nil {
+		http.Error(w, "failed to encode error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(status)
 	_, _ = w.Write(data)
 }
 
@@ -231,6 +264,22 @@ func (r *rateLimiter) Allow(key string) bool {
 	}
 	r.requests[key]++
 	return r.requests[key] <= r.limit
+}
+
+func (r *rateLimiter) PruneStaleEntries(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for range ticker.C {
+		now := time.Now()
+		r.mu.Lock()
+		for key, end := range r.windowEnds {
+			if now.After(end) {
+				delete(r.windowEnds, key)
+				delete(r.requests, key)
+			}
+		}
+		r.mu.Unlock()
+	}
 }
 
 func clientIP(r *http.Request) string {
