@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Enclave runner for BioZero: polls job records written by upload-api, verifies
+// signatures, decrypts payloads, invokes the bio pipeline, and writes results
+// consumed by results-api; it can unwrap sensitive fields using BIOZERO_JOB_KEY.
 package main
 
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"crypto"
 	"crypto/aes"
 	"crypto/cipher"
@@ -11,6 +15,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
@@ -35,6 +40,8 @@ type jobRecord struct {
 	ClientID          string `json:"client_id"`
 	EncAlg            string `json:"enc_alg,omitempty"`
 	EncKey            string `json:"enc_key,omitempty"`
+	EncKeyWrapped     bool   `json:"enc_key_wrapped,omitempty"`
+	EncKeyWrapAlg     string `json:"enc_key_wrap_alg,omitempty"`
 	SigAlg            string `json:"sig_alg,omitempty"`
 	Sig              string `json:"sig,omitempty"`
 	ClientCertSubject string `json:"client_cert_subject,omitempty"`
@@ -107,9 +114,11 @@ func main() {
 	pollSeconds := envOr("BIOZERO_POLL_SECONDS", "2")
 	privateKeyPath := os.Getenv("BIOZERO_PRIVATE_KEY")
 	signerCertPath := os.Getenv("BIOZERO_SIGNER_CERT")
+	jobKey := os.Getenv("BIOZERO_JOB_KEY")
 	decryptedDir := envOr("BIOZERO_DECRYPT_DIR", filepath.Join(dataDir, "decrypted"))
 	pipelinePath := envOr("BIOZERO_PIPELINE_PATH", defaultPipelinePath())
 	referencePath := os.Getenv("BIOZERO_REFERENCE_PATH")
+	pipelineTimeout := envOrDuration("BIOZERO_PIPELINE_TIMEOUT", 10*time.Minute)
 
 	uploadDir := filepath.Join(dataDir, "uploads")
 	jobsDir := filepath.Join(dataDir, "jobs")
@@ -129,12 +138,12 @@ func main() {
 
 	log.Printf("enclave-runner watching %s", jobsDir)
 	for {
-		processJobs(jobsDir, uploadDir, resultsDir, decryptedDir, rules, privateKeyPath, signerCertPath, pipelinePath, referencePath)
+		processJobs(jobsDir, uploadDir, resultsDir, decryptedDir, rules, privateKeyPath, signerCertPath, pipelinePath, referencePath, jobKey, pipelineTimeout)
 		time.Sleep(interval)
 	}
 }
 
-func processJobs(jobsDir, uploadDir, resultsDir, decryptedDir string, rules detectionRules, privateKeyPath, signerCertPath, pipelinePath, referencePath string) {
+func processJobs(jobsDir, uploadDir, resultsDir, decryptedDir string, rules detectionRules, privateKeyPath, signerCertPath, pipelinePath, referencePath, jobKey string, pipelineTimeout time.Duration) {
 	entries, err := os.ReadDir(jobsDir)
 	if err != nil {
 		log.Printf("read jobs dir error: %v", err)
@@ -146,85 +155,116 @@ func processJobs(jobsDir, uploadDir, resultsDir, decryptedDir string, rules dete
 			continue
 		}
 
-		jobPath := filepath.Join(jobsDir, entry.Name())
-		job, err := readJob(jobPath)
-		if err != nil {
-			log.Printf("job read error %s: %v", entry.Name(), err)
-			continue
-		}
-		if job.Status != "uploaded" {
-			continue
-		}
+		func() {
+			defer func() {
+				if recovered := recover(); recovered != nil {
+					log.Printf("job processing panic %s: %v", entry.Name(), recovered)
+				}
+			}()
 
-		resultPath := filepath.Join(resultsDir, job.JobID+".json")
-		if _, err := os.Stat(resultPath); err == nil {
-			continue
-		}
+			jobPath := filepath.Join(jobsDir, entry.Name())
+			job, err := readJob(jobPath)
+			if err != nil {
+				log.Printf("job read error %s: %v", entry.Name(), err)
+				return
+			}
+			if job.Status != "uploaded" {
+				return
+			}
+			if !isValidJobID(job.JobID) {
+				log.Printf("job id validation failed %s", job.JobID)
+				return
+			}
 
-		storedName := job.JobID + "_" + sanitizeFilename(job.OriginalName)
-		uploadPath := filepath.Join(uploadDir, storedName)
+			resultPath := filepath.Join(resultsDir, job.JobID+".json")
+			if _, err := os.Stat(resultPath); err == nil {
+				return
+			}
 
-		uploadSHA, _, err := hashFile(uploadPath)
-		if err != nil {
-			log.Printf("hash error %s: %v", uploadPath, err)
-			continue
-		}
+			// Upload path is derived from job metadata produced by upload-api.
+			storedName := job.JobID + "_" + sanitizeFilename(job.OriginalName)
+			uploadPath := filepath.Join(uploadDir, storedName)
 
-		signatureValid, signatureErr := verifySignature(uploadPath, job.Sig, signerCertPath)
+			uploadSHA, _, err := hashFile(uploadPath)
+			if err != nil {
+				log.Printf("hash error %s: %v", uploadPath, err)
+				return
+			}
 
-		contentPath := uploadPath
-		decrypted := false
-		decryptionError := ""
-		if job.EncAlg != "" && job.EncKey != "" {
-			if privateKeyPath == "" {
-				decryptionError = "private key not configured"
-			} else {
-				outPath, err := decryptPayload(uploadPath, job.EncKey, privateKeyPath, decryptedDir, job.JobID)
-				if err != nil {
-					decryptionError = err.Error()
+			signatureValid, signatureErr := verifySignature(uploadPath, job.Sig, signerCertPath)
+
+			contentPath := uploadPath
+			decrypted := false
+			decryptionError := ""
+			encKey := job.EncKey
+			if job.EncKeyWrapped {
+				if jobKey == "" {
+					decryptionError = "job key not configured"
+				} else if job.EncKeyWrapAlg != "" && job.EncKeyWrapAlg != "aes-256-gcm" {
+					decryptionError = "unsupported enc_key_wrap_alg"
 				} else {
-					contentPath = outPath
-					decrypted = true
+					unwrapped, err := unwrapSensitiveValue(job.EncKey, jobKey)
+					if err != nil {
+						decryptionError = err.Error()
+					} else {
+						encKey = unwrapped
+					}
 				}
 			}
-		}
 
-		processedSHA, processedSize, err := hashFile(contentPath)
-		if err != nil {
-			log.Printf("hash error %s: %v", contentPath, err)
-			continue
-		}
+			// Decrypt only when encryption metadata is present and keys are configured.
+			if job.EncAlg != "" && encKey != "" {
+				if privateKeyPath == "" {
+					decryptionError = "private key not configured"
+				} else if decryptionError == "" {
+					outPath, err := decryptPayload(uploadPath, encKey, privateKeyPath, decryptedDir, job.JobID)
+					if err != nil {
+						decryptionError = err.Error()
+					} else {
+						contentPath = outPath
+						decrypted = true
+					}
+				}
+			}
 
-		pipelineOutput, pipelineError := runPipeline(pipelinePath, contentPath, referencePath)
-		detection := evaluateDetection(job, processedSize, rules, decrypted, decryptionError, signatureValid, signatureErr, pipelineOutput, contentPath)
-		result := resultRecord{
-			JobID:            job.JobID,
-			Status:           "processed",
-			ProcessedAt:      time.Now().UTC().Format(time.RFC3339),
-			UploadSHA256:     uploadSHA,
-			ProcessedSHA256:  processedSHA,
-			SizeBytes:        processedSize,
-			Decrypted:        decrypted,
-			DecryptionError:  decryptionError,
-			SignatureValid:   signatureValid,
-			SignatureError:   signatureErr,
-			PipelineOutput:   pipelineOutput,
-			PipelineError:    pipelineError,
-			Detection:        detection,
-			ClientCertSerial: job.ClientCertSerial,
-		}
+			processedSHA, processedSize, err := hashFile(contentPath)
+			if err != nil {
+				log.Printf("hash error %s: %v", contentPath, err)
+				return
+			}
 
-		if err := writeJSON(resultPath, result); err != nil {
-			log.Printf("result write error %s: %v", resultPath, err)
-			continue
-		}
+			// Invoke the pipeline wrapper and evaluate detection signals.
+			pipelineOutput, pipelineError := runPipeline(pipelinePath, contentPath, referencePath, pipelineTimeout)
+			detection := evaluateDetection(job, processedSize, rules, decrypted, decryptionError, signatureValid, signatureErr, pipelineOutput, contentPath)
+			result := resultRecord{
+				JobID:            job.JobID,
+				Status:           "processed",
+				ProcessedAt:      time.Now().UTC().Format(time.RFC3339),
+				UploadSHA256:     uploadSHA,
+				ProcessedSHA256:  processedSHA,
+				SizeBytes:        processedSize,
+				Decrypted:        decrypted,
+				DecryptionError:  decryptionError,
+				SignatureValid:   signatureValid,
+				SignatureError:   signatureErr,
+				PipelineOutput:   pipelineOutput,
+				PipelineError:    pipelineError,
+				Detection:        detection,
+				ClientCertSerial: job.ClientCertSerial,
+			}
 
-		job.Status = "processed"
-		job.SHA256 = processedSHA
-		job.SizeBytes = processedSize
-		if err := writeJSON(jobPath, job); err != nil {
-			log.Printf("job update error %s: %v", jobPath, err)
-		}
+			if err := writeJSON(resultPath, result); err != nil {
+				log.Printf("result write error %s: %v", resultPath, err)
+				return
+			}
+
+			job.Status = "processed"
+			job.SHA256 = processedSHA
+			job.SizeBytes = processedSize
+			if err := writeJSON(jobPath, job); err != nil {
+				log.Printf("job update error %s: %v", jobPath, err)
+			}
+		}()
 	}
 }
 
@@ -239,17 +279,16 @@ func verifySignature(path, sigHex, certPath string) (bool, string) {
 	if err != nil {
 		return false, err.Error()
 	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return false, err.Error()
-	}
 	sig, err := hex.DecodeString(sigHex)
 	if err != nil {
 		return false, "invalid signature encoding"
 	}
 
-	hash := sha256.Sum256(data)
-	if err := rsa.VerifyPSS(pub, crypto.SHA256, hash[:], sig, nil); err != nil {
+	hash, err := fileSHA256Bytes(path)
+	if err != nil {
+		return false, err.Error()
+	}
+	if err := rsa.VerifyPSS(pub, crypto.SHA256, hash, sig, nil); err != nil {
 		return false, err.Error()
 	}
 	return true, ""
@@ -543,7 +582,9 @@ func threatPanelAlignment(fastaPath, fastqPath string) (alignmentStats, string) 
 		return stats, "minimap2 not available"
 	}
 
-	cmd := exec.Command("minimap2", "-a", fastaPath, fastqPath)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "minimap2", "-a", fastaPath, fastqPath)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return stats, "failed to read minimap2 stdout"
@@ -652,7 +693,7 @@ func writeJSON(path string, v any) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0600)
 }
 
 func hashFile(path string) (string, int64, error) {
@@ -668,6 +709,20 @@ func hashFile(path string) (string, int64, error) {
 		return "", 0, err
 	}
 	return hex.EncodeToString(hasher.Sum(nil)), size, nil
+}
+
+func fileSHA256Bytes(path string) ([]byte, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	hasher := sha256.New()
+	if _, err := file.WriteTo(hasher); err != nil {
+		return nil, err
+	}
+	return hasher.Sum(nil), nil
 }
 
 func loadRules(path string) detectionRules {
@@ -742,6 +797,18 @@ func envOr(key, fallback string) string {
 	return val
 }
 
+func envOrDuration(key string, fallback time.Duration) time.Duration {
+	val := strings.TrimSpace(os.Getenv(key))
+	if val == "" {
+		return fallback
+	}
+	parsed, err := time.ParseDuration(val)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
 func mustMkdirAll(path string) {
 	if err := os.MkdirAll(path, 0755); err != nil {
 		log.Fatalf("failed to create %s: %v", path, err)
@@ -753,7 +820,7 @@ func sanitizeFilename(name string) string {
 	return replacer.Replace(name)
 }
 
-func runPipeline(path, input, referencePath string) (json.RawMessage, string) {
+func runPipeline(path, input, referencePath string, timeout time.Duration) (json.RawMessage, string) {
 	if path == "" {
 		return nil, ""
 	}
@@ -765,13 +832,18 @@ func runPipeline(path, input, referencePath string) (json.RawMessage, string) {
 	if referencePath != "" {
 		args = append(args, "--reference", referencePath)
 	}
-	cmd := exec.Command(path, args...)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, path, args...)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return nil, "pipeline timed out"
+		}
 		if stderr.Len() > 0 {
 			return nil, strings.TrimSpace(stderr.String())
 		}
@@ -786,4 +858,58 @@ func runPipeline(path, input, referencePath string) (json.RawMessage, string) {
 		return nil, "pipeline output is not valid JSON"
 	}
 	return json.RawMessage(out), ""
+}
+
+func isValidJobID(jobID string) bool {
+	if len(jobID) < 8 || len(jobID) > 64 {
+		return false
+	}
+	for _, r := range jobID {
+		if (r < '0' || r > '9') && (r < 'a' || r > 'f') {
+			return false
+		}
+	}
+	return true
+}
+
+func unwrapSensitiveValue(payload, keyMaterial string) (string, error) {
+	key, err := decodeKeyMaterial(keyMaterial)
+	if err != nil {
+		return "", err
+	}
+	raw, err := base64.StdEncoding.DecodeString(payload)
+	if err != nil {
+		return "", err
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+	if len(raw) < gcm.NonceSize() {
+		return "", errors.New("wrapped value too short")
+	}
+	nonce := raw[:gcm.NonceSize()]
+	ciphertext := raw[gcm.NonceSize():]
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return "", err
+	}
+	return string(plaintext), nil
+}
+
+func decodeKeyMaterial(raw string) ([]byte, error) {
+	if raw == "" {
+		return nil, errors.New("missing key material")
+	}
+	if decoded, err := base64.StdEncoding.DecodeString(raw); err == nil && len(decoded) == 32 {
+		return decoded, nil
+	}
+	if decoded, err := hex.DecodeString(raw); err == nil && len(decoded) == 32 {
+		return decoded, nil
+	}
+	return nil, errors.New("job key must be 32 bytes (base64 or hex)")
 }
