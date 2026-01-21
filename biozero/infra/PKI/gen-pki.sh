@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# PKI generator: creates CA, server, client, and signer keys for local mTLS demo.
+
+umask 077
 
 OUT_DIR="${1:-./pki}"
 mkdir -p "$OUT_DIR"
