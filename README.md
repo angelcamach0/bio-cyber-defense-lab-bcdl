@@ -101,7 +101,7 @@ Trigger ZeroResponder:
 ```bash
 curl -s -X POST http://localhost:8090/alert \
   -H "Content-Type: application/json" \
-  -H "X-Webhook-Secret: change-me" \
+  -H "X-Webhook-Secret: ${BIOZERO_WEBHOOK_SECRET:-}" \
   -d '{"alert_id":"ALERT-001","source":"siem","severity":"high","timestamp":"2026-01-12T00:00:00Z","indicators":{"ip":"10.1.2.3","job_id":"abcd1234","cert_serial":"01"},"actions":["block_ip","revoke_cert","quarantine"]}'
 ```
 

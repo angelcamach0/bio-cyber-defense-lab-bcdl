@@ -10,6 +10,8 @@ Accepts file uploads and writes job metadata for the runner to process.
 When the client provides encryption/signing metadata, the API records:
 - `enc_alg`, `enc_key`, `sig_alg`, `sig`
 - mTLS client certificate subject/issuer/serial (when enabled)
+If `BIOZERO_JOB_KEY` is set, `enc_key` is wrapped at rest and the runner must
+use the same key to decrypt.
 
 ## Config
 - `BIOZERO_UPLOAD_ADDR` (default `:8081`)
@@ -19,6 +21,7 @@ When the client provides encryption/signing metadata, the API records:
 - `BIOZERO_TLS_CERT` (PEM cert path, enables TLS when set)
 - `BIOZERO_TLS_KEY` (PEM key path)
 - `BIOZERO_TLS_CA` (PEM CA bundle, enables mTLS when set)
+- `BIOZERO_JOB_KEY` (optional 32-byte key, base64 or hex, to wrap `enc_key`)
 
 ## Run
 ```bash

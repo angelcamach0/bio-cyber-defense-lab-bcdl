@@ -1,4 +1,8 @@
 <!doctype html>
+<!--
+  BioZero MVP UI: fronts the API proxy for upload/results/alert and surfaces
+  health checks for the services configured in nginx.
+-->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -27,7 +31,14 @@
         <h2>Upload FASTQ</h2>
         <label>
           Client ID
-          <input type="text" id="clientId" value="researcher-1" />
+          <input
+            type="text"
+            id="clientId"
+            value="researcher-1"
+            maxlength="64"
+            pattern="[A-Za-z0-9_-]{1,64}"
+            required
+          />
         </label>
         <label>
           FASTQ File

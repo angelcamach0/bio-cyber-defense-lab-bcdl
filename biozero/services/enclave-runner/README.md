@@ -12,6 +12,8 @@ rule set, and writes results.
 - `BIOZERO_DECRYPT_DIR` (default `./data/decrypted`)
 - `BIOZERO_PIPELINE_PATH` (default `../../bio/pipeline/pipeline.py`)
 - `BIOZERO_REFERENCE_PATH` (optional reference genome for alignment/variant steps)
+- `BIOZERO_PIPELINE_TIMEOUT` (default `10m`)
+- `BIOZERO_JOB_KEY` (optional 32-byte key, base64 or hex, to unwrap `enc_key`)
 
 ## Output
 - Results include `upload_sha256`, `processed_sha256`, `pipeline_output`, `decrypted`, and signature status fields.

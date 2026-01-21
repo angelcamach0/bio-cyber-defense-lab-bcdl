@@ -1,8 +1,10 @@
+# BioZero MVP compose stack: wires services, data volumes, and PKI assets together.
 services:
   upload-api:
     build:
       context: ../../services/upload-api
-    user: "0:0"
+    # Run as configured UID/GID to support least-privilege operation.
+    user: "${BIOZERO_UID:-0}:${BIOZERO_GID:-0}"
     environment:
       BIOZERO_DATA_DIR: /data
       BIOZERO_UPLOAD_ADDR: :8081
@@ -11,6 +13,8 @@ services:
       BIOZERO_TLS_CERT: /pki/server.crt
       BIOZERO_TLS_KEY: /pki/server.key
       BIOZERO_TLS_CA: /pki/ca.crt
+      # Optional key for wrapping enc_key at rest in job records.
+      BIOZERO_JOB_KEY: ${BIOZERO_JOB_KEY:-}
     ports:
       - "8081:8081"
     volumes:
@@ -20,7 +24,8 @@ services:
   results-api:
     build:
       context: ../../services/results-api
-    user: "0:0"
+    # Run as configured UID/GID to support least-privilege operation.
+    user: "${BIOZERO_UID:-0}:${BIOZERO_GID:-0}"
     environment:
       BIOZERO_DATA_DIR: /data
       BIOZERO_RESULTS_ADDR: :8082
@@ -37,7 +42,8 @@ services:
   enclave-runner:
     build:
       context: ../../services/enclave-runner
-    user: "0:0"
+    # Run as configured UID/GID to support least-privilege operation.
+    user: "${BIOZERO_UID:-0}:${BIOZERO_GID:-0}"
     environment:
       BIOZERO_DATA_DIR: /data
       BIOZERO_RULES_PATH: /rules/rules.json
@@ -46,6 +52,10 @@ services:
       BIOZERO_DECRYPT_DIR: /data/decrypted
       BIOZERO_PIPELINE_PATH: /pipeline/pipeline.py
       BIOZERO_REFERENCE_PATH: /reference/reference.fa
+      # Optional key for unwrapping enc_key at rest in job records.
+      BIOZERO_JOB_KEY: ${BIOZERO_JOB_KEY:-}
+      # Pipeline timeout budget to avoid runaway processing.
+      BIOZERO_PIPELINE_TIMEOUT: ${BIOZERO_PIPELINE_TIMEOUT:-10m}
     volumes:
       - biozero-data:/data
       - ../PKI/pki:/pki:ro
@@ -56,11 +66,13 @@ services:
   zeroresponder:
     build:
       context: ../../services/zeroresponder
-    user: "0:0"
+    # Run as configured UID/GID to support least-privilege operation.
+    user: "${BIOZERO_UID:-0}:${BIOZERO_GID:-0}"
     environment:
       BIOZERO_DATA_DIR: /data
       BIOZERO_RESPONDER_ADDR: :8090
-      BIOZERO_WEBHOOK_SECRET: change-me
+      # Optional shared secret for alert webhook authentication.
+      BIOZERO_WEBHOOK_SECRET: ${BIOZERO_WEBHOOK_SECRET:-}
     ports:
       - "8090:8090"
     volumes:

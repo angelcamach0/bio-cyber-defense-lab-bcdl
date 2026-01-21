@@ -18,3 +18,7 @@ If tools are missing, the wrapper still emits JSON with warnings and basic stats
 ```bash
 ./pipeline.py /path/to/input.fastq --reference /path/to/reference.fa
 ```
+
+## Env vars
+- `BIOZERO_PIPELINE_TIMEOUT_SECONDS` (default `600`)
+- `BIOZERO_PIPELINE_MAX_BYTES` (default `26214400`)

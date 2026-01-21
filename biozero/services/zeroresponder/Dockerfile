@@ -1,3 +1,4 @@
+# ZeroResponder container: builds Go binary and runs as non-root user.
 FROM golang:1.22-alpine AS build
 WORKDIR /src
 COPY go.mod ./

@@ -19,4 +19,5 @@ docker compose up --build
 - APIs listen on 8081 and 8082 with mTLS enabled.
 - Update PKI paths if you store certs elsewhere.
 - Rebuild the stack after regenerating PKI assets so Nginx picks up new certs.
-- Containers run as root to avoid volume permission issues with the named data volume.
+- Set `BIOZERO_UID`/`BIOZERO_GID` to run services as a non-root user (recommended).
+- Optional env vars: `BIOZERO_WEBHOOK_SECRET` (ZeroResponder) and `BIOZERO_JOB_KEY` (wrap enc_key).
