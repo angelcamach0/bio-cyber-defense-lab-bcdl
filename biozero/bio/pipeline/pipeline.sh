@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Basic pipeline wrapper: computes FASTQ stats and emits JSON consumed by enclave-runner/results-api.
 
 if [[ $# -lt 1 ]]; then
   echo "usage: $0 <input-file>" >&2
@@ -9,6 +10,11 @@ fi
 input="$1"
 if [[ ! -f "$input" ]]; then
   echo "input not found: $input" >&2
+  exit 1
+fi
+max_bytes="${BIOZERO_PIPELINE_MAX_BYTES:-26214400}"
+if [[ "$(wc -c <"$input")" -gt "$max_bytes" ]]; then
+  echo "input exceeds configured size limit" >&2
   exit 1
 fi
 
