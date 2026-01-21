@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// UI client logic: uploads files, polls results, sends alerts, and queries health
+// endpoints; it talks to the API proxy in nginx and surfaces status to users.
 const uploadBtn = document.getElementById("uploadBtn");
 const alertBtn = document.getElementById("alertBtn");
 const refreshHealth = document.getElementById("refreshHealth");
@@ -6,6 +8,7 @@ const uploadStatus = document.getElementById("uploadStatus");
 const resultsBox = document.getElementById("resultsBox");
 const jobMeta = document.getElementById("jobMeta");
 const alertBox = document.getElementById("alertBox");
+const maxFileBytes = 25 * 1024 * 1024;
 
 const api = {
   upload: "/api/upload",
@@ -15,6 +18,21 @@ const api = {
   healthResults: "/api/health/results",
   healthZR: "/api/health/zeroresponder",
 };
+
+function isValidClientId(value) {
+  return /^[A-Za-z0-9_-]{1,64}$/.test(value);
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const resp = await fetch(url, { ...options, signal: controller.signal });
+    return resp;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 async function hashFile(file) {
   const buf = await file.arrayBuffer();
@@ -32,8 +50,16 @@ async function uploadFile() {
     uploadStatus.textContent = "Client ID is required.";
     return;
   }
+  if (!isValidClientId(clientId)) {
+    uploadStatus.textContent = "Client ID must be 1-64 chars: letters, numbers, - or _.";
+    return;
+  }
   if (!file) {
     uploadStatus.textContent = "Select a FASTQ file.";
+    return;
+  }
+  if (file.size > maxFileBytes) {
+    uploadStatus.textContent = "File exceeds the 25MB limit.";
     return;
   }
 
@@ -47,14 +73,14 @@ async function uploadFile() {
     form.append("client_id", clientId);
 
     uploadStatus.textContent = "Uploading...";
-    const resp = await fetch(api.upload, {
+    const resp = await fetchWithTimeout(api.upload, {
       method: "POST",
       headers: {
         "X-Content-SHA256": hash,
         "X-Client-Id": clientId,
       },
       body: form,
-    });
+    }, 20000);
 
     if (!resp.ok) {
       const text = await resp.text();
@@ -77,27 +103,38 @@ async function uploadFile() {
 
 async function pollResults(jobId, clientId) {
   const url = `${api.results}/${jobId}`;
+  let consecutiveErrors = 0;
   for (let i = 0; i < 30; i += 1) {
-    const resp = await fetch(url, {
-      headers: {
-        "X-Client-Id": clientId,
-      },
-    });
+    try {
+      const resp = await fetchWithTimeout(url, {
+        headers: {
+          "X-Client-Id": clientId,
+        },
+      }, 10000);
 
-    if (!resp.ok) {
-      resultsBox.textContent = `Error: ${await resp.text()}`;
-      return;
+      if (!resp.ok) {
+        resultsBox.textContent = `Error: ${await resp.text()}`;
+        return;
+      }
+
+      const data = await resp.json();
+      if (data.status === "processed") {
+        resultsBox.textContent = JSON.stringify(data, null, 2);
+        uploadStatus.textContent = "Results ready.";
+        return;
+      }
+
+      uploadStatus.textContent = "Processing...";
+      await new Promise((r) => setTimeout(r, 2000));
+      consecutiveErrors = 0;
+    } catch (err) {
+      consecutiveErrors += 1;
+      if (consecutiveErrors >= 3) {
+        resultsBox.textContent = `Error: ${err.message}`;
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 2000));
     }
-
-    const data = await resp.json();
-    if (data.status === "processed") {
-      resultsBox.textContent = JSON.stringify(data, null, 2);
-      uploadStatus.textContent = "Results ready.";
-      return;
-    }
-
-    uploadStatus.textContent = "Processing...";
-    await new Promise((r) => setTimeout(r, 2000));
   }
 
   uploadStatus.textContent = "Timed out waiting for results.";
@@ -121,14 +158,18 @@ async function sendAlert() {
   };
 
   try {
-    const resp = await fetch(api.alert, {
+    const resp = await fetchWithTimeout(api.alert, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    });
+    }, 10000);
 
+    if (!resp.ok) {
+      alertBox.textContent = await resp.text();
+      return;
+    }
     const data = await resp.json();
     alertBox.textContent = JSON.stringify(data, null, 2);
   } catch (err) {
@@ -150,7 +191,7 @@ async function checkHealth() {
     if (!badge) continue;
 
     try {
-      const resp = await fetch(item.url);
+      const resp = await fetchWithTimeout(item.url, {}, 5000);
       badge.textContent = resp.ok ? "ok" : "down";
       badge.classList.toggle("ok", resp.ok);
       badge.classList.toggle("fail", !resp.ok);
