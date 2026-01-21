@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# MVP test harness: spins up compose stack, uploads a sample, and captures evidence.
 
 BASE_DIR="/home/acamacho/TopDawgProjects/BioZeroRelated/Bio-Cyber Defense Lab (BCDL)/biozero"
 COMPOSE_DIR="$BASE_DIR/infra/compose"
@@ -9,6 +10,7 @@ mkdir -p "$EVIDENCE_DIR"
 
 RUN_LOG="$EVIDENCE_DIR/run_output.txt"
 : > "$RUN_LOG"
+WEBHOOK_SECRET="${BIOZERO_WEBHOOK_SECRET:-}"
 
 log_step() {
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*" | tee -a "$RUN_LOG"
@@ -61,11 +63,18 @@ curl -vk https://localhost:8081/health 2>&1 | tee "$EVIDENCE_DIR/LOG_31_tls_fail
 set -e
 
 log_step "ZeroResponder alert test"
-curl -s -X POST http://localhost:8090/alert \
-  -H "Content-Type: application/json" \
-  -H "X-Webhook-Secret: change-me" \
-  -d '{"alert_id":"ALERT-001","source":"siem","severity":"high","timestamp":"2026-01-13T00:00:00Z","indicators":{"ip":"10.1.2.3","job_id":"abcd1234","cert_serial":"01"},"actions":["block_ip","revoke_cert","quarantine"]}' \
-  | tee "$EVIDENCE_DIR/IMG_35_zeroresponder_response.txt" | tee -a "$RUN_LOG"
+if [[ -n "$WEBHOOK_SECRET" ]]; then
+  curl -s -X POST http://localhost:8090/alert \
+    -H "Content-Type: application/json" \
+    -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" \
+    -d '{"alert_id":"ALERT-001","source":"siem","severity":"high","timestamp":"2026-01-13T00:00:00Z","indicators":{"ip":"10.1.2.3","job_id":"abcd1234","cert_serial":"01"},"actions":["block_ip","revoke_cert","quarantine"]}' \
+    | tee "$EVIDENCE_DIR/IMG_35_zeroresponder_response.txt" | tee -a "$RUN_LOG"
+else
+  curl -s -X POST http://localhost:8090/alert \
+    -H "Content-Type: application/json" \
+    -d '{"alert_id":"ALERT-001","source":"siem","severity":"high","timestamp":"2026-01-13T00:00:00Z","indicators":{"ip":"10.1.2.3","job_id":"abcd1234","cert_serial":"01"},"actions":["block_ip","revoke_cert","quarantine"]}' \
+    | tee "$EVIDENCE_DIR/IMG_35_zeroresponder_response.txt" | tee -a "$RUN_LOG"
+fi
 
 log_step "UI smoke test (fetch homepage)"
 curl -s http://localhost:8080/ | tee "$EVIDENCE_DIR/IMG_36_ui_homepage.html" | tee -a "$RUN_LOG"
