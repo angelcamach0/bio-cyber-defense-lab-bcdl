@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Simulated adversary: generates synthetic FASTQ-like files and invokes the
+// uploader-cli to create background traffic for the MVP services.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -17,8 +20,16 @@ func main() {
 	uploader := flag.String("uploader", "../services/uploader-cli", "path to uploader-cli dir")
 	flag.Parse()
 
+	if *count <= 0 {
+		fmt.Fprintln(os.Stderr, "count must be greater than 0")
+		os.Exit(1)
+	}
+	if stat, err := os.Stat(*uploader); err != nil || !stat.IsDir() {
+		fmt.Fprintln(os.Stderr, "uploader path is invalid")
+		os.Exit(1)
+	}
 	if err := os.MkdirAll(*outputDir, 0755); err != nil {
-		fmt.Printf("mkdir error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "mkdir error: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -27,15 +38,19 @@ func main() {
 		name := randomName(i)
 		path := filepath.Join(*outputDir, name)
 		if err := os.WriteFile(path, randomBytes(1024+rand.Intn(2048)), 0644); err != nil {
-			fmt.Printf("write error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "write error: %v\n", err)
 			continue
 		}
 
-		cmd := exec.Command("go", "run", "./main.go", "--file", path, "--client-id", "simulator")
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		cmd := exec.CommandContext(ctx, "go", "run", "./main.go", "--file", path, "--client-id", "simulator")
 		cmd.Dir = *uploader
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		_ = cmd.Run()
+		if err := cmd.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "uploader failed: %v\n", err)
+		}
+		cancel()
 	}
 }
 
