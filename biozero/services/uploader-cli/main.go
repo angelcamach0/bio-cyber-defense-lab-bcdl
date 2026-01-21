@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Uploader CLI: prepares payloads (optional encryption/signing), uploads to the
+// upload-api, and polls results-api for completion; used by the UI and simulator.
 package main
 
 import (
-	"bytes"
+	"context"
 	"crypto"
 	"crypto/aes"
 	"crypto/cipher"
@@ -42,6 +44,7 @@ func main() {
 	resultsURL := flag.String("results-url", "http://localhost:8082/results", "results endpoint base")
 	clientID := flag.String("client-id", "", "client identifier")
 	pollSeconds := flag.Int("poll-seconds", 2, "poll interval seconds")
+	maxPollErrors := flag.Int("max-poll-errors", 5, "max consecutive poll errors before exit")
 	mtlsCert := flag.String("mtls-cert", "", "client TLS cert (PEM)")
 	mtlsKey := flag.String("mtls-key", "", "client TLS key (PEM)")
 	caCert := flag.String("ca-cert", "", "CA cert bundle (PEM)")
@@ -50,14 +53,15 @@ func main() {
 	flag.Parse()
 
 	if *filePath == "" {
-		fmt.Println("missing --file")
-		os.Exit(1)
+		fatal("missing --file")
+	}
+	if !isValidClientID(*clientID) && *clientID != "" {
+		fatal("invalid --client-id")
 	}
 
 	client, err := newHTTPClient(*mtlsCert, *mtlsKey, *caCert)
 	if err != nil {
-		fmt.Printf("tls config error: %v\n", err)
-		os.Exit(1)
+		fatalf("tls config error: %v", err)
 	}
 
 	payloadPath := *filePath
@@ -66,8 +70,7 @@ func main() {
 	if *serverCert != "" {
 		payloadPath, encKey, err = encryptFile(*filePath, *serverCert)
 		if err != nil {
-			fmt.Printf("encrypt error: %v\n", err)
-			os.Exit(1)
+			fatalf("encrypt error: %v", err)
 		}
 		encAlg = "aes-256-gcm+rsa-oaep-sha256"
 		defer func() {
@@ -79,8 +82,7 @@ func main() {
 
 	sha, err := fileSHA256(payloadPath)
 	if err != nil {
-		fmt.Printf("hash error: %v\n", err)
-		os.Exit(1)
+		fatalf("hash error: %v", err)
 	}
 
 	sigAlg := ""
@@ -88,25 +90,30 @@ func main() {
 	if *signKey != "" {
 		sigHex, err = signFile(payloadPath, *signKey)
 		if err != nil {
-			fmt.Printf("sign error: %v\n", err)
-			os.Exit(1)
+			fatalf("sign error: %v", err)
 		}
 		sigAlg = "rsa-pss-sha256"
 	}
 
 	jobID, err := uploadFile(client, *uploadURL, payloadPath, *clientID, sha, encAlg, encKey, sigAlg, sigHex)
 	if err != nil {
-		fmt.Printf("upload error: %v\n", err)
-		os.Exit(1)
+		fatalf("upload error: %v", err)
 	}
 
 	fmt.Printf("uploaded job %s\n", jobID)
+	consecutiveErrors := 0
 	for {
 		status, payload, err := fetchResults(client, *resultsURL, jobID)
 		if err != nil {
-			fmt.Printf("results error: %v\n", err)
-			os.Exit(1)
+			consecutiveErrors++
+			if consecutiveErrors > *maxPollErrors {
+				fatalf("results error: %v", err)
+			}
+			fmt.Printf("results error: %v (retrying)\n", err)
+			time.Sleep(time.Duration(*pollSeconds) * time.Second)
+			continue
 		}
+		consecutiveErrors = 0
 		if status == "processed" {
 			fmt.Printf("results:\n%s\n", payload)
 			break
@@ -118,7 +125,7 @@ func main() {
 
 func newHTTPClient(certPath, keyPath, caPath string) (*http.Client, error) {
 	if certPath == "" && keyPath == "" && caPath == "" {
-		return http.DefaultClient, nil
+		return &http.Client{Timeout: 30 * time.Second}, nil
 	}
 
 	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
@@ -142,7 +149,7 @@ func newHTTPClient(certPath, keyPath, caPath string) (*http.Client, error) {
 	}
 
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
-	return &http.Client{Transport: transport}, nil
+	return &http.Client{Transport: transport, Timeout: 30 * time.Second}, nil
 }
 
 func encryptFile(path, certPath string) (string, string, error) {
@@ -197,13 +204,12 @@ func signFile(path, keyPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	data, err := os.ReadFile(path)
+
+	hash, err := fileSHA256Bytes(path)
 	if err != nil {
 		return "", err
 	}
-
-	hash := sha256.Sum256(data)
-	sig, err := rsa.SignPSS(rand.Reader, priv, crypto.SHA256, hash[:], nil)
+	sig, err := rsa.SignPSS(rand.Reader, priv, crypto.SHA256, hash, nil)
 	if err != nil {
 		return "", err
 	}
@@ -277,37 +283,44 @@ func uploadFile(client *http.Client, url, path, clientID, sha, encAlg, encKey, s
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
 
-	var buf bytes.Buffer
-	writer := multipart.NewWriter(&buf)
-	part, err := writer.CreateFormFile("file", filepath.Base(path))
-	if err != nil {
-		return "", err
-	}
-	if _, err := io.Copy(part, file); err != nil {
-		return "", err
-	}
-	if clientID != "" {
-		_ = writer.WriteField("client_id", clientID)
-	}
-	if encAlg != "" {
-		_ = writer.WriteField("enc_alg", encAlg)
-	}
-	if encKey != "" {
-		_ = writer.WriteField("enc_key", encKey)
-	}
-	if sigAlg != "" {
-		_ = writer.WriteField("sig_alg", sigAlg)
-	}
-	if sigHex != "" {
-		_ = writer.WriteField("sig", sigHex)
-	}
-	if err := writer.Close(); err != nil {
-		return "", err
-	}
+	// Stream multipart form data to avoid buffering large uploads in memory.
+	pr, pw := io.Pipe()
+	writer := multipart.NewWriter(pw)
+	go func() {
+		defer file.Close()
+		defer pw.Close()
+		defer writer.Close()
 
-	req, err := http.NewRequest(http.MethodPost, url, &buf)
+		part, err := writer.CreateFormFile("file", filepath.Base(path))
+		if err != nil {
+			_ = pw.CloseWithError(err)
+			return
+		}
+		if _, err := io.Copy(part, file); err != nil {
+			_ = pw.CloseWithError(err)
+			return
+		}
+		if clientID != "" {
+			_ = writer.WriteField("client_id", clientID)
+		}
+		if encAlg != "" {
+			_ = writer.WriteField("enc_alg", encAlg)
+		}
+		if encKey != "" {
+			_ = writer.WriteField("enc_key", encKey)
+		}
+		if sigAlg != "" {
+			_ = writer.WriteField("sig_alg", sigAlg)
+		}
+		if sigHex != "" {
+			_ = writer.WriteField("sig", sigHex)
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, pr)
 	if err != nil {
 		return "", err
 	}
@@ -337,7 +350,13 @@ func uploadFile(client *http.Client, url, path, clientID, sha, encAlg, encKey, s
 
 func fetchResults(client *http.Client, baseURL, jobID string) (string, string, error) {
 	url := fmt.Sprintf("%s/%s", strings.TrimRight(baseURL, "/"), jobID)
-	resp, err := client.Get(url)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", "", err
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", "", err
 	}
@@ -371,4 +390,44 @@ func fileSHA256(path string) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+func fileSHA256Bytes(path string) ([]byte, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return nil, err
+	}
+	return hasher.Sum(nil), nil
+}
+
+func isValidClientID(clientID string) bool {
+	if clientID == "" {
+		return true
+	}
+	if len(clientID) > 64 {
+		return false
+	}
+	for _, r := range clientID {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' || r == '_' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func fatal(message string) {
+	fmt.Fprintln(os.Stderr, message)
+	os.Exit(1)
+}
+
+func fatalf(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, format+"\n", args...)
+	os.Exit(1)
 }
