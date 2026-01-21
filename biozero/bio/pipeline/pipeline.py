@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-only
 """
-BioZero pipeline wrapper: inspects FASTQ input, runs optional tools, and prints
+BioZero pipeline wrapper: inspects FASTQ input, runs optional tools, and emits
 JSON for enclave-runner to persist as results consumed by results-api.
+
+This module forms an API boundary between local filesystem inputs and external
+bioinformatics tooling (fastp/minimap2/samtools/bcftools). Outputs are designed
+to be machine-readable and stable for downstream services, enabling the
+enclave-runner to pass results to results-api without format translation.
 """
 import argparse
 import hashlib
@@ -24,6 +29,10 @@ def sha256_file(path):
     Returns the hex-encoded SHA-256 digest string.
 
     Throws [IOError] when file reading fails.
+
+    Performance:
+      Time complexity: O(n) over file bytes.
+      Space complexity: O(1) additional space.
 
     Example: `digest = sha256_file("/data/sample.fastq")`
     """
@@ -51,6 +60,9 @@ def fastq_stats(path):
       Time complexity: O(n) over file lines.
       Space complexity: O(1) additional space.
 
+    Assumptions:
+      FASTQ records are 4 lines; truncated inputs may undercount reads.
+
     Example: `read_count, avg_len, line_count = fastq_stats(path)`
     """
     read_count = 0
@@ -60,12 +72,10 @@ def fastq_stats(path):
         # Iterate through lines to count reads and accumulate lengths.
         for idx, line in enumerate(f, start=1):
             line_count += 1
-            # FASTQ sequence lines occur every 4 lines.
-            # Only count sequence lines (2nd line of each FASTQ record).
+            # FASTQ sequence lines occur every 4 lines; only count sequence lines.
             if idx % 4 == 2:
                 read_count += 1
                 total_len += len(line.strip())
-    # Avoid division by zero when no reads are present.
     # Avoid division by zero when no reads are present.
     avg_len = int(total_len / read_count) if read_count else 0
     # Return computed statistics for downstream scoring.
@@ -84,6 +94,12 @@ def run_cmd(cmd, stdout_path=None, timeout_seconds=600):
     Returns a subprocess.CompletedProcess instance.
 
     Throws [SubprocessError] when execution fails; errors are captured in returncode.
+
+    API Boundary:
+      Invokes external tooling and captures stdout/stderr for downstream reporting.
+
+    Security:
+      Assumes `cmd` is trusted and fully specified; do not pass user-provided shell strings.
 
     Example: `result = run_cmd(["fastp", "-i", input_path], timeout_seconds=600)`
     """
@@ -178,6 +194,13 @@ def main():
 
     Throws [Exception] when unexpected pipeline errors occur.
 
+    API Boundary:
+      Interfaces with filesystem inputs/outputs and external tooling, producing a
+      stable JSON contract for enclave-runner and results-api.
+
+    Security:
+      Enforces size limits and timeouts to mitigate resource exhaustion risks.
+
     Example: `python pipeline.py input.fastq --reference ref.fa`
     """
     try:
@@ -185,16 +208,15 @@ def main():
         parser.add_argument("input", help="input FASTQ file")
         parser.add_argument("--reference", help="reference genome (FASTA)")
         parser.add_argument("--out-dir", help="output directory")
+        # Parse CLI arguments once to avoid inconsistent reads.
         args = parser.parse_args()
 
         # Validate input existence before performing any work.
-        # Validate input path before processing.
         if not os.path.isfile(args.input):
             write_error(f"input not found: {args.input}")
             # Return non-zero to signal invalid input.
             return 1
         # Enforce max input size to avoid expensive processing.
-        # Enforce size limits before invoking tools.
         if os.path.getsize(args.input) > max_bytes_limit():
             write_error("input exceeds configured size limit")
             # Return non-zero to signal size violations.
@@ -208,6 +230,7 @@ def main():
         os.makedirs(out_dir, exist_ok=True)
 
         timeout_seconds = parse_timeout_seconds()
+        # Discover tool availability early to drive conditional branches.
         tools = {
             "fastp": shutil.which("fastp"),
             "minimap2": shutil.which("minimap2"),
@@ -215,7 +238,9 @@ def main():
             "samtools": shutil.which("samtools"),
         }
 
+        # Collect non-fatal issues so results still reach downstream systems.
         warnings = []
+        # Collect output artifact paths and tool summaries for consumers.
         outputs = {}
 
         # Compute base stats for detection and reporting.
@@ -223,10 +248,10 @@ def main():
         byte_count = os.path.getsize(args.input)
         sha = sha256_file(args.input)
 
+        # Track the current input as it flows through optional pre-processing.
         working_input = args.input
 
         # Pre-process reads with fastp when available.
-        # Run fastp when available for read cleaning and metrics.
         if tools["fastp"]:
             fastp_out = os.path.join(out_dir, "fastp_cleaned.fastq")
             fastp_json = os.path.join(out_dir, "fastp.json")
@@ -247,6 +272,7 @@ def main():
                 outputs["fastp_cleaned"] = fastp_out
                 outputs["fastp_json"] = fastp_json
                 outputs["fastp_html"] = fastp_html
+                # Use cleaned reads for any subsequent alignment or variant steps.
                 working_input = fastp_out
                 try:
                     with open(fastp_json, "r") as f:
@@ -262,7 +288,6 @@ def main():
             warnings.append("fastp not installed")
 
         # Align against the reference to surface targeted signals.
-        # Run minimap2 when available and reference is provided.
         if tools["minimap2"] and args.reference:
             sam_path = os.path.join(out_dir, "alignment.sam")
             result = run_cmd(
@@ -320,6 +345,7 @@ def main():
                     if sort.returncode == 0:
                         # Index the sorted BAM to enable random access.
                         run_cmd([tools["samtools"], "index", sorted_bam], timeout_seconds=timeout_seconds)
+                        # Use mpileup -> call pipeline for variant discovery.
                         mpileup = subprocess.Popen(
                             [tools["bcftools"], "mpileup", "-f", args.reference, sorted_bam],
                             stdout=subprocess.PIPE,
@@ -359,6 +385,7 @@ def main():
                 # Record missing tool to explain variant omission.
                 warnings.append("samtools not installed")
 
+        # Consolidate all results into a stable JSON payload for downstream services.
         payload = {
             "pipeline": "python-wrapper",
             "timestamp": datetime.utcnow().isoformat() + "Z",
@@ -374,6 +401,7 @@ def main():
             "warnings": warnings,
         }
 
+        # Emit machine-readable output to stdout for enclave-runner ingestion.
         print(json.dumps(payload, indent=2))
         # Return success to indicate pipeline completion.
         return 0
