@@ -1,24 +1,33 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// ZeroResponder: accepts alert webhooks, validates the payload, and writes
+// action artifacts for the SOC pipeline; the UI and automation clients call /alert.
 package main
 
 import (
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
 
+type errorResponse struct {
+	Error string `json:"error"`
+	Code  string `json:"code"`
+}
+
 type alertPayload struct {
-	AlertID   string            `json:"alert_id"`
-	Source    string            `json:"source"`
-	Severity  string            `json:"severity"`
-	Timestamp string            `json:"timestamp"`
+	AlertID    string            `json:"alert_id"`
+	Source     string            `json:"source"`
+	Severity   string            `json:"severity"`
+	Timestamp  string            `json:"timestamp"`
 	Indicators map[string]string `json:"indicators"`
-	Actions   []string          `json:"actions"`
+	Actions    []string          `json:"actions"`
 }
 
 type actionRecord struct {
@@ -33,6 +42,7 @@ func main() {
 	addr := envOr("BIOZERO_RESPONDER_ADDR", ":8090")
 	dataDir := envOr("BIOZERO_DATA_DIR", "./data")
 	secret := os.Getenv("BIOZERO_WEBHOOK_SECRET")
+	maxAlertBytes := envOrInt64("BIOZERO_ALERT_MAX_BYTES", 1<<20)
 
 	actionsDir := filepath.Join(dataDir, "actions")
 	mustMkdirAll(actionsDir)
@@ -44,28 +54,31 @@ func main() {
 
 	http.HandleFunc("/alert", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed")
 			return
 		}
 		if secret != "" {
 			provided := r.Header.Get("X-Webhook-Secret")
 			if subtle.ConstantTimeCompare([]byte(provided), []byte(secret)) != 1 {
-				http.Error(w, "forbidden", http.StatusForbidden)
+				writeJSONError(w, http.StatusForbidden, "forbidden", "forbidden")
 				return
 			}
 		}
 
+		// Cap body size to reduce abuse and protect the responder log pipeline.
+		r.Body = http.MaxBytesReader(w, r.Body, maxAlertBytes)
 		var payload alertPayload
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			http.Error(w, "invalid json", http.StatusBadRequest)
+			writeJSONError(w, http.StatusBadRequest, "invalid_json", "invalid json")
 			return
 		}
 
-		if payload.AlertID == "" {
-			http.Error(w, "missing alert_id", http.StatusBadRequest)
+		if err := validateAlert(payload); err != nil {
+			writeJSONError(w, http.StatusBadRequest, "invalid_alert", err.Error())
 			return
 		}
 
+		// Write action artifacts so downstream SOC tooling can consume them.
 		records := handleActions(payload, actionsDir)
 		resp := map[string]any{
 			"status":  "ok",
@@ -74,8 +87,15 @@ func main() {
 		writeJSONResponse(w, resp)
 	})
 
+	server := &http.Server{
+		Addr:              addr,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       30 * time.Second,
+		MaxHeaderBytes:    1 << 20,
+	}
 	log.Printf("zeroresponder listening on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	log.Fatal(server.ListenAndServe())
 }
 
 func handleActions(alert alertPayload, actionsDir string) []actionRecord {
@@ -111,7 +131,7 @@ func writeAction(dir string, alert alertPayload, action, target string, meta map
 	}
 
 	logPath := filepath.Join(dir, "actions.log")
-	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
 	if err == nil {
 		defer f.Close()
 		data, err := json.Marshal(record)
@@ -134,7 +154,7 @@ func writeAction(dir string, alert alertPayload, action, target string, meta map
 }
 
 func appendLine(path, value string) {
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
 	if err != nil {
 		return
 	}
@@ -145,11 +165,24 @@ func appendLine(path, value string) {
 func writeJSONResponse(w http.ResponseWriter, v any) {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
-		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "encode_failed", "failed to encode response")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
+}
+
+func writeJSONError(w http.ResponseWriter, status int, code, message string) {
+	data, err := json.MarshalIndent(errorResponse{Error: message, Code: code}, "", "  ")
+	if err != nil {
+		http.Error(w, "failed to encode error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(status)
 	_, _ = w.Write(data)
 }
 
@@ -161,8 +194,42 @@ func envOr(key, fallback string) string {
 	return val
 }
 
+func envOrInt64(key string, fallback int64) int64 {
+	val := strings.TrimSpace(os.Getenv(key))
+	if val == "" {
+		return fallback
+	}
+	parsed, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
 func mustMkdirAll(path string) {
 	if err := os.MkdirAll(path, 0755); err != nil {
 		log.Fatalf("failed to create %s: %v", path, err)
 	}
+}
+
+func validateAlert(payload alertPayload) error {
+	if payload.AlertID == "" {
+		return errors.New("missing alert_id")
+	}
+	if payload.Source == "" {
+		return errors.New("missing source")
+	}
+	if payload.Severity == "" {
+		return errors.New("missing severity")
+	}
+	if payload.Timestamp == "" {
+		return errors.New("missing timestamp")
+	}
+	if len(payload.Actions) == 0 {
+		return errors.New("missing actions")
+	}
+	if len(payload.AlertID) > 128 || len(payload.Source) > 64 {
+		return errors.New("alert_id or source too long")
+	}
+	return nil
 }
