@@ -12,6 +12,7 @@ RUN_LOG="$EVIDENCE_DIR/run_output.txt"
 : > "$RUN_LOG"
 WEBHOOK_SECRET="${BIOZERO_WEBHOOK_SECRET:-}"
 
+# log_step writes a timestamped message to stdout and the run log.
 log_step() {
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*" | tee -a "$RUN_LOG"
 }
@@ -19,6 +20,7 @@ log_step() {
 log_step "Starting MVP test run"
 
 log_step "Ensuring sample FASTQ exists"
+# Create a minimal sample FASTQ when missing for repeatable tests.
 if [[ ! -f "$EVIDENCE_DIR/sample.fastq" ]]; then
   cat > "$EVIDENCE_DIR/sample.fastq" <<'FASTQ'
 @read1
@@ -58,11 +60,14 @@ docker run --rm --network host \
   | tee "$EVIDENCE_DIR/LOG_30_uploader_cli.txt" | tee -a "$RUN_LOG"
 
 log_step "mTLS negative test (no client cert)"
+# Allow the curl command to fail without aborting the script.
 set +e
 curl -vk https://localhost:8081/health 2>&1 | tee "$EVIDENCE_DIR/LOG_31_tls_fail.txt" | tee -a "$RUN_LOG"
+# Restore strict error handling after the negative test.
 set -e
 
 log_step "ZeroResponder alert test"
+# Include webhook secret only when configured.
 if [[ -n "$WEBHOOK_SECRET" ]]; then
   curl -s -X POST http://localhost:8090/alert \
     -H "Content-Type: application/json" \
@@ -70,6 +75,7 @@ if [[ -n "$WEBHOOK_SECRET" ]]; then
     -d '{"alert_id":"ALERT-001","source":"siem","severity":"high","timestamp":"2026-01-13T00:00:00Z","indicators":{"ip":"10.1.2.3","job_id":"abcd1234","cert_serial":"01"},"actions":["block_ip","revoke_cert","quarantine"]}' \
     | tee "$EVIDENCE_DIR/IMG_35_zeroresponder_response.txt" | tee -a "$RUN_LOG"
 else
+  # Send a webhook without a secret when none is configured.
   curl -s -X POST http://localhost:8090/alert \
     -H "Content-Type: application/json" \
     -d '{"alert_id":"ALERT-001","source":"siem","severity":"high","timestamp":"2026-01-13T00:00:00Z","indicators":{"ip":"10.1.2.3","job_id":"abcd1234","cert_serial":"01"},"actions":["block_ip","revoke_cert","quarantine"]}' \
@@ -83,13 +89,17 @@ log_step "UI health proxy check"
 curl -s http://localhost:8080/api/health/upload | tee "$EVIDENCE_DIR/LOG_36_ui_health_upload.txt" | tee -a "$RUN_LOG"
 
 log_step "Collecting enclave-runner logs"
+# Allow log collection to fail without aborting the script.
 set +e
 docker compose logs enclave-runner --tail 50 | tee "$EVIDENCE_DIR/LOG_30_runner.log" | tee -a "$RUN_LOG"
+# Restore strict error handling after log collection.
 set -e
 
 log_step "Collecting zeroresponder actions log"
+# Allow log collection to fail without aborting the script.
 set +e
 docker compose exec -T zeroresponder sh -c "cat /data/actions/actions.log" | tee "$EVIDENCE_DIR/LOG_34_zeroresponder_actions.log" | tee -a "$RUN_LOG"
+# Restore strict error handling after log collection.
 set -e
 
 log_step "Test run complete"
