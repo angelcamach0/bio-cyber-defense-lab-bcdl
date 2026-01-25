@@ -6,10 +6,13 @@ Simple webhook listener that logs response actions and writes blocklist/revocati
 - `POST /alert` (JSON payload)
 - `GET /health`
 
+When `BIOZERO_WEBHOOK_SECRET` is set, callers must include `X-Webhook-Secret`.
+
 ## Config
 - `BIOZERO_RESPONDER_ADDR` (default `:8090`)
 - `BIOZERO_DATA_DIR` (default `./data`)
 - `BIOZERO_WEBHOOK_SECRET` (optional shared secret)
+- `BIOZERO_ALERT_MAX_BYTES` (default `1048576`)
 
 ## Example alert
 ```json

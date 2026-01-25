@@ -55,7 +55,7 @@ flowchart LR
   - fastp QC (if installed)
   - minimap2 alignment (if reference present)
   - bcftools/samtools variant calling (if available)
-- **Detection Rules** apply simple threat scoring (file size + name patterns).
+- **Detection Rules** apply multi-signal scoring (name patterns, size, warnings, fastp Q30, alignment hits, and crypto integrity).
 
 ### 3) Outputs (What comes out)
 - **Results JSON** returned via Results API containing:

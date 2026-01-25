@@ -32,3 +32,4 @@ biozero/**/__pycache__/
 biozero/**/*.pyc
 biozero/**/*.pyo
 biozero/**/*.pyd
+.aider*

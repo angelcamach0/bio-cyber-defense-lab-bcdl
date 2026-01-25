@@ -3,7 +3,7 @@
 Accepts file uploads and writes job metadata for the runner to process.
 
 ## Endpoints
-- `POST /upload` (multipart form, field `file`, optional `client_id`)
+- `POST /upload` (multipart form, field `file`, required `client_id` or `X-Client-Id`)
 - `GET /health`
 
 ## Security metadata

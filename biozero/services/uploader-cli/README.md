@@ -16,5 +16,5 @@ go run ./main.go --file /path/to/sample.fastq --client-id researcher-1
 ## Flags
 - `--upload-url` (default `http://localhost:8081/upload`)
 - `--results-url` (default `http://localhost:8082/results`)
-- `--client-id` (optional)
+- `--client-id` (required by upload-api)
 - `--poll-seconds` (default `2`)

@@ -7,29 +7,16 @@ Serves processed results for a given job ID.
 - `GET /health`
 
 ## Response shape
-`GET /results/{job_id}` returns `job`, `result`, and `inputs` so the UI can display provenance.
+`GET /results/{job_id}` returns `status` and, when processed, a raw `data` payload
+containing the stored result JSON (including detection and pipeline output).
 
 Example (abridged):
 ```json
 {
-  "job": {
-    "id": "d846d14ae9491894",
-    "status": "completed"
-  },
-  "inputs": {
-    "mode": "default",
-    "reference": {
-      "id": "bundled",
-      "hash": "sha256:...",
-      "version": "v1"
-    },
-    "rules": {
-      "id": "bundled",
-      "hash": "sha256:...",
-      "version": "v1"
-    }
-  },
-  "result": {
+  "status": "processed",
+  "data": {
+    "job_id": "d846d14ae9491894",
+    "status": "processed",
     "detection": {
       "verdict": "low"
     }

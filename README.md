@@ -121,11 +121,32 @@ See `biozero/docs/PROJECT_FLOW_GUIDE.md` for a Mermaid flow chart, pipeline expl
 This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See `LICENSE` and `NOTICE`.
 
 ## Proxmox VM Usage (Pull + Run)
-1) Install dependencies (inside the VM):\n
-```bash\nsudo apt update\nsudo apt install -y git docker.io python3 fastp minimap2 bcftools samtools\n```\n
-2) Clone the repo:\n
-```bash\ngit clone https://github.com/<you>/<repo>.git\ncd \"Bio-Cyber Defense Lab (BCDL)\"\n```\n
-3) Generate PKI and run Compose:\n
-```bash\ncd biozero/infra/PKI\nbash ./gen-pki.sh ./pki\ncd ../compose\nsudo docker compose up --build -d\n```\n
-4) Run uploader CLI test:\n
-```bash\ncd ../../services/uploader-cli\ngo run ./main.go --file /path/to/sample.fastq --client-id researcher-1 \\\n  --upload-url https://localhost:8081/upload \\\n  --results-url https://localhost:8082/results \\\n  --mtls-cert ../../infra/PKI/pki/client.crt \\\n  --mtls-key ../../infra/PKI/pki/client.key \\\n  --ca-cert ../../infra/PKI/pki/ca.crt \\\n  --server-cert ../../infra/PKI/pki/server.crt \\\n  --sign-key ../../infra/PKI/pki/signer.key\n```\n
+1) Install dependencies (inside the VM):
+```bash
+sudo apt update
+sudo apt install -y git docker.io python3 fastp minimap2 bcftools samtools
+```
+2) Clone the repo:
+```bash
+git clone https://github.com/<you>/<repo>.git
+cd "Bio-Cyber Defense Lab (BCDL)"
+```
+3) Generate PKI and run Compose:
+```bash
+cd biozero/infra/PKI
+bash ./gen-pki.sh ./pki
+cd ../compose
+sudo docker compose up --build -d
+```
+4) Run uploader CLI test:
+```bash
+cd ../../services/uploader-cli
+go run ./main.go --file /path/to/sample.fastq --client-id researcher-1 \
+  --upload-url https://localhost:8081/upload \
+  --results-url https://localhost:8082/results \
+  --mtls-cert ../../infra/PKI/pki/client.crt \
+  --mtls-key ../../infra/PKI/pki/client.key \
+  --ca-cert ../../infra/PKI/pki/ca.crt \
+  --server-cert ../../infra/PKI/pki/server.crt \
+  --sign-key ../../infra/PKI/pki/signer.key
+```
