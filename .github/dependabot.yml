@@ -64,3 +64,8 @@ updates:
     directory: "/biozero/infra/compose"
     schedule:
       interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
