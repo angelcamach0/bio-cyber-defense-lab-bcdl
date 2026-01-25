@@ -5,7 +5,7 @@ COPY go.mod ./
 COPY main.go ./
 RUN go build -o /out/enclave-runner ./main.go
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 fastp minimap2 bcftools samtools ca-certificates \
     && rm -rf /var/lib/apt/lists/*
