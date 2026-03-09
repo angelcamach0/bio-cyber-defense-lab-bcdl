@@ -5,7 +5,7 @@ COPY go.mod ./
 COPY main.go ./
 RUN go build -o /out/upload-api ./main.go
 
-FROM alpine:3.19
+FROM alpine:3.23
 RUN adduser -D -g '' appuser
 USER appuser
 WORKDIR /app
