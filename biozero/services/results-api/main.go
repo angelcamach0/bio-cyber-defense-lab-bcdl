@@ -105,6 +105,12 @@ func main() {
 			// Return to prevent unsafe filesystem access.
 			return
 		}
+		// Enforce that jobID is a single path component to prevent directory traversal.
+		if strings.Contains(jobID, "/") || strings.Contains(jobID, "\\") || strings.Contains(jobID, "..") {
+			writeJSONError(w, http.StatusBadRequest, "invalid_job_id", "invalid job id")
+			// Return to prevent constructing unsafe filesystem paths.
+			return
+		}
 
 		// Results are written by enclave-runner once processing is complete.
 		resultPath := filepath.Join(resultsDir, jobID+".json")
