@@ -56,6 +56,16 @@
 
       <section class="panel">
         <h2>Trigger Alert</h2>
+        <label>
+          Webhook Secret
+          <input
+            type="password"
+            id="alertSecret"
+            maxlength="256"
+            autocomplete="off"
+            placeholder="Optional"
+          />
+        </label>
         <button id="alertBtn">Send Test Alert</button>
         <pre id="alertBox">{}</pre>
       </section>
