@@ -8,6 +8,7 @@ const uploadStatus = document.getElementById("uploadStatus");
 const resultsBox = document.getElementById("resultsBox");
 const jobMeta = document.getElementById("jobMeta");
 const alertBox = document.getElementById("alertBox");
+const alertSecretInput = document.getElementById("alertSecret");
 const maxFileBytes = 25 * 1024 * 1024;
 
 const api = {
@@ -232,6 +233,7 @@ async function pollResults(jobId, clientId) {
 async function sendAlert() {
   alertBtn.disabled = true;
   alertBox.textContent = "Sending alert...";
+  const webhookSecret = alertSecretInput.value.trim();
 
   const payload = {
     alert_id: `ALERT-${Date.now()}`,
@@ -247,11 +249,16 @@ async function sendAlert() {
   };
 
   try {
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    if (webhookSecret) {
+      headers["X-Webhook-Secret"] = webhookSecret;
+    }
+
     const resp = await fetchWithTimeout(api.alert, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(payload),
     }, 10000);
 
