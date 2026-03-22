@@ -71,8 +71,12 @@ func main() {
 	if *filePath == "" {
 		fatal("missing --file")
 	}
+	// Require client ID locally to match upload/results API authorization.
+	if *clientID == "" {
+		fatal("missing --client-id")
+	}
 	// Validate client ID format to avoid sending invalid identifiers.
-	if !isValidClientID(*clientID) && *clientID != "" {
+	if !isValidClientID(*clientID) {
 		fatal("invalid --client-id")
 	}
 
@@ -132,7 +136,7 @@ func main() {
 	consecutiveErrors := 0
 	// Poll results-api until processing completes or errors exceed threshold.
 	for {
-		status, payload, err := fetchResults(client, *resultsURL, jobID)
+		status, payload, err := fetchResults(client, *resultsURL, jobID, *clientID)
 		// Handle transient polling errors with retries.
 		if err != nil {
 			consecutiveErrors++
@@ -567,13 +571,14 @@ func uploadFile(client *http.Client, url, path, clientID, sha, encAlg, encKey, s
 ///   client - HTTP client to use.
 ///   baseURL - Base results URL (without job ID).
 ///   jobID - Job identifier to query.
+///   clientID - Client identifier for results authorization.
 ///
 /// Returns (status, payload, error).
 ///
 /// Throws [NetworkError] when the results request fails.
 ///
-/// Example: `status, payload, err := fetchResults(client, baseURL, jobID)`
-func fetchResults(client *http.Client, baseURL, jobID string) (string, string, error) {
+/// Example: `status, payload, err := fetchResults(client, baseURL, jobID, clientID)`
+func fetchResults(client *http.Client, baseURL, jobID, clientID string) (string, string, error) {
 	url := fmt.Sprintf("%s/%s", strings.TrimRight(baseURL, "/"), jobID)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -582,6 +587,10 @@ func fetchResults(client *http.Client, baseURL, jobID string) (string, string, e
 	if err != nil {
 		// Return error when request creation fails.
 		return "", "", err
+	}
+	if clientID != "" {
+		// Send client identity for non-mTLS authorization in results-api.
+		req.Header.Set("X-Client-Id", clientID)
 	}
 	resp, err := client.Do(req)
 	// Fail fast when the results request fails.
