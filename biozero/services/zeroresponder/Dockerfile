@@ -5,7 +5,7 @@ COPY go.mod ./
 COPY main.go ./
 RUN go build -o /out/zeroresponder ./main.go
 
-FROM alpine:3.23
+FROM alpine:3.24
 RUN adduser -D -g '' appuser
 USER appuser
 WORKDIR /app
