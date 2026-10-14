@@ -1,428 +1,660 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// ZeroResponder: accepts alert webhooks, validates the payload, and writes
-// action artifacts for the SOC pipeline; the UI and automation clients call /alert.
+// ZeroResponder authenticates bounded simulation requests and durably records
+// intentions. It never enforces firewall, certificate or job-state changes.
 package main
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"crypto/subtle"
+	"crypto/tls"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
+	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"path/filepath"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
+	"syscall"
 	"time"
 )
 
-// errorResponse standardizes error payloads returned by API handlers.
-type errorResponse struct {
-	Error string `json:"error"`
-	Code  string `json:"code"`
+const maxPayloadBytes = 64 << 10
+
+var alertIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$`)
+var jobIDPattern = regexp.MustCompile(`^[a-f0-9]{8,64}$`)
+var serialPattern = regexp.MustCompile(`^[a-fA-F0-9]{1,128}$`)
+var workerEvents = map[string]bool{
+	"upload_integrity_failed": true, "signature_required": true, "signature_algorithm_invalid": true,
+	"signature_invalid": true, "encryption_required": true, "encryption_metadata_invalid": true,
+	"key_unwrap_failed": true, "decryption_failed": true,
 }
 
-// alertPayload represents an incoming webhook alert from external systems.
+// Field order is part of the relay's canonical SHA256 wire contract.
 type alertPayload struct {
-	AlertID    string            `json:"alert_id"`
-	Source     string            `json:"source"`
-	Severity   string            `json:"severity"`
-	Timestamp  string            `json:"timestamp"`
-	Indicators map[string]string `json:"indicators"`
-	Actions    []string          `json:"actions"`
+	SchemaVersion int               `json:"schema_version"`
+	AlertID       string            `json:"alert_id"`
+	Source        string            `json:"source"`
+	EventCode     string            `json:"event_code"`
+	Severity      string            `json:"severity"`
+	Timestamp     string            `json:"timestamp"`
+	Indicators    map[string]string `json:"indicators"`
+	Actions       []string          `json:"actions"`
+}
+type simulatedAction struct {
+	Action   string `json:"action"`
+	Target   string `json:"target"`
+	Status   string `json:"status"`
+	Enforced bool   `json:"enforced"`
+}
+type receipt struct {
+	SchemaVersion int               `json:"schema_version"`
+	Status        string            `json:"status"`
+	Mode          string            `json:"mode"`
+	Enforced      bool              `json:"enforced"`
+	AlertID       string            `json:"alert_id"`
+	PayloadSHA256 string            `json:"payload_sha256"`
+	RecordedAt    string            `json:"recorded_at"`
+	Alert         alertPayload      `json:"alert"`
+	Actions       []simulatedAction `json:"actions"`
+}
+type acknowledgment struct {
+	Status        string            `json:"status"`
+	Mode          string            `json:"mode"`
+	Enforced      bool              `json:"enforced"`
+	AlertID       string            `json:"alert_id"`
+	PayloadSHA256 string            `json:"payload_sha256"`
+	RecordedAt    string            `json:"recorded_at"`
+	Replay        bool              `json:"replay"`
+	Actions       []simulatedAction `json:"actions"`
+}
+type serverConfig struct{ Address, DataDir, Secret, TLSCert, TLSKey string }
+type persistenceOps struct {
+	CreateTemp func(string, string) (*os.File, error)
+	Write      func(*os.File, []byte) error
+	SyncFile   func(*os.File) error
+	Link       func(string, string) error
+	Remove     func(string) error
+	SyncDir    func(string) error
+}
+type responder struct {
+	dir        string
+	directory  *os.File
+	secretHash [32]byte
+	mu         sync.Mutex
+	healthy    bool
+	now        func() time.Time
+	ops        persistenceOps
 }
 
-// actionRecord captures actions written to audit logs and artifacts.
-type actionRecord struct {
-	AlertID   string            `json:"alert_id"`
-	Action    string            `json:"action"`
-	Target    string            `json:"target"`
-	Timestamp string            `json:"timestamp"`
-	Meta      map[string]string `json:"meta,omitempty"`
-}
-
-/// main registers HTTP handlers and starts the ZeroResponder server.
-///
-/// Brief description of what the function does.
-/// - Boots the responder API, wires health and alert endpoints, and configures limits.
-///
-/// Parameters:
-///   None.
-///
-/// Returns no value; the process exits on fatal server errors.
-///
-/// Throws [FatalServerError] when the listener cannot start.
-///
-/// Example: `go run ./main.go`
 func main() {
-	addr := envOr("BIOZERO_RESPONDER_ADDR", ":8090")
-	dataDir := envOr("BIOZERO_DATA_DIR", "./data")
-	secret := os.Getenv("BIOZERO_WEBHOOK_SECRET")
-	maxAlertBytes := envOrInt64("BIOZERO_ALERT_MAX_BYTES", 1<<20)
-
-	actionsDir := filepath.Join(dataDir, "actions")
-	// Ensure action directories exist before accepting alerts.
-	mustMkdirAll(actionsDir)
-
-	// API boundary: health probe for UI and orchestration checks.
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		// Respond quickly to indicate liveness.
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
-	})
-
-	// API boundary: accepts external alert webhooks from UI and automation.
-	http.HandleFunc("/alert", func(w http.ResponseWriter, r *http.Request) {
-		// Guard against unsupported methods to reduce surface area.
-		if r.Method != http.MethodPost {
-			writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed")
-			// Return to stop processing non-alert requests.
-			return
+	cfg := serverConfig{Address: envOr("BIOZERO_RESPONDER_ADDR", "127.0.0.1:8090"), DataDir: envOr("BIOZERO_DATA_DIR", "./data"),
+		Secret: os.Getenv("BIOZERO_WEBHOOK_SECRET"), TLSCert: os.Getenv("BIOZERO_TLS_CERT"), TLSKey: os.Getenv("BIOZERO_TLS_KEY")}
+	if err := validateServerConfig(cfg); err != nil {
+		log.Fatal(err)
+	}
+	handler, err := newResponder(filepath.Join(cfg.DataDir, "actions"), cfg.Secret)
+	if err != nil {
+		log.Fatal("simulation receipt store unavailable")
+	}
+	server := &http.Server{Addr: cfg.Address, Handler: handler, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,
+		WriteTimeout: 15 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 16 << 10, TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12}}
+	log.Print("zeroresponder starting in simulation mode; no actions are enforced")
+	if cfg.TLSCert != "" {
+		err = server.ListenAndServeTLS(cfg.TLSCert, cfg.TLSKey)
+	} else {
+		err = server.ListenAndServe()
+	}
+	if err != nil {
+		log.Fatal("zeroresponder listener stopped")
+	}
+}
+func envOr(name, fallback string) string {
+	if value := os.Getenv(name); value != "" {
+		return value
+	}
+	return fallback
+}
+func validateServerConfig(cfg serverConfig) error {
+	if len(cfg.Secret) < 32 || len(cfg.Secret) > 512 || strings.ContainsAny(cfg.Secret, "\r\n\x00") {
+		return errors.New("a configured webhook secret of 32 to 512 bytes is required")
+	}
+	if (cfg.TLSCert == "") != (cfg.TLSKey == "") {
+		return errors.New("TLS certificate and key must be configured together")
+	}
+	host, port, err := net.SplitHostPort(cfg.Address)
+	if err != nil || port == "" {
+		return errors.New("invalid responder listener address")
+	}
+	addr, err := netip.ParseAddr(host)
+	if cfg.TLSCert == "" && (err != nil || !addr.IsLoopback() || addr.Zone() != "") {
+		return errors.New("non-loopback responders require TLS")
+	}
+	return nil
+}
+func defaultOps() persistenceOps {
+	return persistenceOps{
+		CreateTemp: os.CreateTemp,
+		Write: func(file *os.File, data []byte) error {
+			n, err := file.Write(data)
+			if err == nil && n != len(data) {
+				return io.ErrShortWrite
+			}
+			return err
+		},
+		SyncFile: func(file *os.File) error { return file.Sync() }, Link: os.Link, Remove: os.Remove,
+		SyncDir: func(path string) error {
+			dir, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer dir.Close()
+			return dir.Sync()
+		},
+	}
+}
+func newResponder(dir, secret string) (*responder, error) {
+	return newResponderWithOps(dir, secret, defaultOps())
+}
+func newResponderWithOps(dir, secret string, ops persistenceOps) (*responder, error) {
+	if err := validateServerConfig(serverConfig{Address: "127.0.0.1:8090", Secret: secret}); err != nil {
+		return nil, err
+	}
+	directory, err := prepareDirectory(dir, ops)
+	if err != nil {
+		return nil, err
+	}
+	keep := false
+	defer func() {
+		if !keep {
+			directory.Close()
 		}
-		// SECURITY: verify shared secret when configured to block unauthenticated alerts.
-		if secret != "" {
-			provided := r.Header.Get("X-Webhook-Secret")
-			if subtle.ConstantTimeCompare([]byte(provided), []byte(secret)) != 1 {
-				writeJSONError(w, http.StatusForbidden, "forbidden", "forbidden")
-				// Return to avoid processing unauthorized alerts.
+	}()
+	// Linux proc-fd path is internal and pins every operation to the verified store.
+	anchored := "/proc/self/fd/" + strconv.FormatUint(uint64(directory.Fd()), 10)
+	r := &responder{dir: anchored, directory: directory, secretHash: sha256.Sum256([]byte(secret)), healthy: true, now: time.Now, ops: ops}
+	entries, err := directory.ReadDir(-1)
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range entries {
+		if strings.HasSuffix(entry.Name(), ".json") {
+			id := strings.TrimSuffix(entry.Name(), ".json")
+			if !alertIDPattern.MatchString(id) {
+				return nil, errors.New("invalid receipt filename")
+			}
+			if _, err = r.readReceipt(id); err != nil {
+				return nil, err
+			}
+		}
+	}
+	if err = r.ops.SyncDir(r.dir); err != nil {
+		return nil, err
+	}
+	keep = true
+	return r, nil
+}
+func prepareDirectory(path string, ops persistenceOps) (*os.File, error) {
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+	fd, err := syscall.Open("/", syscall.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		return nil, err
+	}
+	current := os.NewFile(uintptr(fd), "receipt-parent")
+	for _, part := range strings.Split(strings.TrimPrefix(absolute, "/"), "/") {
+		if part == "" {
+			continue
+		}
+		nextFD, openErr := syscall.Openat(int(current.Fd()), part, syscall.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
+		if errors.Is(openErr, syscall.ENOENT) {
+			if mkdirErr := syscall.Mkdirat(int(current.Fd()), part, 0700); mkdirErr != nil && !errors.Is(mkdirErr, syscall.EEXIST) {
+				current.Close()
+				return nil, mkdirErr
+			}
+			nextFD, openErr = syscall.Openat(int(current.Fd()), part, syscall.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
+		}
+		if openErr != nil {
+			current.Close()
+			return nil, errors.New("receipt path ancestors must be nonsymlink directories")
+		}
+		next := os.NewFile(uintptr(nextFD), "receipt-directory")
+		// Sync even an existing entry: a preceding failed attempt may have created it
+		// without reaching its parent's durability boundary.
+		parent := "/proc/self/fd/" + strconv.FormatUint(uint64(current.Fd()), 10)
+		if err = ops.SyncDir(parent); err != nil {
+			next.Close()
+			current.Close()
+			return nil, err
+		}
+		current.Close()
+		current = next
+	}
+	info, err := current.Stat()
+	if err != nil {
+		current.Close()
+		return nil, err
+	}
+	owner, ok := info.Sys().(*syscall.Stat_t)
+	if !ok || !info.IsDir() || info.Mode().Perm() != 0700 || info.Mode()&(os.ModeSetuid|os.ModeSetgid|os.ModeSticky) != 0 || owner.Uid != uint32(os.Geteuid()) {
+		current.Close()
+		return nil, errors.New("receipt directory requires mode 0700 and process ownership")
+	}
+	return current, nil
+}
+func (r *responder) openReceipt(id string) (*os.File, error) {
+	fd, err := syscall.Openat(int(r.directory.Fd()), id+".json", syscall.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0)
+	if err != nil {
+		return nil, err
+	}
+	file := os.NewFile(uintptr(fd), "simulation-receipt")
+	info, err := file.Stat()
+	if err != nil {
+		file.Close()
+		return nil, err
+	}
+	owner, ok := info.Sys().(*syscall.Stat_t)
+	if !ok || !info.Mode().IsRegular() || info.Mode().Perm() != 0600 || info.Mode()&(os.ModeSetuid|os.ModeSetgid|os.ModeSticky) != 0 || info.Size() > maxPayloadBytes || owner.Uid != uint32(os.Geteuid()) {
+		file.Close()
+		return nil, errors.New("receipt must be a private bounded regular file owned by the process")
+	}
+	return file, nil
+}
+
+func writeJSON(w http.ResponseWriter, status int, value any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(value)
+}
+func fail(w http.ResponseWriter, status int, code string) {
+	writeJSON(w, status, map[string]string{"error": code, "code": code})
+}
+func (r *responder) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if req.URL.Path == "/health" && req.Method == http.MethodGet {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		status := 200
+		if !r.healthy {
+			status = 503
+		}
+		writeJSON(w, status, map[string]any{"status": "responder_alive", "healthy": r.healthy, "mode": "simulation", "enforced": false})
+		return
+	}
+	if req.URL.Path != "/alert" {
+		fail(w, 404, "not_found")
+		return
+	}
+	if req.Method != http.MethodPost {
+		fail(w, 405, "method_not_allowed")
+		return
+	}
+	// Duplicate authentication headers are ambiguous and are never accepted.
+	secrets := req.Header.Values("X-Webhook-Secret")
+	if len(secrets) != 1 || len(secrets[0]) < 32 || len(secrets[0]) > 512 {
+		fail(w, 403, "forbidden")
+		return
+	}
+	digest := sha256.Sum256([]byte(secrets[0]))
+	if subtle.ConstantTimeCompare(digest[:], r.secretHash[:]) != 1 {
+		fail(w, 403, "forbidden")
+		return
+	}
+	data, err := io.ReadAll(http.MaxBytesReader(w, req.Body, maxPayloadBytes))
+	if err != nil {
+		var limit *http.MaxBytesError
+		if errors.As(err, &limit) {
+			fail(w, 413, "payload_too_large")
+		} else {
+			fail(w, 400, "invalid_json")
+		}
+		return
+	}
+	var alert alertPayload
+	if strictDecode(data, &alert) != nil || requiredKeys(data, []string{"schema_version", "alert_id", "source", "event_code", "severity", "timestamp", "indicators", "actions"}) != nil {
+		fail(w, 400, "invalid_json")
+		return
+	}
+	if err = canonicalize(&alert); err != nil {
+		fail(w, 400, "invalid_alert")
+		return
+	}
+	canonical, err := json.Marshal(alert)
+	if err != nil {
+		fail(w, 400, "invalid_alert")
+		return
+	}
+	hash := sha256.Sum256(canonical)
+	payloadSHA := hex.EncodeToString(hash[:])
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if !r.healthy {
+		fail(w, 503, "receipt_store_unavailable")
+		return
+	}
+	existing, err := r.readReceipt(alert.AlertID)
+	if err == nil {
+		r.ackExisting(w, existing, payloadSHA)
+		return
+	}
+	if !os.IsNotExist(err) {
+		r.healthy = false
+		fail(w, 503, "receipt_store_unavailable")
+		return
+	}
+	record := receipt{SchemaVersion: 1, Status: "recorded", Mode: "simulation", Enforced: false, AlertID: alert.AlertID, PayloadSHA256: payloadSHA,
+		RecordedAt: r.now().UTC().Format(time.RFC3339Nano), Alert: alert, Actions: deriveActions(alert)}
+	if err = r.publish(record); err != nil {
+		// Another process may publish this ID concurrently. No final file is replaced.
+		if errors.Is(err, os.ErrExist) {
+			existing, readErr := r.readReceipt(alert.AlertID)
+			if readErr == nil {
+				r.ackExisting(w, existing, payloadSHA)
 				return
 			}
 		}
-
-		// Cap body size to reduce abuse and protect the responder log pipeline.
-		r.Body = http.MaxBytesReader(w, r.Body, maxAlertBytes)
-		var payload alertPayload
-		// Decode JSON payload and reject malformed input.
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			writeJSONError(w, http.StatusBadRequest, "invalid_json", "invalid json")
-			// Return to prevent partial or unsafe processing.
-			return
-		}
-
-		// Validate required fields and bounds to keep logs consistent.
-		if err := validateAlert(payload); err != nil {
-			writeJSONError(w, http.StatusBadRequest, "invalid_alert", err.Error())
-			// Return to avoid writing invalid action artifacts.
-			return
-		}
-
-		// Write action artifacts so downstream SOC tooling can consume them.
-		records := handleActions(payload, actionsDir)
-		resp := map[string]any{
-			"status":  "ok",
-			"actions": records,
-		}
-		// Return the action summary to the caller.
-		writeJSONResponse(w, resp)
-	})
-
-	// Configure server timeouts to protect against slow clients.
-	server := &http.Server{
-		Addr:              addr,
-		ReadHeaderTimeout: 5 * time.Second,
-		WriteTimeout:      10 * time.Second,
-		IdleTimeout:       30 * time.Second,
-		MaxHeaderBytes:    1 << 20,
+		r.healthy = false
+		fail(w, 503, "receipt_store_unavailable")
+		return
 	}
-	log.Printf("zeroresponder listening on %s", addr)
-	log.Fatal(server.ListenAndServe())
-	// Return is unreachable because log.Fatal exits, but keep flow explicit.
-	return
+	writeJSON(w, 200, acknowledge(record, false))
 }
-
-/// handleActions expands alert actions into persisted records and files.
-///
-/// Brief description of what the function does.
-/// - Maps action strings to artifacts that downstream SOC tooling can read.
-///
-/// Parameters:
-///   alert - Parsed alert payload from the caller.
-///   actionsDir - Directory for writing action artifacts.
-///
-/// Returns a list of action records written to disk.
-///
-/// Throws [IOError] when artifact writing fails; failures are logged as noop.
-///
-/// Example: `records := handleActions(payload, "/data/actions")`
-func handleActions(alert alertPayload, actionsDir string) []actionRecord {
-	var records []actionRecord
-
-	// Iterate through each requested action for this alert.
-	for _, action := range alert.Actions {
-		// Normalize action tokens to keep downstream handling predictable.
-		action = strings.ToLower(strings.TrimSpace(action))
-		// Route action types to their respective artifact outputs.
-		switch action {
-		case "block_ip":
-			target := alert.Indicators["ip"]
-			records = append(records, writeAction(actionsDir, alert, action, target, map[string]string{"type": "blocklist"}))
-		case "revoke_cert":
-			target := alert.Indicators["cert_serial"]
-			records = append(records, writeAction(actionsDir, alert, action, target, map[string]string{"type": "revocation"}))
-		case "quarantine":
-			target := alert.Indicators["job_id"]
-			records = append(records, writeAction(actionsDir, alert, action, target, map[string]string{"type": "quarantine"}))
-		default:
-			records = append(records, writeAction(actionsDir, alert, "noop", "", map[string]string{"reason": "unknown action"}))
+func (r *responder) ackExisting(w http.ResponseWriter, record receipt, payloadSHA string) {
+	if record.PayloadSHA256 != payloadSHA {
+		fail(w, 409, "alert_id_conflict")
+		return
+	}
+	// A concurrent instance may have linked the receipt before its directory sync.
+	// Establish this instance's durability boundary before acknowledging a replay.
+	file, err := r.openReceipt(record.AlertID)
+	if err == nil {
+		err = r.ops.SyncFile(file)
+		closeErr := file.Close()
+		if err == nil {
+			err = closeErr
 		}
 	}
-
-	// Return the assembled action records for response payloads.
+	if err == nil {
+		err = r.ops.SyncDir(r.dir)
+	}
+	if err != nil {
+		r.healthy = false
+		fail(w, 503, "receipt_store_unavailable")
+		return
+	}
+	writeJSON(w, 200, acknowledge(record, true))
+}
+func acknowledge(record receipt, replay bool) acknowledgment {
+	return acknowledgment{Status: "recorded", Mode: "simulation", Enforced: false,
+		AlertID: record.AlertID, PayloadSHA256: record.PayloadSHA256, RecordedAt: record.RecordedAt, Replay: replay, Actions: record.Actions}
+}
+func deriveActions(alert alertPayload) []simulatedAction {
+	records := make([]simulatedAction, 0, len(alert.Actions))
+	for _, action := range alert.Actions {
+		key := "job_id"
+		if action == "block_ip" {
+			key = "ip"
+		} else if action == "revoke_cert" {
+			key = "cert_serial"
+		}
+		records = append(records, simulatedAction{Action: action, Target: alert.Indicators[key], Status: "simulated", Enforced: false})
+	}
 	return records
 }
-
-/// writeAction persists an action record and writes supporting artifacts.
-///
-/// Brief description of what the function does.
-/// - Writes a JSON log entry and appends to action-specific files.
-///
-/// Parameters:
-///   dir - Base directory for action artifacts.
-///   alert - Original alert payload for context.
-///   action - Normalized action string.
-///   target - Target identifier (IP, cert serial, job ID).
-///   meta - Additional metadata for the action log.
-///
-/// Returns the actionRecord persisted to disk.
-///
-/// Throws [IOError] when file writes fail; errors are ignored to keep flow moving.
-///
-/// Example: `record := writeAction("/data/actions", alert, "block_ip", "10.0.0.1", meta)`
-func writeAction(dir string, alert alertPayload, action, target string, meta map[string]string) actionRecord {
-	record := actionRecord{
-		AlertID:   alert.AlertID,
-		Action:    action,
-		Target:    target,
-		Timestamp: time.Now().UTC().Format(time.RFC3339),
-		Meta:      meta,
+func canonicalize(alert *alertPayload) error {
+	invalid := errors.New("invalid simulation alert")
+	if alert.SchemaVersion != 1 || !alertIDPattern.MatchString(alert.AlertID) || len(alert.Actions) < 1 || len(alert.Actions) > 3 {
+		return invalid
 	}
-
-	logPath := filepath.Join(dir, "actions.log")
-	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
-	// Best-effort logging: skip file write if the log cannot be opened.
-	if err == nil {
-		defer f.Close()
-		data, err := json.Marshal(record)
-		// Only write valid JSON entries to the log.
-		if err == nil {
-			_, _ = f.Write(append(data, '\n'))
+	stamp, err := time.Parse(time.RFC3339Nano, alert.Timestamp)
+	if err != nil {
+		return invalid
+	}
+	alert.Timestamp = stamp.UTC().Format(time.RFC3339Nano)
+	if alert.Source == "enclave-runner" {
+		if !workerEvents[alert.EventCode] || alert.Severity != "high" || len(alert.Actions) != 1 || alert.Actions[0] != "quarantine" {
+			return invalid
+		}
+	} else if alert.Source == "siem" {
+		if alert.EventCode != "policy_alert" {
+			return invalid
+		}
+		switch alert.Severity {
+		case "low", "medium", "high", "critical":
+		default:
+			return invalid
+		}
+	} else {
+		return invalid
+	}
+	used, seen := map[string]bool{}, map[string]bool{}
+	for _, action := range alert.Actions {
+		if seen[action] {
+			return invalid
+		}
+		seen[action] = true
+		switch action {
+		case "quarantine":
+			used["job_id"] = true
+			if !jobIDPattern.MatchString(alert.Indicators["job_id"]) {
+				return invalid
+			}
+		case "block_ip":
+			used["ip"] = true
+			addr, err := netip.ParseAddr(alert.Indicators["ip"])
+			if err != nil || addr.Zone() != "" {
+				return invalid
+			}
+			alert.Indicators["ip"] = addr.Unmap().String()
+		case "revoke_cert":
+			used["cert_serial"] = true
+			if !serialPattern.MatchString(alert.Indicators["cert_serial"]) {
+				return invalid
+			}
+			alert.Indicators["cert_serial"] = strings.ToLower(alert.Indicators["cert_serial"])
+		default:
+			return invalid
 		}
 	}
-
-	// Write action-specific artifacts for downstream tooling.
-	if action == "block_ip" && target != "" {
-		appendLine(filepath.Join(dir, "blocklist.txt"), target)
+	if len(alert.Indicators) != len(used) {
+		return invalid
 	}
-	// Append cert revocations for PKI integrations.
-	if action == "revoke_cert" && target != "" {
-		appendLine(filepath.Join(dir, "revocations.txt"), target)
+	for key := range alert.Indicators {
+		if !used[key] {
+			return invalid
+		}
 	}
-	// Append job IDs for quarantine workflows.
-	if action == "quarantine" && target != "" {
-		appendLine(filepath.Join(dir, "quarantine.txt"), target)
+	if alert.Source == "enclave-runner" {
+		hash := sha256.Sum256([]byte("enclave-runner/" + alert.Indicators["job_id"] + "/" + alert.EventCode))
+		if alert.AlertID != "evt-"+hex.EncodeToString(hash[:]) {
+			return invalid
+		}
 	}
-
-	// Return the record for API response aggregation.
-	return record
-}
-
-/// appendLine appends a single line to a file, creating it if needed.
-///
-/// Brief description of what the function does.
-/// - Writes action artifacts for blocking, revocation, and quarantine lists.
-///
-/// Parameters:
-///   path - Destination file path.
-///   value - Line value to append.
-///
-/// Returns no value; failures are silently ignored.
-///
-/// Throws [IOError] when file open/write fails; errors are ignored intentionally.
-///
-/// Example: `appendLine("/data/actions/blocklist.txt", "10.0.0.1")`
-func appendLine(path, value string) {
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
-	if err != nil {
-		// Return to keep alert handling resilient to filesystem issues.
-		return
-	}
-	defer f.Close()
-	// Best-effort append; ignore errors for resilience.
-	_, _ = f.WriteString(value + "\n")
-}
-
-/// writeJSONResponse serializes a value into the HTTP response body.
-///
-/// Brief description of what the function does.
-/// - Writes JSON API responses with safe caching headers.
-///
-/// Parameters:
-///   w - HTTP response writer.
-///   v - Response payload to marshal.
-///
-/// Returns no value; writes to the response stream.
-///
-/// Throws [EncodeError] when JSON serialization fails.
-///
-/// Example: `writeJSONResponse(w, map[string]any{"status":"ok"})`
-func writeJSONResponse(w http.ResponseWriter, v any) {
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "encode_failed", "failed to encode response")
-		// Return to stop writing a partial response.
-		return
-	}
-	// Set JSON content type and prevent caching of sensitive data.
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(http.StatusOK)
-	// Best-effort write; ignore short writes as response is already committed.
-	_, _ = w.Write(data)
-}
-
-/// writeJSONError sends a standardized JSON error payload.
-///
-/// Brief description of what the function does.
-/// - Ensures API clients receive consistent error structure and codes.
-///
-/// Parameters:
-///   w - HTTP response writer.
-///   status - HTTP status code to return.
-///   code - Machine-readable error code.
-///   message - Human-readable error message.
-///
-/// Returns no value; writes to the response stream.
-///
-/// Throws [EncodeError] when error payload serialization fails.
-///
-/// Example: `writeJSONError(w, 400, "invalid_alert", "missing alert_id")`
-func writeJSONError(w http.ResponseWriter, status int, code, message string) {
-	data, err := json.MarshalIndent(errorResponse{Error: message, Code: code}, "", "  ")
-	if err != nil {
-		// Fall back to plain text to avoid recursive error handling.
-		http.Error(w, "failed to encode error", http.StatusInternalServerError)
-		// Return to avoid double-writing headers.
-		return
-	}
-	// Set JSON content type and prevent caching of error responses.
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(status)
-	// Best-effort write; response is already committed.
-	_, _ = w.Write(data)
-}
-
-/// envOr returns the environment variable or a fallback value.
-///
-/// Brief description of what the function does.
-/// - Reads configuration from env without panicking on missing values.
-///
-/// Parameters:
-///   key - Environment variable name.
-///   fallback - Default value when env is unset.
-///
-/// Returns the env value if set; otherwise the fallback.
-///
-/// Throws [None] - uses default on missing values.
-///
-/// Example: `addr := envOr("BIOZERO_RESPONDER_ADDR", ":8090")`
-func envOr(key, fallback string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		// Return fallback to keep configuration predictable.
-		return fallback
-	}
-	// Return the configured value when present.
-	return val
-}
-
-/// envOrInt64 returns a 64-bit numeric env var or fallback.
-///
-/// Brief description of what the function does.
-/// - Parses int64 config values safely with fallback defaults.
-///
-/// Parameters:
-///   key - Environment variable name.
-///   fallback - Default value when env is unset or invalid.
-///
-/// Returns the parsed int64 or fallback.
-///
-/// Throws [ParseError] when env value is malformed; fallback is used.
-///
-/// Example: `maxBytes := envOrInt64("BIOZERO_ALERT_MAX_BYTES", 1<<20)`
-func envOrInt64(key string, fallback int64) int64 {
-	val := strings.TrimSpace(os.Getenv(key))
-	if val == "" {
-		// Return fallback when unset to avoid zero-values.
-		return fallback
-	}
-	parsed, err := strconv.ParseInt(val, 10, 64)
-	if err != nil {
-		// Return fallback on parse errors.
-		return fallback
-	}
-	// Return parsed value for valid configuration.
-	return parsed
-}
-
-/// mustMkdirAll creates directories or exits the process.
-///
-/// Brief description of what the function does.
-/// - Ensures required directories exist before starting the server.
-///
-/// Parameters:
-///   path - Directory path to create if missing.
-///
-/// Returns no value; terminates process on failure.
-///
-/// Throws [FatalIOError] when directory creation fails.
-///
-/// Example: `mustMkdirAll("/data/actions")`
-func mustMkdirAll(path string) {
-	// Fail fast if the filesystem layout cannot be prepared.
-	if err := os.MkdirAll(path, 0755); err != nil {
-		log.Fatalf("failed to create %s: %v", path, err)
-	}
-}
-
-/// validateAlert checks required fields and size constraints.
-///
-/// Brief description of what the function does.
-/// - Verifies the minimal alert schema before processing actions.
-///
-/// Parameters:
-///   payload - Parsed alert payload.
-///
-/// Returns nil when valid; otherwise an error with a message.
-///
-/// Throws [ValidationError] when required fields are missing or too long.
-///
-/// Example: `if err := validateAlert(payload); err != nil { ... }`
-func validateAlert(payload alertPayload) error {
-	if payload.AlertID == "" {
-		// Return a descriptive error when the alert ID is missing.
-		return errors.New("missing alert_id")
-	}
-	if payload.Source == "" {
-		// Return a descriptive error when the source is missing.
-		return errors.New("missing source")
-	}
-	if payload.Severity == "" {
-		// Return a descriptive error when the severity is missing.
-		return errors.New("missing severity")
-	}
-	if payload.Timestamp == "" {
-		// Return a descriptive error when the timestamp is missing.
-		return errors.New("missing timestamp")
-	}
-	if len(payload.Actions) == 0 {
-		// Return a descriptive error when no actions are provided.
-		return errors.New("missing actions")
-	}
-	if len(payload.AlertID) > 128 || len(payload.Source) > 64 {
-		// Return a descriptive error when fields exceed length limits.
-		return errors.New("alert_id or source too long")
-	}
-	// Return nil when all validations pass.
+	sort.Strings(alert.Actions)
 	return nil
+}
+func (r *responder) publish(record receipt) error {
+	data, err := json.Marshal(record)
+	if err != nil || len(data) > maxPayloadBytes {
+		return errors.New("receipt encoding failed")
+	}
+	file, err := r.ops.CreateTemp(r.dir, ".receipt-*")
+	if err != nil {
+		return err
+	}
+	name := file.Name()
+	defer r.ops.Remove(name)
+	if err = file.Chmod(0600); err == nil {
+		err = r.ops.Write(file, data)
+	}
+	if err == nil {
+		err = r.ops.SyncFile(file)
+	}
+	closeErr := file.Close()
+	if err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		return err
+	}
+	if err = r.ops.Link(name, filepath.Join(r.dir, record.AlertID+".json")); err != nil {
+		return err
+	}
+	if err = r.ops.Remove(name); err != nil {
+		return err
+	}
+	return r.ops.SyncDir(r.dir)
+}
+func (r *responder) readReceipt(id string) (receipt, error) {
+	var record receipt
+	file, err := r.openReceipt(id)
+	if err != nil {
+		return record, err
+	}
+	defer file.Close()
+	data, err := io.ReadAll(io.LimitReader(file, maxPayloadBytes+1))
+	if err != nil || len(data) > maxPayloadBytes {
+		return record, errors.New("invalid receipt file")
+	}
+	if strictDecode(data, &record) != nil || requiredKeys(data, []string{"schema_version", "status", "mode", "enforced", "alert_id", "payload_sha256", "recorded_at", "alert", "actions"}) != nil {
+		return record, errors.New("invalid receipt JSON")
+	}
+	if record.SchemaVersion != 1 || record.Status != "recorded" || record.Mode != "simulation" || record.Enforced || record.AlertID != id {
+		return record, errors.New("invalid receipt contract")
+	}
+	stamp, err := time.Parse(time.RFC3339Nano, record.RecordedAt)
+	if err != nil || stamp.UTC().Format(time.RFC3339Nano) != record.RecordedAt {
+		return record, errors.New("invalid recorded timestamp")
+	}
+	before, err := json.Marshal(record.Alert)
+	if err != nil {
+		return record, err
+	}
+	canonical := record.Alert
+	canonical.Indicators = make(map[string]string, len(record.Alert.Indicators))
+	for key, value := range record.Alert.Indicators {
+		canonical.Indicators[key] = value
+	}
+	canonical.Actions = append([]string(nil), record.Alert.Actions...)
+	if canonicalize(&canonical) != nil {
+		return record, errors.New("invalid receipt alert")
+	}
+	after, err := json.Marshal(canonical)
+	if err != nil || !bytes.Equal(before, after) || record.Alert.AlertID != id {
+		return record, errors.New("noncanonical receipt alert")
+	}
+	hash := sha256.Sum256(after)
+	if record.PayloadSHA256 != hex.EncodeToString(hash[:]) {
+		return record, errors.New("receipt digest mismatch")
+	}
+	expected, _ := json.Marshal(deriveActions(canonical))
+	actual, _ := json.Marshal(record.Actions)
+	if !bytes.Equal(expected, actual) {
+		return record, errors.New("receipt actions mismatch")
+	}
+	// Require explicit false flags in every action, not missing/default booleans.
+	var fields map[string]json.RawMessage
+	_ = json.Unmarshal(data, &fields)
+	var actionRows []json.RawMessage
+	if json.Unmarshal(fields["actions"], &actionRows) != nil {
+		return record, errors.New("invalid receipt actions")
+	}
+	for _, row := range actionRows {
+		if requiredKeys(row, []string{"action", "target", "status", "enforced"}) != nil {
+			return record, errors.New("incomplete action receipt")
+		}
+	}
+	if requiredKeys(fields["alert"], []string{"schema_version", "alert_id", "source", "event_code", "severity", "timestamp", "indicators", "actions"}) != nil {
+		return record, errors.New("incomplete receipt alert")
+	}
+	return record, nil
+}
+func requiredKeys(data []byte, names []string) error {
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(data, &fields) != nil || len(fields) != len(names) {
+		return errors.New("missing fields")
+	}
+	for _, name := range names {
+		if _, exists := fields[name]; !exists {
+			return errors.New("missing fields")
+		}
+	}
+	return nil
+}
+
+var knownKeys = map[string]bool{
+	"schema_version": true, "alert_id": true, "source": true, "event_code": true, "severity": true, "timestamp": true, "indicators": true, "actions": true,
+	"job_id": true, "ip": true, "cert_serial": true, "status": true, "mode": true, "enforced": true, "payload_sha256": true, "recorded_at": true, "alert": true, "action": true, "target": true,
+}
+
+func strictDecode(data []byte, target any) error {
+	check := json.NewDecoder(bytes.NewReader(data))
+	check.UseNumber()
+	if err := checkValue(check); err != nil {
+		return err
+	}
+	if _, err := check.Token(); err != io.EOF {
+		return errors.New("trailing JSON")
+	}
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(target); err != nil {
+		return err
+	}
+	if dec.Decode(new(any)) != io.EOF {
+		return errors.New("trailing JSON")
+	}
+	return nil
+}
+func checkValue(dec *json.Decoder) error {
+	token, err := dec.Token()
+	if err != nil {
+		return err
+	}
+	if token == nil {
+		return errors.New("null not allowed")
+	}
+	delimiter, ok := token.(json.Delim)
+	if !ok {
+		return nil
+	}
+	switch delimiter {
+	case '{':
+		seen := map[string]bool{}
+		for dec.More() {
+			keyToken, err := dec.Token()
+			if err != nil {
+				return err
+			}
+			key, ok := keyToken.(string)
+			if !ok || seen[key] || !knownKeys[key] {
+				return errors.New("unknown or duplicate field")
+			}
+			seen[key] = true
+			if err = checkValue(dec); err != nil {
+				return err
+			}
+		}
+	case '[':
+		for dec.More() {
+			if err := checkValue(dec); err != nil {
+				return err
+			}
+		}
+	default:
+		return errors.New("invalid JSON structure")
+	}
+	_, err = dec.Token()
+	return err
 }

@@ -26,32 +26,26 @@ type errorResponse struct {
 
 // resultResponse wraps job status and optional result payload.
 type resultResponse struct {
-	Status string          `json:"status"`
-	Data   json.RawMessage `json:"data,omitempty"`
+	Status       string          `json:"status"`
+	LegacyStatus string          `json:"legacy_status,omitempty"`
+	ErrorCode    string          `json:"error_code,omitempty"`
+	ErrorMessage string          `json:"error_message,omitempty"`
+	Data         json.RawMessage `json:"data,omitempty"`
 }
 
-// jobRecord represents the minimal job metadata needed for authorization.
-type jobRecord struct {
-	JobID            string `json:"job_id"`
-	Status           string `json:"status"`
-	OriginalName     string `json:"original_name"`
-	ClientID         string `json:"client_id"`
-	ClientCertSerial string `json:"client_cert_serial,omitempty"`
-}
-
-/// main registers HTTP handlers and starts the results API server.
-///
-/// Brief description of what the function does.
-/// - Boots the results API, wires health and results endpoints, and enables TLS/mTLS.
-///
-/// Parameters:
-///   None.
-///
-/// Returns no value; the process exits on fatal server errors.
-///
-/// Throws [FatalServerError] when TLS setup fails or the listener cannot start.
-///
-/// Example: `go run ./main.go`
+// / main registers HTTP handlers and starts the results API server.
+// /
+// / Brief description of what the function does.
+// / - Boots the results API, wires health and results endpoints, and enables TLS/mTLS.
+// /
+// / Parameters:
+// /   None.
+// /
+// / Returns no value; the process exits on fatal server errors.
+// /
+// / Throws [FatalServerError] when TLS setup fails or the listener cannot start.
+// /
+// / Example: `go run ./main.go`
 func main() {
 	addr := envOr("BIOZERO_RESULTS_ADDR", ":8082")
 	dataDir := envOr("BIOZERO_DATA_DIR", "./data")
@@ -59,6 +53,9 @@ func main() {
 	keyPath := os.Getenv("BIOZERO_TLS_KEY")
 	caPath := os.Getenv("BIOZERO_TLS_CA")
 	rateLimit := envOrInt("BIOZERO_RATE_LIMIT", 120)
+	if err := validateServerSecurity(certPath, keyPath, caPath); err != nil {
+		log.Fatal(err)
+	}
 
 	resultsDir := filepath.Join(dataDir, "results")
 	jobsDir := filepath.Join(dataDir, "jobs")
@@ -78,73 +75,7 @@ func main() {
 	})
 
 	// API boundary: serves results produced by enclave-runner.
-	http.HandleFunc("/results/", func(w http.ResponseWriter, r *http.Request) {
-		// Guard against unsupported methods to reduce surface area.
-		if r.Method != http.MethodGet {
-			writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed")
-			// Return to stop processing non-read requests.
-			return
-		}
-		// Apply per-client throttling to protect storage and CPU.
-		if !limiter.Allow(clientIP(r)) {
-			writeJSONError(w, http.StatusTooManyRequests, "rate_limited", "rate limit exceeded")
-			// Return to enforce throttling before file I/O.
-			return
-		}
-
-		jobID := strings.TrimPrefix(r.URL.Path, "/results/")
-		// Reject missing job IDs to avoid ambiguous lookups.
-		if jobID == "" {
-			writeJSONError(w, http.StatusBadRequest, "missing_job_id", "missing job id")
-			// Return to avoid scanning the filesystem with empty IDs.
-			return
-		}
-		// Validate job ID format to avoid path traversal risks.
-		if !isValidJobID(jobID) {
-			writeJSONError(w, http.StatusBadRequest, "invalid_job_id", "invalid job id")
-			// Return to prevent unsafe filesystem access.
-			return
-		}
-		// Enforce that jobID is a single path component to prevent directory traversal.
-		if strings.Contains(jobID, "/") || strings.Contains(jobID, "\\") || strings.Contains(jobID, "..") {
-			writeJSONError(w, http.StatusBadRequest, "invalid_job_id", "invalid job id")
-			// Return to prevent constructing unsafe filesystem paths.
-			return
-		}
-
-		// Results are written by enclave-runner once processing is complete.
-		resultPath := filepath.Join(resultsDir, jobID+".json")
-		if data, err := os.ReadFile(resultPath); err == nil {
-			// Enforce job-level authorization before returning results.
-			if !authorizedForJob(r, jobsDir, jobID) {
-				writeJSONError(w, http.StatusForbidden, "forbidden", "forbidden")
-				// Return to avoid leaking result data.
-				return
-			}
-			// Return processed results to the caller.
-			writeJSONResponse(w, resultResponse{Status: "processed", Data: data})
-			return
-		}
-
-		// Fall back to the job record to signal "pending" if processing isn't done.
-		jobPath := filepath.Join(jobsDir, jobID+".json")
-		if _, err := os.Stat(jobPath); err == nil {
-			// Enforce job-level authorization before returning status.
-			if !authorizedForJob(r, jobsDir, jobID) {
-				writeJSONError(w, http.StatusForbidden, "forbidden", "forbidden")
-				// Return to avoid leaking job existence.
-				return
-			}
-			// Return pending status while the runner processes the job.
-			writeJSONResponse(w, resultResponse{Status: "pending"})
-			return
-		}
-
-		// Return not found when neither job nor results exist.
-		writeJSONError(w, http.StatusNotFound, "job_not_found", "job not found")
-		// Return to end the request after a not-found response.
-		return
-	})
+	http.Handle("/results/", newResultsHandler(jobsDir, resultsDir, limiter))
 
 	// Configure server timeouts to protect against slow clients.
 	server := &http.Server{
@@ -179,20 +110,105 @@ func main() {
 	return
 }
 
-/// writeJSONResponse serializes a value into the HTTP response body.
-///
-/// Brief description of what the function does.
-/// - Writes JSON API responses with safe caching headers.
-///
-/// Parameters:
-///   w - HTTP response writer.
-///   v - Response payload to marshal.
-///
-/// Returns no value; writes to the response stream.
-///
-/// Throws [EncodeError] when JSON serialization fails.
-///
-/// Example: `writeJSONResponse(w, resultResponse{Status: "pending"})`
+func validateServerSecurity(certPath, keyPath, caPath string) error {
+	mode := envOr("BIOZERO_SECURITY_MODE", "protected")
+	if mode != "protected" && mode != "demo" {
+		return fmt.Errorf("BIOZERO_SECURITY_MODE must be protected or demo")
+	}
+	if mode == "protected" && (certPath == "" || keyPath == "" || caPath == "") {
+		return fmt.Errorf("protected mode requires server certificate, key, and client CA")
+	}
+	if (certPath == "") != (keyPath == "") {
+		return fmt.Errorf("TLS certificate and key must be supplied together")
+	}
+	return nil
+}
+
+func newResultsHandler(jobsDir, resultsDir string, limiter *rateLimiter) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			writeJSONError(w, 405, "method_not_allowed", "method not allowed")
+			return
+		}
+		if !limiter.Allow(clientIP(r)) {
+			writeJSONError(w, 429, "rate_limited", "rate limit exceeded")
+			return
+		}
+		jobID := strings.TrimPrefix(r.URL.Path, "/results/")
+		if !isValidJobID(jobID) {
+			writeJSONError(w, 400, "invalid_job_id", "invalid job id")
+			return
+		}
+		job, err := readJob(filepath.Join(jobsDir, jobID+".json"))
+		if err != nil {
+			if isMissingRecord(err) {
+				writeJSONError(w, 404, "job_not_found", "job not found")
+			} else {
+				writeRecordError(w, "job", err)
+			}
+			return
+		}
+		if job.JobID != jobID {
+			writeJSONError(w, 500, "job_record_invalid", "job record invalid")
+			return
+		}
+		if !authorizedJob(r, job) {
+			writeJSONError(w, 403, "forbidden", "forbidden")
+			return
+		}
+		data, err := readRecord(filepath.Join(resultsDir, jobID+".json"), maxResultBytes)
+		if err == nil {
+			result, parseErr := parseResult(data)
+			if parseErr != nil || result.JobID != jobID {
+				writeJSONError(w, 500, "result_record_invalid", "result record invalid")
+				return
+			}
+			response := resultResponse{Status: result.Status, Data: data}
+			if result.Status == "processed" {
+				response.Status = "incomplete"
+				response.LegacyStatus = "processed"
+				response.ErrorCode = "legacy_result_unverified"
+				response.ErrorMessage = "historical processed result has not been validated under the current contract"
+			}
+			writeJSONResponse(w, response)
+			return
+		}
+		if !isMissingRecord(err) {
+			writeRecordError(w, "result", err)
+			return
+		}
+		switch job.Status {
+		case "uploaded", "running":
+			writeJSONResponse(w, resultResponse{Status: job.Status})
+		case "rejected", "failed", "timed_out":
+			writeJSONResponse(w, resultResponse{Status: job.Status, ErrorCode: job.ErrorCode, ErrorMessage: job.ErrorMessage})
+		default:
+			writeJSONError(w, 500, "result_missing", "job state has no valid corresponding result")
+		}
+	})
+}
+func knownTerminal(status string) bool {
+	switch status {
+	case "succeeded", "incomplete", "rejected", "failed", "timed_out", "processed":
+		return true
+	}
+	return false
+}
+
+// / writeJSONResponse serializes a value into the HTTP response body.
+// /
+// / Brief description of what the function does.
+// / - Writes JSON API responses with safe caching headers.
+// /
+// / Parameters:
+// /   w - HTTP response writer.
+// /   v - Response payload to marshal.
+// /
+// / Returns no value; writes to the response stream.
+// /
+// / Throws [EncodeError] when JSON serialization fails.
+// /
+// / Example: `writeJSONResponse(w, resultResponse{Status: "pending"})`
 func writeJSONResponse(w http.ResponseWriter, v any) {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
@@ -208,22 +224,22 @@ func writeJSONResponse(w http.ResponseWriter, v any) {
 	_, _ = w.Write(data)
 }
 
-/// writeJSONError sends a standardized JSON error payload.
-///
-/// Brief description of what the function does.
-/// - Ensures API clients receive consistent error structure and codes.
-///
-/// Parameters:
-///   w - HTTP response writer.
-///   status - HTTP status code to return.
-///   code - Machine-readable error code.
-///   message - Human-readable error message.
-///
-/// Returns no value; writes to the response stream.
-///
-/// Throws [EncodeError] when error payload serialization fails.
-///
-/// Example: `writeJSONError(w, 403, "forbidden", "forbidden")`
+// / writeJSONError sends a standardized JSON error payload.
+// /
+// / Brief description of what the function does.
+// / - Ensures API clients receive consistent error structure and codes.
+// /
+// / Parameters:
+// /   w - HTTP response writer.
+// /   status - HTTP status code to return.
+// /   code - Machine-readable error code.
+// /   message - Human-readable error message.
+// /
+// / Returns no value; writes to the response stream.
+// /
+// / Throws [EncodeError] when error payload serialization fails.
+// /
+// / Example: `writeJSONError(w, 403, "forbidden", "forbidden")`
 func writeJSONError(w http.ResponseWriter, status int, code, message string) {
 	data, err := json.MarshalIndent(errorResponse{Error: message, Code: code}, "", "  ")
 	if err != nil {
@@ -240,19 +256,19 @@ func writeJSONError(w http.ResponseWriter, status int, code, message string) {
 	_, _ = w.Write(data)
 }
 
-/// loadCertPool reads a PEM bundle and constructs a CA pool.
-///
-/// Brief description of what the function does.
-/// - Loads trusted CA certificates for mTLS verification.
-///
-/// Parameters:
-///   path - Filesystem path to the PEM bundle.
-///
-/// Returns a populated CertPool or an error if parsing fails.
-///
-/// Throws [CertificateError] when PEM data is unreadable or invalid.
-///
-/// Example: `pool, err := loadCertPool("/pki/ca.crt")`
+// / loadCertPool reads a PEM bundle and constructs a CA pool.
+// /
+// / Brief description of what the function does.
+// / - Loads trusted CA certificates for mTLS verification.
+// /
+// / Parameters:
+// /   path - Filesystem path to the PEM bundle.
+// /
+// / Returns a populated CertPool or an error if parsing fails.
+// /
+// / Throws [CertificateError] when PEM data is unreadable or invalid.
+// /
+// / Example: `pool, err := loadCertPool("/pki/ca.crt")`
 func loadCertPool(path string) (*x509.CertPool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -269,20 +285,20 @@ func loadCertPool(path string) (*x509.CertPool, error) {
 	return pool, nil
 }
 
-/// envOr returns the environment variable or a fallback value.
-///
-/// Brief description of what the function does.
-/// - Reads configuration from env without panicking on missing values.
-///
-/// Parameters:
-///   key - Environment variable name.
-///   fallback - Default value when env is unset.
-///
-/// Returns the env value if set; otherwise the fallback.
-///
-/// Throws [None] - uses default on missing values.
-///
-/// Example: `addr := envOr("BIOZERO_RESULTS_ADDR", ":8082")`
+// / envOr returns the environment variable or a fallback value.
+// /
+// / Brief description of what the function does.
+// / - Reads configuration from env without panicking on missing values.
+// /
+// / Parameters:
+// /   key - Environment variable name.
+// /   fallback - Default value when env is unset.
+// /
+// / Returns the env value if set; otherwise the fallback.
+// /
+// / Throws [None] - uses default on missing values.
+// /
+// / Example: `addr := envOr("BIOZERO_RESULTS_ADDR", ":8082")`
 func envOr(key, fallback string) string {
 	val := os.Getenv(key)
 	if val == "" {
@@ -293,20 +309,20 @@ func envOr(key, fallback string) string {
 	return val
 }
 
-/// envOrInt returns a numeric env var or fallback.
-///
-/// Brief description of what the function does.
-/// - Parses integer config values safely with fallback defaults.
-///
-/// Parameters:
-///   key - Environment variable name.
-///   fallback - Default value when env is unset or invalid.
-///
-/// Returns the parsed integer or fallback.
-///
-/// Throws [ParseError] when env value is malformed; fallback is used.
-///
-/// Example: `limit := envOrInt("BIOZERO_RATE_LIMIT", 120)`
+// / envOrInt returns a numeric env var or fallback.
+// /
+// / Brief description of what the function does.
+// / - Parses integer config values safely with fallback defaults.
+// /
+// / Parameters:
+// /   key - Environment variable name.
+// /   fallback - Default value when env is unset or invalid.
+// /
+// / Returns the parsed integer or fallback.
+// /
+// / Throws [ParseError] when env value is malformed; fallback is used.
+// /
+// / Example: `limit := envOrInt("BIOZERO_RATE_LIMIT", 120)`
 func envOrInt(key string, fallback int) int {
 	val := os.Getenv(key)
 	if val == "" {
@@ -322,19 +338,19 @@ func envOrInt(key string, fallback int) int {
 	return parsed
 }
 
-/// mustMkdirAll creates directories or exits the process.
-///
-/// Brief description of what the function does.
-/// - Ensures required directories exist before starting the server.
-///
-/// Parameters:
-///   path - Directory path to create if missing.
-///
-/// Returns no value; terminates process on failure.
-///
-/// Throws [FatalIOError] when directory creation fails.
-///
-/// Example: `mustMkdirAll("/data/results")`
+// / mustMkdirAll creates directories or exits the process.
+// /
+// / Brief description of what the function does.
+// / - Ensures required directories exist before starting the server.
+// /
+// / Parameters:
+// /   path - Directory path to create if missing.
+// /
+// / Returns no value; terminates process on failure.
+// /
+// / Throws [FatalIOError] when directory creation fails.
+// /
+// / Example: `mustMkdirAll("/data/results")`
 func mustMkdirAll(path string) {
 	// Fail fast if the filesystem layout cannot be prepared.
 	if err := os.MkdirAll(path, 0755); err != nil {
@@ -342,19 +358,19 @@ func mustMkdirAll(path string) {
 	}
 }
 
-/// isValidJobID validates job IDs for safe filesystem access.
-///
-/// Brief description of what the function does.
-/// - Enforces hex-only IDs with bounded length to prevent path traversal.
-///
-/// Parameters:
-///   jobID - Job identifier from the request path.
-///
-/// Returns true when the ID is valid; false otherwise.
-///
-/// Throws [None] - pure validation.
-///
-/// Example: `if !isValidJobID(jobID) { ... }`
+// / isValidJobID validates job IDs for safe filesystem access.
+// /
+// / Brief description of what the function does.
+// / - Enforces hex-only IDs with bounded length to prevent path traversal.
+// /
+// / Parameters:
+// /   jobID - Job identifier from the request path.
+// /
+// / Returns true when the ID is valid; false otherwise.
+// /
+// / Throws [None] - pure validation.
+// /
+// / Example: `if !isValidJobID(jobID) { ... }`
 func isValidJobID(jobID string) bool {
 	if len(jobID) < 8 || len(jobID) > 64 {
 		// Return false when length constraints are violated.
@@ -371,71 +387,56 @@ func isValidJobID(jobID string) bool {
 	return true
 }
 
-/// authorizedForJob verifies caller access to a job using cert or client ID.
-///
-/// Brief description of what the function does.
-/// - Checks mTLS cert serial or X-Client-Id header against job metadata.
-///
-/// Parameters:
-///   r - Incoming HTTP request containing auth info.
-///   jobsDir - Directory where job records are stored.
-///   jobID - Job identifier for lookup.
-///
-/// Returns true when the caller is authorized for the job.
-///
-/// Throws [AuthError] when job metadata cannot be read.
-///
-/// Example: `if !authorizedForJob(r, jobsDir, jobID) { ... }`
+// / authorizedForJob verifies caller access to a job using cert or client ID.
+// /
+// / Brief description of what the function does.
+// / - Checks mTLS cert serial or X-Client-Id header against job metadata.
+// /
+// / Parameters:
+// /   r - Incoming HTTP request containing auth info.
+// /   jobsDir - Directory where job records are stored.
+// /   jobID - Job identifier for lookup.
+// /
+// / Returns true when the caller is authorized for the job.
+// /
+// / Throws [AuthError] when job metadata cannot be read.
+// /
+// / Example: `if !authorizedForJob(r, jobsDir, jobID) { ... }`
 func authorizedForJob(r *http.Request, jobsDir, jobID string) bool {
-	jobPath := filepath.Join(jobsDir, jobID+".json")
-	job, err := readJob(jobPath)
-	if err != nil {
-		// Return false to avoid leaking job data when read fails.
-		return false
-	}
-
-	// Prefer cert-based auth when available and recorded.
-	if r.TLS != nil && len(r.TLS.PeerCertificates) > 0 && job.ClientCertSerial != "" {
+	job, err := readJob(filepath.Join(jobsDir, jobID+".json"))
+	return err == nil && isValidJobID(jobID) && job.JobID == jobID && authorizedJob(r, job)
+}
+func authorizedJob(r *http.Request, job jobRecord) bool {
+	if r.TLS != nil {
+		if len(r.TLS.PeerCertificates) == 0 || len(r.TLS.VerifiedChains) == 0 || job.ClientCertSerial == "" || job.ClientID == "" {
+			return false
+		}
 		cert := r.TLS.PeerCertificates[0]
-		// Return whether the client cert matches the recorded serial.
-		return cert.SerialNumber.String() == job.ClientCertSerial
+		return cert.SerialNumber != nil && cert.SerialNumber.String() == job.ClientCertSerial && cert.Subject.CommonName == job.ClientID
 	}
-
-	clientID := r.Header.Get("X-Client-Id")
-	if clientID == "" {
-		// Return false when no client ID is provided.
-		return false
-	}
-	// Return whether the client ID matches job ownership.
-	return clientID == job.ClientID
+	// The insecure identity header exists only for an explicitly selected local demo.
+	return envOr("BIOZERO_SECURITY_MODE", "protected") == "demo" && job.ClientCertSerial == "" && job.ClientID != "" && r.Header.Get("X-Client-Id") == job.ClientID
 }
 
-/// readJob loads a job record from disk.
-///
-/// Brief description of what the function does.
-/// - Parses job JSON for authorization and status checks.
-///
-/// Parameters:
-///   path - Filesystem path to the job JSON.
-///
-/// Returns the jobRecord and an error if reading or parsing fails.
-///
-/// Throws [IOError] when file reading fails.
-///
-/// Example: `job, err := readJob("/data/jobs/abc.json")`
+// / readJob loads a job record from disk.
+// /
+// / Brief description of what the function does.
+// / - Parses job JSON for authorization and status checks.
+// /
+// / Parameters:
+// /   path - Filesystem path to the job JSON.
+// /
+// / Returns the jobRecord and an error if reading or parsing fails.
+// /
+// / Throws [IOError] when file reading fails.
+// /
+// / Example: `job, err := readJob("/data/jobs/abc.json")`
 func readJob(path string) (jobRecord, error) {
-	var job jobRecord
-	data, err := os.ReadFile(path)
+	data, err := readRecord(path, maxJobBytes)
 	if err != nil {
-		// Return file errors to the caller for authorization handling.
-		return job, err
+		return jobRecord{}, err
 	}
-	if err := json.Unmarshal(data, &job); err != nil {
-		// Return parse errors to avoid using incomplete data.
-		return job, err
-	}
-	// Return the parsed job record.
-	return job, nil
+	return parseJob(data)
 }
 
 type rateLimiter struct {
@@ -446,20 +447,20 @@ type rateLimiter struct {
 	windowEnds map[string]time.Time
 }
 
-/// newRateLimiter constructs a basic in-memory rate limiter.
-///
-/// Brief description of what the function does.
-/// - Creates a sliding window limiter for per-client throttling.
-///
-/// Parameters:
-///   limit - Maximum requests per window.
-///   window - Duration of the rate limit window.
-///
-/// Returns a configured rateLimiter instance.
-///
-/// Throws [None] - in-memory allocation only.
-///
-/// Example: `limiter := newRateLimiter(120, time.Minute)`
+// / newRateLimiter constructs a basic in-memory rate limiter.
+// /
+// / Brief description of what the function does.
+// / - Creates a sliding window limiter for per-client throttling.
+// /
+// / Parameters:
+// /   limit - Maximum requests per window.
+// /   window - Duration of the rate limit window.
+// /
+// / Returns a configured rateLimiter instance.
+// /
+// / Throws [None] - in-memory allocation only.
+// /
+// / Example: `limiter := newRateLimiter(120, time.Minute)`
 func newRateLimiter(limit int, window time.Duration) *rateLimiter {
 	// Return a configured limiter with fresh maps.
 	return &rateLimiter{
@@ -470,23 +471,23 @@ func newRateLimiter(limit int, window time.Duration) *rateLimiter {
 	}
 }
 
-/// Allow checks whether a key is permitted within the current rate window.
-///
-/// Brief description of what the function does.
-/// - Tracks per-key request counts and blocks when limit exceeded.
-///
-/// Parameters:
-///   key - Identifier (e.g., client IP) to rate limit.
-///
-/// Returns true when the request is allowed; false when rate-limited.
-///
-/// Throws [None] - uses in-memory counters.
-///
-/// Performance:
-///   Time complexity: O(1) per call.
-///   Space complexity: O(k) for tracked keys.
-///
-/// Example: `if !limiter.Allow(clientIP(r)) { ... }`
+// / Allow checks whether a key is permitted within the current rate window.
+// /
+// / Brief description of what the function does.
+// / - Tracks per-key request counts and blocks when limit exceeded.
+// /
+// / Parameters:
+// /   key - Identifier (e.g., client IP) to rate limit.
+// /
+// / Returns true when the request is allowed; false when rate-limited.
+// /
+// / Throws [None] - uses in-memory counters.
+// /
+// / Performance:
+// /   Time complexity: O(1) per call.
+// /   Space complexity: O(k) for tracked keys.
+// /
+// / Example: `if !limiter.Allow(clientIP(r)) { ... }`
 func (r *rateLimiter) Allow(key string) bool {
 	if r.limit <= 0 {
 		// Return true to treat unlimited mode as always allowed.
@@ -507,19 +508,19 @@ func (r *rateLimiter) Allow(key string) bool {
 	return r.requests[key] <= r.limit
 }
 
-/// PruneStaleEntries periodically drops expired rate limit entries.
-///
-/// Brief description of what the function does.
-/// - Prevents unbounded growth of in-memory rate limit maps.
-///
-/// Parameters:
-///   interval - How often to scan for expired entries.
-///
-/// Returns no value; runs until the process exits.
-///
-/// Throws [None] - background maintenance loop.
-///
-/// Example: `go limiter.PruneStaleEntries(5 * time.Minute)`
+// / PruneStaleEntries periodically drops expired rate limit entries.
+// /
+// / Brief description of what the function does.
+// / - Prevents unbounded growth of in-memory rate limit maps.
+// /
+// / Parameters:
+// /   interval - How often to scan for expired entries.
+// /
+// / Returns no value; runs until the process exits.
+// /
+// / Throws [None] - background maintenance loop.
+// /
+// / Example: `go limiter.PruneStaleEntries(5 * time.Minute)`
 func (r *rateLimiter) PruneStaleEntries(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -538,19 +539,19 @@ func (r *rateLimiter) PruneStaleEntries(interval time.Duration) {
 	}
 }
 
-/// clientIP extracts the caller IP address from headers or remote address.
-///
-/// Brief description of what the function does.
-/// - Prefers X-Forwarded-For when behind a proxy, otherwise uses RemoteAddr.
-///
-/// Parameters:
-///   r - Incoming HTTP request.
-///
-/// Returns the best-effort client IP string.
-///
-/// Throws [None] - string parsing only.
-///
-/// Example: `ip := clientIP(r)`
+// / clientIP extracts the caller IP address from headers or remote address.
+// /
+// / Brief description of what the function does.
+// / - Prefers X-Forwarded-For when behind a proxy, otherwise uses RemoteAddr.
+// /
+// / Parameters:
+// /   r - Incoming HTTP request.
+// /
+// / Returns the best-effort client IP string.
+// /
+// / Throws [None] - string parsing only.
+// /
+// / Example: `ip := clientIP(r)`
 func clientIP(r *http.Request) string {
 	// Respect proxy headers when present to avoid grouping all clients.
 	if ip := r.Header.Get("X-Forwarded-For"); ip != "" {

@@ -1,323 +1,220 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// UI client logic: uploads files, polls results, sends alerts, and queries health
-// endpoints; it talks to the API proxy in nginx and surfaces status to users.
-const uploadBtn = document.getElementById("uploadBtn");
-const alertBtn = document.getElementById("alertBtn");
-const refreshHealth = document.getElementById("refreshHealth");
-const uploadStatus = document.getElementById("uploadStatus");
-const resultsBox = document.getElementById("resultsBox");
-const jobMeta = document.getElementById("jobMeta");
-const alertBox = document.getElementById("alertBox");
-const alertSecretInput = document.getElementById("alertSecret");
-const maxFileBytes = 25 * 1024 * 1024;
+// Reviewer session stays in an HttpOnly cookie; CSRF stays in memory.
+const byId = (id) => document.getElementById(id);
+let csrf = "";
+let catalog = [];
+let pollingGeneration = 0;
+let signedIn = false;
+let sessionGeneration = 0;
+let authOperation = 0;
+let authPending = false;
+const terminal = new Set(["succeeded", "incomplete", "rejected", "failed", "timed_out"]);
 
-const api = {
-  upload: "/api/upload",
-  results: "/api/results",
-  alert: "/api/alert",
-  healthUpload: "/api/health/upload",
-  healthResults: "/api/health/results",
-  healthZR: "/api/health/zeroresponder",
-};
-
-/// Template for function documentation
-///
-/// Brief description of what the function does.
-///
-/// Parameters:
-///   [value] - Client identifier string to validate.
-///
-/// Returns true when the client ID matches the allowed pattern.
-///
-/// Throws [None] - pure validation.
-///
-/// Example: isValidClientId("researcher-1")
-function isValidClientId(value) {
-  // Return regex test result to enforce safe client ID format.
-  return /^[A-Za-z0-9_-]{1,64}$/.test(value);
+function message(value) { byId("statusMessage").textContent = value; }
+function currentSession(generation) { return signedIn && generation === sessionGeneration; }
+function currentAction(sessionEpoch, pollingEpoch) {
+  return currentSession(sessionEpoch) && pollingEpoch === pollingGeneration;
 }
-
-/// Template for function documentation
-///
-/// Brief description of what the function does.
-///
-/// Parameters:
-///   [url] - API endpoint to call.
-///   [options] - Fetch options (method, headers, body).
-///   [timeoutMs] - Timeout in milliseconds.
-///
-/// Returns a fetch Response when successful.
-///
-/// Throws [AbortError] when the request exceeds timeout.
-///
-/// Example: await fetchWithTimeout("/api/health", {}, 5000)
-async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+async function api(path, options = {}) {
+  const sessionEpoch = sessionGeneration;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), 35000);
+  const headers = { ...options.headers };
+  if (options.method === "POST") {
+    headers["Content-Type"] = "application/json";
+    if (csrf) headers["X-CSRF-Token"] = csrf;
+  }
   try {
-    // Return the fetch response to the caller for status handling.
-    const resp = await fetch(url, { ...options, signal: controller.signal });
-    return resp;
-  } finally {
-    // Clear timeout to avoid leaking timers.
-    clearTimeout(timeoutId);
+    const response = await fetch(path, { ...options, headers, credentials: "same-origin", signal: controller.signal });
+    const data = await response.json();
+    if (!response.ok) {
+      if (response.status === 401 && path !== "/api/sign-in" && sessionEpoch === sessionGeneration) {
+        showSignedOut();
+        message("Your session ended. Sign in to begin.");
+      }
+      throw new Error(data.error || `Request failed (${response.status})`);
+    }
+    return data;
+  } finally { clearTimeout(timeout); }
+}
+function showSignedOut() {
+  sessionGeneration += 1;
+  signedIn = false;
+  csrf = "";
+  pollingGeneration += 1;
+  byId("loginPanel").hidden = false;
+  byId("workspace").hidden = true;
+  byId("reportPanel").hidden = true;
+  byId("executionReport").textContent = "";
+  byId("evaluationReport").textContent = "";
+  byId("executionStatus").textContent = "—";
+  byId("scientificStatus").textContent = "—";
+  byId("releaseBadge").textContent = "Not assessed";
+  byId("releaseBadge").className = "badge";
+  byId("accessCode").value = "";
+  catalog = [];
+  byId("experimentSelect").replaceChildren();
+  byId("experimentScope").textContent = "";
+  byId("runSelect").replaceChildren();
+  byId("identityLabel").textContent = "Review workspace";
+  byId("jobLabel").textContent = "";
+  byId("runBtn").disabled = true;
+  byId("viewRunBtn").disabled = true;
+}
+function selectionScope() {
+  const experiment = catalog.find((item) => item.id === byId("experimentSelect").value);
+  byId("experimentScope").textContent = experiment ? `${experiment.scope} · input SHA-256 ${experiment.input_sha256}` : "No prepared experiments available.";
+}
+async function refreshRuns(sessionEpoch = sessionGeneration, pollingEpoch = null) {
+  if (!currentSession(sessionEpoch)) return;
+  const runs = await api("/api/runs");
+  if (!currentSession(sessionEpoch) || (pollingEpoch !== null && pollingEpoch !== pollingGeneration)) return;
+  byId("runSelect").replaceChildren();
+  for (const run of runs) {
+    const option = document.createElement("option");
+    option.value = run.job_id;
+    option.textContent = `${run.experiment_id} · ${run.job_id}`;
+    byId("runSelect").append(option);
+  }
+  byId("viewRunBtn").disabled = runs.length === 0;
+}
+async function loadWorkspace(session, expectedGeneration = sessionGeneration) {
+  if (expectedGeneration !== sessionGeneration) return;
+  const generation = ++sessionGeneration;
+  pollingGeneration += 1;
+  try {
+    csrf = session.csrf_token;
+    signedIn = true;
+    byId("identityLabel").textContent = `Reviewer ${session.reviewer}`;
+    const prepared = await api("/api/experiments");
+    if (!currentSession(generation)) return;
+    catalog = prepared;
+    byId("experimentSelect").replaceChildren();
+    for (const experiment of catalog) {
+      const option = document.createElement("option");
+      option.value = experiment.id;
+      option.textContent = experiment.label;
+      byId("experimentSelect").append(option);
+    }
+    selectionScope();
+    await refreshRuns(generation);
+    if (!currentSession(generation)) return;
+    byId("loginPanel").hidden = true;
+    byId("workspace").hidden = false;
+    byId("runBtn").disabled = catalog.length === 0;
+    message("Choose a prepared experiment or review one of your previous runs.");
+  } catch (error) {
+    if (generation === sessionGeneration) { showSignedOut(); message(error.message); }
   }
 }
-
-/// Template for function documentation
-///
-/// Brief description of what the function does.
-///
-/// Parameters:
-///   [file] - File object selected by the user.
-///
-/// Returns a hex-encoded SHA-256 hash string.
-///
-/// Throws [Error] when hashing fails.
-///
-/// Example: const hash = await hashFile(file)
-async function hashFile(file) {
-  const buf = await file.arrayBuffer();
-  const hash = await crypto.subtle.digest("SHA-256", buf);
-  const bytes = Array.from(new Uint8Array(hash));
-  // Return a hex string for API header compatibility.
-  return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
+function renderReport(report) {
+  const data = report.data || {};
+  const release = data.release_status || "unassessed";
+  const approved = report.status === "succeeded" && release === "evaluated_passed";
+  byId("reportPanel").hidden = false;
+  byId("jobLabel").textContent = `${report.experiment_id} · ${report.job_id}`;
+  byId("executionStatus").textContent = report.status;
+  byId("scientificStatus").textContent = release;
+  byId("releaseBadge").textContent = approved ? "Evaluation passed" : release === "withheld" ? "Release withheld" : "Not scientifically assessed";
+  byId("releaseBadge").className = approved ? "badge passed" : "badge";
+  byId("evaluationReport").textContent = data.scientific_evaluation ? JSON.stringify(data.scientific_evaluation, null, 2) : "No scientific evaluation is available. Execution success alone does not validate scientific results.";
+  const { scientific_evaluation, ...execution } = data;
+  byId("executionReport").textContent = JSON.stringify({ status: report.status, error_code: report.error_code || "", ...execution }, null, 2);
 }
-
-/// Template for function documentation
-///
-/// Brief description of what the function does.
-///
-/// Parameters:
-///   None.
-///
-/// Returns no value; updates UI state and triggers result polling.
-///
-/// Throws [Error] when upload fails or validation fails.
-///
-/// Example: uploadBtn.addEventListener("click", uploadFile)
-async function uploadFile() {
-  const fileInput = document.getElementById("fileInput");
-  const clientId = document.getElementById("clientId").value.trim();
-  const file = fileInput.files[0];
-
-  if (!clientId) {
-    uploadStatus.textContent = "Client ID is required.";
-    // Return early to avoid sending anonymous uploads.
-    return;
-  }
-  if (!isValidClientId(clientId)) {
-    uploadStatus.textContent = "Client ID must be 1-64 chars: letters, numbers, - or _.";
-    // Return early to enforce safe ID format.
-    return;
-  }
-  if (!file) {
-    uploadStatus.textContent = "Select a FASTQ file.";
-    // Return early to avoid null file uploads.
-    return;
-  }
-  if (file.size > maxFileBytes) {
-    uploadStatus.textContent = "File exceeds the 25MB limit.";
-    // Return early to avoid server-side rejection.
-    return;
-  }
-
-  uploadBtn.disabled = true;
-  uploadStatus.textContent = "Hashing file...";
-
-  try {
-    const hash = await hashFile(file);
-    const form = new FormData();
-    form.append("file", file);
-    form.append("client_id", clientId);
-
-    uploadStatus.textContent = "Uploading...";
-    const resp = await fetchWithTimeout(api.upload, {
-      method: "POST",
-      headers: {
-        "X-Content-SHA256": hash,
-        "X-Client-Id": clientId,
-      },
-      body: form,
-    }, 20000);
-
-    if (!resp.ok) {
-      const text = await resp.text();
-      uploadStatus.textContent = `Upload failed: ${text}`;
-      uploadBtn.disabled = false;
-      // Return early on failed uploads to avoid polling invalid jobs.
+async function pollRun(job, sessionEpoch = sessionGeneration, pollingEpoch = null) {
+  if (!currentSession(sessionEpoch)) return;
+  const generation = pollingEpoch === null ? ++pollingGeneration : pollingEpoch;
+  const deadline = Date.now() + 12 * 60 * 1000;
+  while (currentAction(sessionEpoch, generation) && Date.now() < deadline) {
+    const report = await api(`/api/results/${encodeURIComponent(job)}`);
+    if (!currentAction(sessionEpoch, generation)) return;
+    renderReport(report);
+    if (terminal.has(report.status)) {
+      const approved = report.status === "succeeded" && report.data?.release_status === "evaluated_passed";
+      message(approved ? "The prepared experiment passed scientific evaluation. Its scope remains synthetic." : `Execution ended as ${report.status}. Inspect the separate scientific release decision.`);
+      await refreshRuns(sessionEpoch, generation);
       return;
     }
-
-    const data = await resp.json();
-    const jobId = data.job_id;
-    jobMeta.textContent = `Job ID: ${jobId}`;
-    uploadStatus.textContent = "Upload complete. Polling results...";
-    pollResults(jobId, clientId);
-  } catch (err) {
-    uploadStatus.textContent = `Error: ${err.message}`;
-  } finally {
-    // Re-enable the upload button after completion or failure.
-    uploadBtn.disabled = false;
+    message(`Worker status: ${report.status}`);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
+  if (currentAction(sessionEpoch, generation)) message("Stopped waiting after 12 minutes. Use Previous runs to check the report later.");
 }
-
-/// Template for function documentation
-///
-/// Brief description of what the function does.
-///
-/// Parameters:
-///   [jobId] - Job identifier to query.
-///   [clientId] - Client identifier for authorization headers.
-///
-/// Returns no value; updates UI with results or errors.
-///
-/// Throws [Error] when result polling fails repeatedly.
-///
-/// Example: pollResults(jobId, clientId)
-async function pollResults(jobId, clientId) {
-  const url = `${api.results}/${jobId}`;
-  let consecutiveErrors = 0;
-  // Poll the results endpoint for a fixed number of attempts.
-  for (let i = 0; i < 30; i += 1) {
-    try {
-      const resp = await fetchWithTimeout(url, {
-        headers: {
-          "X-Client-Id": clientId,
-        },
-      }, 10000);
-
-      if (!resp.ok) {
-        resultsBox.textContent = `Error: ${await resp.text()}`;
-        // Return early when the API reports an error.
-        return;
-      }
-
-      const data = await resp.json();
-      if (data.status === "processed") {
-        resultsBox.textContent = JSON.stringify(data, null, 2);
-        uploadStatus.textContent = "Results ready.";
-        // Return after displaying final results.
-        return;
-      }
-
-      uploadStatus.textContent = "Processing...";
-      await new Promise((r) => setTimeout(r, 2000));
-      consecutiveErrors = 0;
-    } catch (err) {
-      consecutiveErrors += 1;
-      if (consecutiveErrors >= 3) {
-        resultsBox.textContent = `Error: ${err.message}`;
-        // Return after repeated failures to avoid endless polling.
-        return;
-      }
-      await new Promise((r) => setTimeout(r, 2000));
-    }
-  }
-
-  uploadStatus.textContent = "Timed out waiting for results.";
+function finishAction(sessionEpoch, pollingEpoch) {
+  if (!currentAction(sessionEpoch, pollingEpoch)) return;
+  byId("runBtn").disabled = catalog.length === 0;
+  byId("viewRunBtn").disabled = byId("runSelect").options.length === 0;
 }
-
-/// Template for function documentation
-///
-/// Brief description of what the function does.
-///
-/// Parameters:
-///   None.
-///
-/// Returns no value; updates UI with alert response.
-///
-/// Throws [Error] when the alert request fails.
-///
-/// Example: alertBtn.addEventListener("click", sendAlert)
-async function sendAlert() {
-  alertBtn.disabled = true;
-  alertBox.textContent = "Sending alert...";
-  const webhookSecret = alertSecretInput.value.trim();
-
-  const payload = {
-    alert_id: `ALERT-${Date.now()}`,
-    source: "ui",
-    severity: "medium",
-    timestamp: new Date().toISOString(),
-    indicators: {
-      ip: "10.1.2.3",
-      job_id: "demo-job",
-      cert_serial: "01",
-    },
-    actions: ["block_ip", "revoke_cert", "quarantine"],
-  };
-
+byId("loginForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (authPending) return;
+  const reviewer = byId("reviewerId").value.trim();
+  const access = byId("accessCode").value.trim();
+  // A deliberate sign-in supersedes initial session recovery immediately.
+  showSignedOut();
+  const generation = sessionGeneration;
+  const operation = ++authOperation;
+  authPending = true;
+  byId("signInBtn").disabled = true;
   try {
-    const headers = {
-      "Content-Type": "application/json",
-    };
-    if (webhookSecret) {
-      headers["X-Webhook-Secret"] = webhookSecret;
-    }
-
-    const resp = await fetchWithTimeout(api.alert, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    }, 10000);
-
-    if (!resp.ok) {
-      alertBox.textContent = await resp.text();
-      // Return early on non-OK responses to avoid parsing errors.
-      return;
-    }
-    const data = await resp.json();
-    alertBox.textContent = JSON.stringify(data, null, 2);
-  } catch (err) {
-    alertBox.textContent = `Error: ${err.message}`;
-  } finally {
-    // Re-enable alert button after request finishes.
-    alertBtn.disabled = false;
+    const session = await api("/api/sign-in", { method: "POST", body: JSON.stringify({ id: reviewer, access_code: access }) });
+    if (generation === sessionGeneration) await loadWorkspace(session, generation);
+  } catch (error) { if (generation === sessionGeneration) { showSignedOut(); message(error.message); } }
+  finally {
+    if (operation === authOperation) { authPending = false; byId("signInBtn").disabled = false; }
   }
-}
-
-/// Template for function documentation
-///
-/// Brief description of what the function does.
-///
-/// Parameters:
-///   None.
-///
-/// Returns no value; updates health badges in the UI.
-///
-/// Throws [Error] when health endpoints are unreachable.
-///
-/// Example: refreshHealth.addEventListener("click", checkHealth)
-async function checkHealth() {
-  const mappings = [
-    { key: "upload", url: api.healthUpload },
-    { key: "results", url: api.healthResults },
-    { key: "zr", url: api.healthZR },
-  ];
-
-  for (const item of mappings) {
-    const badge = document.querySelector(`[data-service="${item.key}"]`);
-    if (!badge) {
-      // Continue to the next mapping if the badge is missing.
-      continue;
-    }
-
-    try {
-      const resp = await fetchWithTimeout(item.url, {}, 5000);
-      badge.textContent = resp.ok ? "ok" : "down";
-      badge.classList.toggle("ok", resp.ok);
-      badge.classList.toggle("fail", !resp.ok);
-    } catch (err) {
-      badge.textContent = "down";
-      badge.classList.add("fail");
-      badge.classList.remove("ok");
-    }
+});
+byId("signOutBtn").addEventListener("click", async () => {
+  if (!signedIn || authPending) return;
+  const operation = ++authOperation;
+  authPending = true;
+  // Start the request with the current CSRF token, then invalidate local views.
+  // Wait for its cookie deletion before admitting another sign-in.
+  const logout = api("/api/sign-out", { method: "POST", body: "{}" });
+  showSignedOut();
+  const generation = sessionGeneration;
+  byId("signInBtn").disabled = true;
+  try {
+    await logout;
+    if (generation === sessionGeneration) message("Signed out. Existing worker jobs continue and remain owned by your identity.");
+  } catch (error) { if (generation === sessionGeneration) message(error.message); }
+  finally {
+    if (operation === authOperation) { authPending = false; byId("signInBtn").disabled = false; }
   }
-}
-
-uploadBtn.addEventListener("click", uploadFile);
-alertBtn.addEventListener("click", sendAlert);
-refreshHealth.addEventListener("click", checkHealth);
-
-checkHealth();
+});
+byId("experimentSelect").addEventListener("change", selectionScope);
+byId("runBtn").addEventListener("click", async () => {
+  if (!signedIn || authPending || byId("runBtn").disabled) return;
+  const sessionEpoch = sessionGeneration;
+  const pollingEpoch = ++pollingGeneration;
+  const experiment = byId("experimentSelect").value;
+  byId("runBtn").disabled = true;
+  byId("viewRunBtn").disabled = true;
+  try {
+    message("Submitting the prepared encrypted and signed input…");
+    const run = await api(`/api/experiments/${encodeURIComponent(experiment)}/runs`, { method: "POST", body: "{}" });
+    if (!currentAction(sessionEpoch, pollingEpoch)) return;
+    await pollRun(run.job_id, sessionEpoch, pollingEpoch);
+  } catch (error) { if (currentAction(sessionEpoch, pollingEpoch)) message(error.message); }
+  finally { finishAction(sessionEpoch, pollingEpoch); }
+});
+byId("viewRunBtn").addEventListener("click", async () => {
+  if (!signedIn || authPending || byId("viewRunBtn").disabled) return;
+  const sessionEpoch = sessionGeneration;
+  const pollingEpoch = ++pollingGeneration;
+  const job = byId("runSelect").value;
+  byId("runBtn").disabled = true;
+  byId("viewRunBtn").disabled = true;
+  try { await pollRun(job, sessionEpoch, pollingEpoch); }
+  catch (error) { if (currentAction(sessionEpoch, pollingEpoch)) message(error.message); }
+  finally { finishAction(sessionEpoch, pollingEpoch); }
+});
+(async () => {
+  const generation = sessionGeneration;
+  try {
+    const session = await api("/api/session");
+    if (generation === sessionGeneration) await loadWorkspace(session, generation);
+  } catch (error) {
+    if (generation === sessionGeneration) { showSignedOut(); message(error.message === "session_required" ? "Sign in to begin." : error.message); }
+  }
+})();

@@ -1,0 +1,36 @@
+{
+  "job_id": "95d67edb9b8c635e",
+  "experiment_id": "variant-smoke",
+  "status": "succeeded",
+  "error_code": "",
+  "data": {
+    "status": "succeeded",
+    "upload_sha256": "de96130db325d0bb90279e6a9e99243d7e607f35b415898ca6e4ba222fe3d0d5",
+    "processed_sha256": "ea7a3d152f9418a35cdede30225d239cd9e20e6f996c870935925b82c3f3a06d",
+    "signature_valid": true,
+    "decrypted": true,
+    "release_status": "evaluated_passed",
+    "pipeline_output": {
+      "schema_version": 1,
+      "mode": "variants",
+      "pipeline_status": "succeeded",
+      "read_count": 1171,
+      "avg_read_length": 150,
+      "line_count": 4684,
+      "reference_sha256": "e4871638ee57abc3e33b58262a9fcd123be2d9f0c5658429d38e0bbb0bf64d08",
+      "errors": []
+    },
+    "scientific_evaluation": {
+      "evaluation_status": "passed",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "truth_sha256": "8406e77d30fd59bed570dd932d3f9ddf28917908f4d65c99b328e47525ecdddc",
+      "reference_sha256": "e4871638ee57abc3e33b58262a9fcd123be2d9f0c5658429d38e0bbb0bf64d08",
+      "observed_sha256": "401685f25643de68be51ff408e60aca36c70346267c7eb4e32bf9bb9a0bd8fd0",
+      "evaluator_sha256": "11b05cdf46f997332cb20c2d1ab1c898b228ac2a59aa449964de0ea8aa7c5b3e"
+    }
+  }
+}

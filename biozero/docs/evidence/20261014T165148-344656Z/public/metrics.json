@@ -1,0 +1,13 @@
+{
+  "tp": 3,
+  "fp": 0,
+  "fn": 0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "unexpected": [],
+  "missing": [],
+  "scope": "normalized allele presence; no genotype or clinical validation",
+  "reproducible_callset": true,
+  "run_difference": [],
+  "evaluation_status": "passed"
+}

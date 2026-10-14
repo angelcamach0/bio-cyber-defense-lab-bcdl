@@ -1,0 +1,10 @@
+{
+  "evaluation_status": "passed",
+  "tp": 3,
+  "fp": 0,
+  "fn": 0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "reproducible_callset": true,
+  "scope": "normalized allele presence; no genotype or clinical validation"
+}

@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "started_at": "20261014T150459-666958Z",
+  "mode": "variants",
+  "architecture": "aarch64",
+  "platform": "Linux-5.14.0-687.5.3.el9_8.aarch64-aarch64-with-glibc2.34",
+  "cpu_count": 1,
+  "scope": "local native single-worker synthetic experiment; container isolation and browser users not verified",
+  "fixture_hashes": {
+    "reference.fa": "e4871638ee57abc3e33b58262a9fcd123be2d9f0c5658429d38e0bbb0bf64d08",
+    "reads.fastq": "ea7a3d152f9418a35cdede30225d239cd9e20e6f996c870935925b82c3f3a06d",
+    "expected.vcf": "8406e77d30fd59bed570dd932d3f9ddf28917908f4d65c99b328e47525ecdddc",
+    "invalid.fastq": "2ac54409a6816ad1637a06323513cf041d7747eda8f836aeb07cd81885980c19"
+  },
+  "cases": [
+    {
+      "case": "valid-run-1",
+      "verdict": "PASS",
+      "observed": {
+        "status": "succeeded",
+        "exit_code": 0
+      }
+    },
+    {
+      "case": "client-b-denied-1",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "upload-digest-preserved-1",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "valid-run-2",
+      "verdict": "PASS",
+      "observed": {
+        "status": "succeeded",
+        "exit_code": 0
+      }
+    },
+    {
+      "case": "client-b-denied-2",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "upload-digest-preserved-2",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "synthetic-variants-and-repeat",
+      "verdict": "PASS",
+      "observed": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "unexpected": [],
+        "missing": [],
+        "scope": "normalized allele presence; no genotype or clinical validation",
+        "reproducible_callset": true,
+        "run_difference": [],
+        "evaluation_status": "passed"
+      }
+    },
+    {
+      "case": "invalid-fastq-rejected-for-format",
+      "verdict": "PASS",
+      "observed": {
+        "status": "failed",
+        "exit_code": 3,
+        "format_error": true
+      }
+    },
+    {
+      "case": "mtls-requires-client-certificate",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "unsigned-input-rejected-before-analysis",
+      "verdict": "PASS",
+      "observed": {
+        "status": "rejected"
+      }
+    }
+  ],
+  "status": "passed",
+  "commit": "06ff85d8afdf67b3297e05c3405b6545a1e91fbd",
+  "dirty": false,
+  "source_hashes": {
+    ".github/dependabot.yml": "71070abf6a847b4b319bfe922cf5b289ed6f27a74f61098ce5ca8e548db5d684",
+    ".github/workflows/ci.yml": "c25ac563352bec811932d42c2fdd4c328ac33e9c682077c2916b28966ddb2c6a",
+    ".gitignore": "cafcaa0edf15afa9338d598e1ba71924ce82c7ba417da57dbbdefae93fa15c01",
+    "AGENTS.md": "4b3f9a7b71be9031c0062456b1df78f68a6f3ad41f42fb2c471f1ba9761a591f",
+    "LICENSE": "f42cf1c42bbe27d0756c0ca7be42a9c0bdef04d60688781b30f912952e62bf1f",
+    "Makefile": "e5c99bbfbaeb886e68e861dd2a9b3b35a74b65fb3880b9494da54ff6ae414644",
+    "NOTICE": "354688b02c8e834cacce981a63a685a0be045b01662ace1e7fa0a1768f29fd1d",
+    "README.md": "65328a9a6c62ba5eaf8fa5f98ecf6889ec3ea1af755d22b2bb6558f9329e9dd4",
+    "biozero/bio/benchmarks/evaluate_variants.py": "11b05cdf46f997332cb20c2d1ab1c898b228ac2a59aa449964de0ea8aa7c5b3e",
+    "biozero/bio/benchmarks/run_variant_smoke.py": "84aaf4b52d83662046fe9832b5bb2ffbbdf6a9e3be60f3f650c37193a1ee5dd9",
+    "biozero/bio/benchmarks/test_evaluate_variants.py": "c3318d950dec538ab701ccaf57b2cbbc00a59dd791d3b3c09d66e6621b82ceec",
+    "biozero/bio/fixtures/variant-smoke/README.md": "b25684cd82c240ffbac05d19a20ce2cd16b34fbd51ebbd2f2852e25069a0ee41",
+    "biozero/bio/fixtures/variant-smoke/expected.vcf": "8406e77d30fd59bed570dd932d3f9ddf28917908f4d65c99b328e47525ecdddc",
+    "biozero/bio/fixtures/variant-smoke/generate.py": "5652326e4c1948719cba5e8dc0ea98ab78f79a689ae8977e6fa7d2c82e84f8c2",
+    "biozero/bio/fixtures/variant-smoke/invalid.fastq": "2ac54409a6816ad1637a06323513cf041d7747eda8f836aeb07cd81885980c19",
+    "biozero/bio/fixtures/variant-smoke/manifest.json": "54751ac105a2553463e414d8d8369dd03b3a02f623fbe39a16e3af925d727693",
+    "biozero/bio/fixtures/variant-smoke/reads.fastq": "ea7a3d152f9418a35cdede30225d239cd9e20e6f996c870935925b82c3f3a06d",
+    "biozero/bio/fixtures/variant-smoke/reference.fa": "e4871638ee57abc3e33b58262a9fcd123be2d9f0c5658429d38e0bbb0bf64d08",
+    "biozero/bio/pipeline/README.md": "f88aff6a8dfbc44df18d7dc4f2a61f4ac8641c60f76fac56c09790d3ade4d1da",
+    "biozero/bio/pipeline/pipeline.py": "28c86a95c93b51a4189374d98e57e7b9251c495d26a872149da4fe7c0c142206",
+    "biozero/bio/pipeline/pipeline.sh": "3fb065c362d05202d85a09fb9122834a19921fe3f70dbb1881b97011fdd0ebda",
+    "biozero/bio/pipeline/test_pipeline.py": "d230a38ce67f19978fab33be438afb4ed5f3a51f84e1debb94fda29b21120b05",
+    "biozero/bio/reference-db/reference.fa": "1a6be98a4b415c99d097d36b8d95863abad3a6b7a26ef04da6ef4fcbbe9b9b15",
+    "biozero/bio/reference-db/rules.json": "49c9c69e2e2afc8b24889e17bd8d6fb47ce554a9a43418a48752773374045d03",
+    "biozero/docs/BioZero_MVP_Attack_Plan.md": "bac1e022d15e58c709054f4877f579ab697b64e750af16de20440028814f9b40",
+    "biozero/docs/BioZero_MVP_Final_Attack_Plan.md": "a49003d81b0b15da8cd526ace58e2ceda9455080b27866a8e87029b84d092a11",
+    "biozero/docs/BioZero_MVP_Missing_Pieces_Blueprint.md": "7eefce4764450b218176afb1d8eff533954e65834656a8f289166b6b193c9e8f",
+    "biozero/docs/BioZero_Pre-Migration_Security_Report.md": "217e3dff97412fa4c395d95a91d7cf8489ce4dc16a7114a88f76f61f92153e50",
+    "biozero/docs/PROJECT_FLOW_GUIDE.md": "e6f5e44381f3ec5a3133236ec23ee353b5fdb67e6bbf422adef014c45268a2e2",
+    "biozero/docs/STATUS.md": "b71af9346081cc15214ec22f1409265783ba033f51650f803cbc961786baf25d",
+    "biozero/docs/Sustainment Cyber Security BioZero - Backbone Ultimate Goal.pdf": "580d7434b2767792ff2ac9d7799de100d584922198484e215245d83f166c4d26",
+    "biozero/docs/UI_STRATEGY_PLAN.md": "e37c2ed7e24bba2d45e821f4754828dc88917168c4818506629329089c76c557",
+    "biozero/docs/bio_zero_vm_report_privilege_escalation_user_hardening_incident.md": "8df92707b11cf9d6a4cc602ff3e23f1ee19aa9cef7bf342db6c1a2f359faa136",
+    "biozero/docs/decisions/001-job-states.md": "a8b91fee49d9b6a6e3a468703fdacdcb7969e907f1f3fd8c0caad7bff88a1152",
+    "biozero/docs/decisions/002-local-container-network.md": "b5206a28ef63570aa6dc11930c3280db88153fa2f762a5dfb82e76bd37c687cc",
+    "biozero/docs/experiments/001-variant-smoke.md": "0165a079b23dc1a8f82c89f8e8f7bef6143537ccd2160c326cb1579ab3b8d17f",
+    "biozero/docs/experiments/002-regulatory-biological-baseline.md": "8a0bb1259a7499bba116ef698d6e06a2675d8d17232299b9e3196e07845ffd7d",
+    "biozero/docs/mvp_change_log_updates.md": "a1d091e52956691df7d359340b14e48aa2e3fc7b1642c089740e4293639296c7",
+    "biozero/docs/mvp_evidence_log_updates.md": "23d425a1bb27c9dfd07b49a26189362b839363e5056d84b40c5fb51d2ef65536",
+    "biozero/docs/mvp_test_plan_updates.md": "925b4faeb1b603081bc797fb16e72fe069f8d12e5c4787085fe3b8c009b4291b",
+    "biozero/docs/research/2026-10-14-regulatory-feasibility.md": "617f4561b4fab2ac98834fb39f2b7f9783143db3a1d4b5cc51475d1fbf51718a",
+    "biozero/docs/runbooks/reproduce.md": "d60a639931150d4932c29a18171b3f21b4a3c60d3370275c0c45ff22fd9780ae",
+    "biozero/docs/snapshots_pre_hardening_and_ssh_baseline.md": "361acd5890249d1b161e42392c967a316f960e339f3f91bb93b8c8a5d0a15af1",
+    "biozero/docs/team/handoff-2026-10-14.md": "979c5d2d965ef699f6075c4ac09c63568934697ab91ce73b29ae9b210c7961fa",
+    "biozero/docs/team/runbook.md": "f02f09825c41604e5f11108b251b6bc46063f5f7b8b883bc896ef474f82e3bfd",
+    "biozero/docs/vm_baseline_report.md": "ce88d1264577b1f753119f2345b58082509377c638ccf00e61211984296c1ea4",
+    "biozero/infra/PKI/README.md": "c5dbae96aba215ba9d1f60380c1c91b7764bd0b5dfb5c501b8858b2ba8672447",
+    "biozero/infra/PKI/gen-pki.sh": "643eaee6b88f86c24ab53e147e49bf437a6f0217f78167450c007a0377b9dbaa",
+    "biozero/infra/PKI/prepare-runtime.sh": "b77949ab796abe2d0e77d315c701a188485a49598ed1bc779ee3a298b20c61e5",
+    "biozero/infra/PKI/test-pki.sh": "791307379ab8887b5317058535e03c96e079142bf8b298f063981b84e93d39f6",
+    "biozero/infra/bootstrap/bio-tools.sh": "076e2fffe36f780a7d5f33f353dacca5e9627c7cd2c4ddffd60ceac7a518ef21",
+    "biozero/infra/bootstrap/environment-linux-aarch64.lock.txt": "e36568b04747370f6895404f8206da02eb08390757781e3794bae5096d327ad2",
+    "biozero/infra/bootstrap/regulatory-tools.sh": "20905d05f81e6aa0bb09d2ef770127ff7ecab2ffcc1029915c4993b9ac61476c",
+    "biozero/infra/compose/README.md": "87ca6e60ea092827d59dbc2d01a8995393e5150d578bf8ec1d719805a9325ae4",
+    "biozero/infra/compose/browser_checks.py": "d1b1666637079f773366515d41af90e379b08dcfa9fa5f1bf7829ef7731323ee",
+    "biozero/infra/compose/docker-compose.yml": "b544f547933d77ced14fe3350a0ab3ed4c4910b5eda20221499fc570c8fe1710",
+    "biozero/infra/compose/prepare-reviewers.py": "c9c3ed91c6fd277acc32b6622371da2e51650976e91af21bcfe79c1ded58a111",
+    "biozero/infra/compose/run_mvp_tests.sh": "fd1db250cb723dddb0770247c82b84cee90fe29a40076d4bb4e6ab6c1d9a8e64",
+    "biozero/infra/compose/run_reviewer_experiment.py": "19fe95bbef080d7d5fe2becd11c29c650ae36e17076f2e72ce142991dcf68281",
+    "biozero/infra/native/check_go.py": "287e085678b33d967bc86c41f9edf59f5d960cbc995222c97e3ff872b23b671f",
+    "biozero/infra/native/public_vcf.py": "71f1910047faa0b41faa7ec87ec422519779d0d58d81aee8a338f59f7e17d5e4",
+    "biozero/infra/native/run_experiment.py": "da8af2937d502b543f74325376e3d255890006c71e35a7c6d987b81b2bbea011",
+    "biozero/infra/native/test_public_vcf.py": "d7fe2e8546b1fe6d7e64b373e668397a58a12a7b866e86378903f4971408ad51",
+    "biozero/infra/native/test_run_experiment.py": "a765e19c240f643a51375e57fc30f6b1ad1b601ae99a997b37df1224fbc33917",
+    "biozero/research/regulatory/README.md": "2ba6506ce7f069bb1e2c723f3046f35d83070b956c8427cac7b335d137967514",
+    "biozero/research/regulatory/checkpoint-acquisition.json": "08a8e44442d0a7e732e35a291b32dfb650e50ecfdcbb0f127f004c9da70e83ba",
+    "biozero/research/regulatory/checkpoint_fetch.py": "b641ef8ad2a64f93498cb86e799279f6b4844b4c482819f10fee1074f1985ba7",
+    "biozero/research/regulatory/checkpoints.json": "4165d1e7a4b39a2e8cbacacde0291702371b33acfaea427192dc56a89fd52400",
+    "biozero/research/regulatory/fbgemm-forced-feasibility.json": "dd66012185e43a3a544fccbfdf59311829bc89874ebb5f5624c0b7fa007a772e",
+    "biozero/research/regulatory/feasibility.json": "8cd9ed33ab2490bfa15ca6bc9a08413f280176bfb15f1c4f3faba001c09081f5",
+    "biozero/research/regulatory/model_probe.py": "983e57f7f6d7462080ddc3be6d1afdc5cea267fe9e0a564e068b0c1584482336",
+    "biozero/research/regulatory/preflight.py": "86850ddf76e4491f685d1fd79f7887047b047d315c859aad77ab5f02c80d569e",
+    "biozero/research/regulatory/python-linux-aarch64.lock.txt": "67f484a1c8763eb603e13e0c5beff70ca1c783e2eaddb10b438275ba8987cf79",
+    "biozero/research/regulatory/qnnpack-fbgemm-feasibility.json": "ce37dc3b5d7de78636d46a8dde65f6ebd18278ff7625b94260cc26060abb25ec",
+    "biozero/research/regulatory/runtime-feasibility.json": "3497055b3bbdfc8a5ad8bba12e679b00ea07793e72b2473c2c149a1c5b7728f8",
+    "biozero/research/regulatory/test_checkpoint_fetch.py": "7c76a6f4618c741159b1b73db8efde61b394411f0f571244172d835081f2bff2",
+    "biozero/research/regulatory/test_model_probe.py": "be24f94b8c6ea7d068008b64e6572cb9da57994f3e454cbe7bea815e009a691a",
+    "biozero/research/regulatory/test_preflight.py": "585619c35d762e5a600e12f3f6e2ea351aa4339940f969addd8caa1e782ba9e8",
+    "biozero/research/regulatory/wheels-linux-aarch64.lock.txt": "9a04e10c9786f3510b41344f2f404e3f5ed5a0424fa5d3694cafaeb020a0740e",
+    "biozero/services/enclave-runner/Dockerfile": "8671dfbd830212551160b2224cd446f1abea4aa6006b1160ece35bcb64d7e463",
+    "biozero/services/enclave-runner/README.md": "364484191ce2da4a1321dac8b7837131fa73c92ab18da64b47a3001d89036811",
+    "biozero/services/enclave-runner/config.example.json": "c5301a46ef35cd968b0fea0aa8552642a7ae52c5378f0312d309cf9143e4bd27",
+    "biozero/services/enclave-runner/go.mod": "c490f8042b79ba9c138463bc4e36a12728402327f6be508a72c21644caea6cc9",
+    "biozero/services/enclave-runner/main.go": "7cb27dcc572b657dd675103aa0ed6ac0b0d7b06bb632c5c7da8537686aa85b62",
+    "biozero/services/enclave-runner/main_test.go": "13d4bcc81789e846c7e334a4ecede2ecaaf0a785ca0b21fc7f84714df93519cd",
+    "biozero/services/results-api/Dockerfile": "e4b01aa04a2a1c7af9f486caae5c0d7a531d5aeba1908cfaf9018b1755ac255e",
+    "biozero/services/results-api/README.md": "1d0855a8fd3a11eed4a7cf660ba181c1a549d1c79bb9ac0946c9194509f23c21",
+    "biozero/services/results-api/config.example.json": "77dc21bb88ecec737a5e1539a9eebbd4ca185574ce5ab6dfbee44991b4d86671",
+    "biozero/services/results-api/go.mod": "77986266336e5d0707546e24da438dffa12f7f9301efb8821f02d710461b7668",
+    "biozero/services/results-api/main.go": "738ef0560024c654001cca189fc5eeac972aba505800b3dbe378514a4e50f0fd",
+    "biozero/services/results-api/main_test.go": "d3855b63e027b31e018ba2e586df81e9c98bd03e0c88a1082cc8021fa4356d31",
+    "biozero/services/reviewer-gateway/Dockerfile": "27a9df4cc26f348d03edc581b1fdadf841498c9e561c727b8db3fb97aa318ef6",
+    "biozero/services/reviewer-gateway/README.md": "f24eebcaf443b54f2f312927eb3803de681c86fdb5fcc5bb91b827d223b3c668",
+    "biozero/services/reviewer-gateway/go.mod": "d0f3e2cbb93a5eedb6539ac02d85096af7cc34b8af34161463113b8e5e798ed8",
+    "biozero/services/reviewer-gateway/main.go": "8faabbb24c00ecf3cf7996c7e19de246195f7d3a4a1d8fddf7f09d1558cc56d9",
+    "biozero/services/reviewer-gateway/main_test.go": "4719c2f0115db5428988b409208ebc1ba0bb9e6f36a6a3a2ea8ab450a553414c",
+    "biozero/services/upload-api/Dockerfile": "22e50a83ea8a51e12576f582747e56b6e8752e016a4764294ffc51ee929b3222",
+    "biozero/services/upload-api/README.md": "90fb2de4a0569cf0499107278d502cb98d5894e3734be06040c9eceb658eae14",
+    "biozero/services/upload-api/config.example.json": "a018eab393f940d60e674bafcd1c0d294c29e90023bc93320beea324e02fcf1d",
+    "biozero/services/upload-api/go.mod": "b00ab30bf229c906a5b97cb5bb6b4592fde9c17c72c7bb17586b6b038b602461",
+    "biozero/services/upload-api/main.go": "311945d1494f260ae184a324ecb46f34b82be33dc5510d90050ff1a24b5dad5d",
+    "biozero/services/upload-api/main_test.go": "acf7a7cbaf6a3acf04fcdcbfd6a3ec665398ed92b0c26848a010bb2148aee2a4",
+    "biozero/services/uploader-cli/README.md": "6542319f1c424a2d70bbb6a94044762e67b5470c26964a8f8de50e32f68a0841",
+    "biozero/services/uploader-cli/go.mod": "fbd2b8e05199807fbd1235ed840aed3899a312fa2d0e3fc7155ff4365153e4e5",
+    "biozero/services/uploader-cli/main.go": "bd5825106a5c5116b21007eddc2bdb2a1d62c794d4eaef4369ebd1b6e52db64e",
+    "biozero/services/uploader-cli/main_test.go": "35ac5e17e94fce6cf80175b8f422c3dac63b94b179a3613c6a3fcf5458619cf8",
+    "biozero/services/zeroresponder/Dockerfile": "b853d07f46e679e2713daa9eeb629c2b56cb21e1297aac469d25597a1ba98002",
+    "biozero/services/zeroresponder/README.md": "6bc6cda57b0c834b3203a4f53b6f64c2fb23bde3804eaa60ffb073348be0cf97",
+    "biozero/services/zeroresponder/go.mod": "f6b2cf22ac0391f22bb178b3d2f87b26c4573c09cbdcbd98c3625c19f0648b12",
+    "biozero/services/zeroresponder/main.go": "1d3f9ce9de7dcff40c5c1b82768e81ff26d569161b7eae35a076cb5dfd339a0c",
+    "biozero/simulated-adversary/README.md": "4262b2b37ed16d05cd325f1a4b905500759725c02da24d2a02c6f9b34d7605be",
+    "biozero/simulated-adversary/go.mod": "daa7f63f06197278bd35c7217132093f6dbb1eb0d2a2c67c40c5e4e92da84760",
+    "biozero/simulated-adversary/main.go": "b016998fce0f545bad18f98b1c7e3b630012fa4893ac9d47b55351240a49d1ef",
+    "biozero/ui/Dockerfile": "962767c79f663a8c34bd6071a14f3bee3b0f2e6fc1a1f115ae3adba1e48d8546",
+    "biozero/ui/README.md": "3c6f431f405ef246e4f1dfc42344616579a17b6f989748108808f636ed56ecc8",
+    "biozero/ui/app.js": "a3a955e75acdf1f1c02829c263633970279c02adabe4ad19ef00eb84825a6d21",
+    "biozero/ui/index.html": "512238e90acffe7e240be43845458cfb7ad9eaf001fbc0929534bb64dcbb5f2c",
+    "biozero/ui/nginx.conf": "85bea5bf81cc34bc8841c198d14cc35f205a3148fe4113c393a44d4384d44df8",
+    "biozero/ui/styles.css": "afd37c1bbaa5fb535dd54afdea2705e45323bee5195dee89fe4df8d538020963"
+  },
+  "tool_versions": {
+    "go": "go version go1.26.7 (Red Hat 1.26.7-2.el9_8) linux/arm64",
+    "openssl": "OpenSSL 3.6.5 29 Sep 2026 (Library: OpenSSL 3.6.5 29 Sep 2026)",
+    "samtools": "samtools 1.24",
+    "bcftools": "bcftools 1.24",
+    "minimap2": "2.31-r1302",
+    "fastp": "fastp 1.4.0"
+  },
+  "configuration": {
+    "security_mode": "protected",
+    "pipeline_mode": "variants",
+    "single_worker": true,
+    "bound_address": "127.0.0.1"
+  },
+  "finished_at": "2026-10-14T15:05:18.883554+00:00"
+}

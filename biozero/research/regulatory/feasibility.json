@@ -1,0 +1,70 @@
+{
+  "checkpoint_compatibility": "pending",
+  "effective_quantized_engine": "x86",
+  "experiment": "SCI01-offline-synthetic-preflight",
+  "generated_at_utc": "2026-10-14T13:45:37.156328+00:00",
+  "initial_quantized_engine": "x86",
+  "network_access_performed": false,
+  "requested_engine": "current",
+  "requested_qconfig": "QConfig(activation=functools.partial(<class 'torch.ao.quantization.observer.HistogramObserver'>, reduce_range=True){}, weight=functools.partial(<class 'torch.ao.quantization.observer.PerChannelMinMaxObserver'>, dtype=torch.qint8, qscheme=torch.per_channel_symmetric){})",
+  "requested_qconfig_backend": "fbgemm",
+  "runtime": {
+    "architecture": "aarch64",
+    "cgroup_memory_limit_bytes": null,
+    "cpu_quota_cores": null,
+    "effective_memory_ceiling_bytes": 5859201024,
+    "host_memory_bytes": 5859201024,
+    "logical_cpu_count": 1,
+    "platform": "Linux-5.14.0-687.5.3.el9_8.aarch64-aarch64-with-glibc2.34",
+    "python": "3.11.17",
+    "python_version_info": [
+      3,
+      11,
+      17
+    ],
+    "torch_distribution_version": "2.14.1+cpu"
+  },
+  "schema_version": 1,
+  "scientific_feasibility": "pending",
+  "supported_quantized_engines": [
+    "qnnpack",
+    "onednn",
+    "x86",
+    "fbgemm"
+  ],
+  "synthetic_probe": {
+    "checks": {
+      "fp32_output_finite": true,
+      "input_finite": true,
+      "output_shape_expected": true,
+      "quantized_conv1d_present": true,
+      "quantized_linear_present": true,
+      "quantized_output_finite": true,
+      "repeat_identical": true,
+      "restored_output_finite": true,
+      "state_dict_roundtrip_identical": true
+    },
+    "input_shape": [
+      4,
+      4,
+      32
+    ],
+    "max_abs_difference_from_synthetic_fp32": 0.005382150411605835,
+    "output_shape": [
+      4,
+      6
+    ],
+    "quantized_module_types": [
+      "torch.ao.nn.intrinsic.quantized.modules.conv_relu.ConvReLU1d",
+      "torch.ao.nn.quantized.modules.linear.Linear",
+      "torch.ao.nn.quantized.modules.linear.LinearPackedParams"
+    ],
+    "scope": "Tiny untrained Conv1d + Linear only; no checkpoint or scientific accuracy validation.",
+    "seed": 20261014,
+    "serialized_synthetic_state_dict_bytes": 7347,
+    "status": "passed",
+    "threads": 1
+  },
+  "torch_imported_version": "2.14.1+cpu",
+  "trained_weights_loaded": false
+}

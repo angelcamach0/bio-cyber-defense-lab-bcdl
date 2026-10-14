@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "status": "acquired_and_pinned",
+  "source_record": 1405945,
+  "source_url": "https://zenodo.org/records/1405945",
+  "license": "CC-BY-4.0",
+  "permission_scope": "internal_research",
+  "files": [
+    {
+      "filename": "lead_caQTL_variants.tsv.gz",
+      "status": "verified",
+      "size_bytes": 10497915,
+      "sha256": "b7a1e169153eff1fbf700270260bc7225f0c4585b1066ab2e2a65583c33a5d2e",
+      "published_md5": "4b05a81465935729056828712e3e2fcf"
+    },
+    {
+      "filename": "README.txt",
+      "status": "verified",
+      "size_bytes": 5043,
+      "sha256": "a3a7255678894553c3bc9ea99a1bc814a9d2104521f5d62e417e0a0ddebc18dd",
+      "published_md5": "ef718ea6b0c2c598fb3c8737f417f41d"
+    }
+  ],
+  "source_metadata_sha256": "22bbbcba0b4108b2be3c9cfc871a5655f77f2d5be273e88c6bf03d52b511cb4b",
+  "dataset_transfer_limit_bytes": 52428800,
+  "dataset_transfer_charged_bytes": 10512921,
+  "baseline_control_bytes": 4251,
+  "header_columns": [
+    "Peak",
+    "Chr",
+    "Pos",
+    "RsID",
+    "Ref",
+    "Alt",
+    "AF",
+    "Inside_Peak",
+    "P_Lead",
+    "Beta",
+    "SE",
+    "Log10_BF"
+  ],
+  "source_build": "GRCh37",
+  "target_protocol_build": "hg38",
+  "normalization_status": "pending_reviewed_build_and_peak_mapping",
+  "biological_loci_inferred": 0,
+  "scope": "Source acquisition and first header only; no complete gzip validation, normalization, selection or inference.",
+  "raw_dataset_published": false,
+  "interpretation_status": "candidate source; normalization/coordinate/peak/context/selection review pending",
+  "license_source_url": "https://zenodo.org/api/records/1405945",
+  "effect_dictionary_url": "https://zenodo.org/api/records/1405945/files/README.txt/content",
+  "model_protocol_build": "hg38",
+  "cache_verified_without_new_transfer": true,
+  "checkpoint_transfer_ledger_unchanged_bytes": 435387199
+}

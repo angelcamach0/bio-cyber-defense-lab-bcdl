@@ -1,0 +1,174 @@
+{
+  "browser": "Firefox",
+  "browser_version": "157.0",
+  "checks": [
+    {
+      "details": {},
+      "name": "firefox_untrusted_demo_ca_rejected",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "firefox_demo_ca_https_verified",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "ui_reviewer_a_signed_in",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "ui_prepared_catalog_available",
+      "passed": true
+    },
+    {
+      "details": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 3
+      },
+      "name": "ui_real_three_snp_evaluation",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "ui_mobile_viewport_no_horizontal_overflow",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "ui_logout_clears_workspace",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "ui_reviewer_b_history_isolated",
+      "passed": true
+    },
+    {
+      "details": {
+        "http_status": 404
+      },
+      "name": "browser_b_cannot_read_a",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "ui_b_malformed_fastq_withheld",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "delayed_a_history_is_real",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "delayed_a_view_error_is_real",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "delayed_initial_session_is_a",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "stale_a_history_cannot_populate_b",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "stale_a_view_error_cannot_interrupt_b",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "delayed_b_signin_is_real",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "stale_session_recovery_loses_to_signin_intent",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "recovery_tab_commits_only_b",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "delayed_a_start_is_real",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "delayed_b_start_is_real",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "stale_a_start_cannot_interrupt_busy_b",
+      "passed": true
+    },
+    {
+      "details": {},
+      "name": "b_remains_owner_after_all_late_callbacks",
+      "passed": true
+    },
+    {
+      "details": {
+        "count": 0
+      },
+      "name": "no_javascript_errors",
+      "passed": true
+    }
+  ],
+  "javascript_error_count": 0,
+  "report_file": "browser-checks.json",
+  "scope": "Real synthetic reviewer execution and delayed-response isolation in Firefox; no clinical validation.",
+  "screenshots": [
+    {
+      "file": "browser-valid-desktop.png",
+      "sha256": "d869ba7d0852ddb24800beb40a594a604fd9e3869d4d0fe921f93ef45ac04563",
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "file": "browser-valid-mobile.png",
+      "sha256": "89000d6b2912f7b47a1c0ce7ff09aa4e61980b611f1707731cd846a6b93d9d20",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "file": "browser-invalid-desktop.png",
+      "sha256": "e7e991f402fa6de4a29b47e7d830d2a497d8b892df844e294065a419cb5c5576",
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "file": "browser-session-isolation.png",
+      "sha256": "96c5cbb078a6c020d39a87eca051c1ae229ef49c9c5db27fb36c15388b2bd32e",
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    }
+  ],
+  "status": "passed",
+  "tls_verified": true,
+  "trust": {
+    "demo_ca_sha256": "736e0e9465728a30e64520e6252a7bcd251526b0361388175a6eef75911c06b7",
+    "ignore_https_errors": false,
+    "private_profile_demo_ca_only_added": true,
+    "system_roots_imported": false
+  }
+}

@@ -1,0 +1,330 @@
+{
+  "schema_version": 1,
+  "scope": "authoritative synthetic metadata parser compatibility cases; valid parser input does not authorize ownership or approve science",
+  "cases": [
+    {
+      "name": "job_core_no_owner_grants_no_authorization",
+      "kind": "job",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"uploaded\"}",
+      "valid": true
+    },
+    {
+      "name": "job_complete_typed_fields",
+      "kind": "job",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"uploaded\",\"client_id\":\"researcher-a\",\"client_cert_serial\":\"1\",\"enc_key_wrapped\":false,\"size_bytes\":0,\"sha256\":\"\",\"original_name\":\"reads.fastq\",\"uploaded_at\":\"\"}",
+      "valid": true
+    },
+    {
+      "name": "job_invalid_id",
+      "kind": "job",
+      "json": "{\"job_id\":\"../other\",\"status\":\"uploaded\"}",
+      "valid": false
+    },
+    {
+      "name": "job_unknown_state",
+      "kind": "job",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"unknown\"}",
+      "valid": false
+    },
+    {
+      "name": "job_owner_null",
+      "kind": "job",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"uploaded\",\"client_id\":null}",
+      "valid": false
+    },
+    {
+      "name": "job_owner_alias",
+      "kind": "job",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"uploaded\",\"Client_id\":\"researcher-a\"}",
+      "valid": false
+    },
+    {
+      "name": "job_unknown_field",
+      "kind": "job",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"uploaded\",\"extra\":true}",
+      "valid": false
+    },
+    {
+      "name": "job_boolean_null",
+      "kind": "job",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"uploaded\",\"enc_key_wrapped\":null}",
+      "valid": false
+    },
+    {
+      "name": "job_size_wrong_type",
+      "kind": "job",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"uploaded\",\"size_bytes\":\"0\"}",
+      "valid": false
+    },
+    {
+      "name": "job_duplicate_owner",
+      "kind": "job",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"uploaded\",\"client_id\":\"a\",\"client_id\":\"b\"}",
+      "valid": false
+    },
+    {
+      "name": "job_duplicate_status",
+      "kind": "job",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"uploaded\",\"status\":\"failed\"}",
+      "valid": false
+    },
+    {
+      "name": "job_trailing",
+      "kind": "job",
+      "json": "{\"job_id\": \"abcd1234\", \"status\": \"uploaded\"}{}",
+      "valid": false
+    },
+    {
+      "name": "result_complete_failed",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": true
+    },
+    {
+      "name": "result_scientific_null_and_case_sensitive_map",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\",\"signals\":{\"ChrX\":null,\"chrx\":1}},\"pipeline_output\":{\"output_dir\":null},\"scientific_evaluation\":{\"optional_metric\":null}}",
+      "valid": true
+    },
+    {
+      "name": "result_schema1_processed",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"processed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": true
+    },
+    {
+      "name": "result_explicit_legacy_processed",
+      "kind": "result",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"processed\"}",
+      "valid": true
+    },
+    {
+      "name": "result_missing_version_succeeded",
+      "kind": "result",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"succeeded\"}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_version_failed",
+      "kind": "result",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"failed\"}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_version_uploaded",
+      "kind": "result",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"uploaded\"}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_version_running",
+      "kind": "result",
+      "json": "{\"job_id\":\"abcd1234\",\"status\":\"running\"}",
+      "valid": false
+    },
+    {
+      "name": "result_nonterminal",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"uploaded\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_unknown_version",
+      "kind": "result",
+      "json": "{\"schema_version\":2,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_zero_version",
+      "kind": "result",
+      "json": "{\"schema_version\":0,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_boolean_version",
+      "kind": "result",
+      "json": "{\"schema_version\":true,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_null_version",
+      "kind": "result",
+      "json": "{\"schema_version\":null,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_boolean_null",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":null,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_scalar_null",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":null,\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_unknown_field",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"extra\":true}",
+      "valid": false
+    },
+    {
+      "name": "result_status_alias",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"Status\":\"failed\"}",
+      "valid": false
+    },
+    {
+      "name": "result_detection_null",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":null}",
+      "valid": false
+    },
+    {
+      "name": "result_detection_missing_score",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_detection_missing_reason",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0}}",
+      "valid": false
+    },
+    {
+      "name": "result_detection_wrong_score",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":\"0\",\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_detection_alias",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\",\"Reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_detection_reasons_null",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\",\"reasons\":null}}",
+      "valid": false
+    },
+    {
+      "name": "result_detection_reasons_null_element",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\",\"reasons\":[null]}}",
+      "valid": false
+    },
+    {
+      "name": "result_detection_signals_null",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\",\"signals\":null}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_schema_version",
+      "kind": "result",
+      "json": "{\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_security_mode",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_pipeline_mode",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_job_id",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_status",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_processed_at",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_upload_sha256",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_processed_sha256",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_size_bytes",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_decrypted",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_signature_valid",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_release_status",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"detection\":{\"score\":0,\"reason\":\"\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_missing_detection",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\"}",
+      "valid": false
+    },
+    {
+      "name": "result_duplicate_status",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"status\":\"succeeded\"}",
+      "valid": false
+    },
+    {
+      "name": "result_duplicate_nested",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"pipeline_output\":{\"status\":\"a\",\"status\":\"b\"}}",
+      "valid": false
+    },
+    {
+      "name": "result_trailing",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"}}{}",
+      "valid": false
+    },
+    {
+      "name": "result_excess_depth",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"pipeline_output\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}",
+      "valid": false
+    }
+  ]
+}

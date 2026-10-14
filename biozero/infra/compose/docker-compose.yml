@@ -1,90 +1,364 @@
-# BioZero MVP compose stack: wires services, data volumes, and PKI assets together.
+# Local synthetic-data milestone. Prepare PKI, runtime and private reviewer config first.
+# Worker has no network; reviewer gateway uses separate identities; responder is opt-in.
 services:
   upload-api:
+    user: ${BIOZERO_UID:-1000}:${BIOZERO_GID:-1000}
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    init: true
+    pids_limit: 64
+    cpus: 0.25
+    mem_limit: 128m
+    tmpfs:
+    - /tmp:rw,noexec,nosuid,nodev,size=32m,mode=1777
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
     build:
       context: ../../services/upload-api
-    # Run as configured UID/GID to support least-privilege operation.
-    user: "${BIOZERO_UID:-0}:${BIOZERO_GID:-0}"
     environment:
       BIOZERO_DATA_DIR: /data
-      BIOZERO_UPLOAD_ADDR: :8081
-      BIOZERO_MAX_UPLOAD_BYTES: 26214400
-      BIOZERO_RATE_LIMIT: 60
       BIOZERO_TLS_CERT: /pki/server.crt
       BIOZERO_TLS_KEY: /pki/server.key
       BIOZERO_TLS_CA: /pki/ca.crt
-      # Optional key for wrapping enc_key at rest in job records.
+      BIOZERO_UPLOAD_ADDR: :8081
+      BIOZERO_RATE_LIMIT: 60
+      BIOZERO_MAX_UPLOAD_BYTES: 26214400
+      BIOZERO_ADMISSION_GLOBAL_JOBS: ${BIOZERO_ADMISSION_GLOBAL_JOBS:-64}
+      BIOZERO_ADMISSION_PRINCIPAL_JOBS: ${BIOZERO_ADMISSION_PRINCIPAL_JOBS:-16}
+      BIOZERO_ADMISSION_GLOBAL_BYTES: ${BIOZERO_ADMISSION_GLOBAL_BYTES:-536870912}
+      BIOZERO_ADMISSION_PRINCIPAL_BYTES: ${BIOZERO_ADMISSION_PRINCIPAL_BYTES:-134217728}
+      BIOZERO_ADMISSION_ACTIVE_UPLOADS: ${BIOZERO_ADMISSION_ACTIVE_UPLOADS:-2}
+      BIOZERO_ADMISSION_PRINCIPAL_ACTIVE_UPLOADS: ${BIOZERO_ADMISSION_PRINCIPAL_ACTIVE_UPLOADS:-1}
+      BIOZERO_ADMISSION_FREE_SPACE_FLOOR: ${BIOZERO_ADMISSION_FREE_SPACE_FLOOR:-134217728}
       BIOZERO_JOB_KEY: ${BIOZERO_JOB_KEY:-}
     ports:
-      - "8081:8081"
+    - 127.0.0.1:8081:8081
+    networks:
+    - api
     volumes:
-      - biozero-data:/data
-      - ../PKI/pki:/pki:ro
-
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/uploads
+      target: /data/uploads
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/jobs
+      target: /data/jobs
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/admission
+      target: /data/admission
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_PKI_PATH:-../PKI/pki}/runtime/upload
+      target: /pki
+      read_only: true
+      bind:
+        create_host_path: false
   results-api:
+    user: ${BIOZERO_UID:-1000}:${BIOZERO_GID:-1000}
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    init: true
+    pids_limit: 64
+    cpus: 0.25
+    mem_limit: 128m
+    tmpfs:
+    - /tmp:rw,noexec,nosuid,nodev,size=32m,mode=1777
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
     build:
       context: ../../services/results-api
-    # Run as configured UID/GID to support least-privilege operation.
-    user: "${BIOZERO_UID:-0}:${BIOZERO_GID:-0}"
     environment:
       BIOZERO_DATA_DIR: /data
-      BIOZERO_RESULTS_ADDR: :8082
-      BIOZERO_RATE_LIMIT: 120
       BIOZERO_TLS_CERT: /pki/server.crt
       BIOZERO_TLS_KEY: /pki/server.key
       BIOZERO_TLS_CA: /pki/ca.crt
+      BIOZERO_RESULTS_ADDR: :8082
+      BIOZERO_RATE_LIMIT: 120
     ports:
-      - "8082:8082"
+    - 127.0.0.1:8082:8082
+    networks:
+    - api
     volumes:
-      - biozero-data:/data
-      - ../PKI/pki:/pki:ro
-
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/jobs
+      target: /data/jobs
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/results
+      target: /data/results
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_PKI_PATH:-../PKI/pki}/runtime/results
+      target: /pki
+      read_only: true
+      bind:
+        create_host_path: false
   enclave-runner:
+    user: ${BIOZERO_UID:-1000}:${BIOZERO_GID:-1000}
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    init: true
+    pids_limit: 128
+    cpus: 1.0
+    mem_limit: 512m
+    tmpfs:
+    - /tmp:rw,noexec,nosuid,nodev,size=256m,mode=1777
+    - /data/decrypted:rw,noexec,nosuid,nodev,size=32m,mode=0700,uid=${BIOZERO_UID:-1000},gid=${BIOZERO_GID:-1000}
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
     build:
       context: ../../services/enclave-runner
-    # Run as configured UID/GID to support least-privilege operation.
-    user: "${BIOZERO_UID:-0}:${BIOZERO_GID:-0}"
+    network_mode: none
     environment:
       BIOZERO_DATA_DIR: /data
       BIOZERO_RULES_PATH: /rules/rules.json
-      BIOZERO_PRIVATE_KEY: /pki/server.key
+      BIOZERO_PRIVATE_KEY: /pki/decrypt.key
       BIOZERO_SIGNER_CERT: /pki/signer.crt
       BIOZERO_DECRYPT_DIR: /data/decrypted
       BIOZERO_PIPELINE_PATH: /pipeline/pipeline.py
-      BIOZERO_REFERENCE_PATH: /reference/reference.fa
-      # Optional key for unwrapping enc_key at rest in job records.
+      BIOZERO_REFERENCE_PATH: ${BIOZERO_REFERENCE_PATH:-/reference/reference.fa}
+      BIOZERO_EVALUATOR_PATH: ${BIOZERO_EVALUATOR_PATH-/benchmarks/evaluate_variants.py}
+      BIOZERO_TRUTH_PATH: ${BIOZERO_TRUTH_PATH-/reference/expected.vcf}
       BIOZERO_JOB_KEY: ${BIOZERO_JOB_KEY:-}
-      # Pipeline timeout budget to avoid runaway processing.
       BIOZERO_PIPELINE_TIMEOUT: ${BIOZERO_PIPELINE_TIMEOUT:-10m}
+      BIOZERO_PIPELINE_MODE: ${BIOZERO_PIPELINE_MODE:-variants}
+      BIOZERO_SECURITY_MODE: protected
+      BIOZERO_SECURITY_EVENTS_DIR: /data/security-events
     volumes:
-      - biozero-data:/data
-      - ../PKI/pki:/pki:ro
-      - ../../bio/reference-db:/rules:ro
-      - ../../bio/pipeline:/pipeline:ro
-      - ../../bio/reference-db:/reference:ro
-
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/uploads
+      target: /data/uploads
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/jobs
+      target: /data/jobs
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/results
+      target: /data/results
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/artifacts
+      target: /data/artifacts
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_PKI_PATH:-../PKI/pki}/runtime/worker
+      target: /pki
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/security-events
+      target: /data/security-events
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ../../bio/reference-db
+      target: /rules
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ../../bio/pipeline
+      target: /pipeline
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_REFERENCE_DATA_PATH:-../../bio/fixtures/variant-smoke}
+      target: /reference
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ../../bio/benchmarks
+      target: /benchmarks
+      read_only: true
+      bind:
+        create_host_path: false
+  reviewer-gateway:
+    user: ${BIOZERO_UID:-1000}:${BIOZERO_GID:-1000}
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    init: true
+    pids_limit: 64
+    cpus: 0.25
+    mem_limit: 128m
+    tmpfs:
+    - /tmp:rw,noexec,nosuid,nodev,size=32m,mode=1777
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
+    build:
+      context: ../../services/reviewer-gateway
+    environment:
+      BIOZERO_REVIEWER_CONFIG: /config/config.json
+    ports:
+    - 127.0.0.1:8083:8083
+    networks:
+    - api
+    volumes:
+    - type: bind
+      source: ${BIOZERO_PKI_PATH:-../PKI/pki}/runtime/gateway
+      target: /pki
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_REVIEWER_CONFIG_PATH:-../../../.biozero/reviewer-config}
+      target: /config
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/reviewer
+      target: /state
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ../../bio/fixtures/variant-smoke
+      target: /fixtures
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ../../ui
+      target: /ui
+      read_only: true
+      bind:
+        create_host_path: false
   zeroresponder:
+    user: ${BIOZERO_UID:-1000}:${BIOZERO_GID:-1000}
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    init: true
+    pids_limit: 64
+    cpus: 0.25
+    mem_limit: 128m
+    tmpfs:
+    - /tmp:rw,noexec,nosuid,nodev,size=32m,mode=1777
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
     build:
       context: ../../services/zeroresponder
-    # Run as configured UID/GID to support least-privilege operation.
-    user: "${BIOZERO_UID:-0}:${BIOZERO_GID:-0}"
+    profiles:
+    - simulation
     environment:
       BIOZERO_DATA_DIR: /data
       BIOZERO_RESPONDER_ADDR: :8090
-      # Optional shared secret for alert webhook authentication.
       BIOZERO_WEBHOOK_SECRET: ${BIOZERO_WEBHOOK_SECRET:-}
+      BIOZERO_TLS_CERT: /pki/server.crt
+      BIOZERO_TLS_KEY: /pki/server.key
     ports:
-      - "8090:8090"
+    - 127.0.0.1:${BIOZERO_RESPONDER_PORT:-8090}:8090
+    networks:
+    - responder
     volumes:
-      - biozero-data:/data
-
+    - type: bind
+      source: ${BIOZERO_PKI_PATH:-../PKI/pki}/runtime/responder
+      target: /pki
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/actions
+      target: /data/actions
+      read_only: false
+      bind:
+        create_host_path: false
   ui:
+    profiles:
+    - static-ui
+    user: ${BIOZERO_UID:-1000}:${BIOZERO_GID:-1000}
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    init: true
+    pids_limit: 64
+    cpus: 0.25
+    mem_limit: 64m
+    tmpfs:
+    - /tmp:rw,noexec,nosuid,nodev,size=32m,mode=1777
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
     build:
       context: ../../ui
+    entrypoint:
+    - nginx
+    command:
+    - -c
+    - /etc/nginx/conf.d/default.conf
+    - -g
+    - daemon off;
     ports:
-      - "8080:8080"
-    volumes:
-      - ../PKI/pki:/etc/nginx/pki:ro
-
-volumes:
-  biozero-data:
+    - 127.0.0.1:8080:8080
+    networks:
+    - static-ui
+networks:
+  api:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: 127.0.0.1
+  responder:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: 127.0.0.1
+  static-ui:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: 127.0.0.1

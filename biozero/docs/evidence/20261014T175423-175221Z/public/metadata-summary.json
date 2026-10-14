@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "scope": "live native Go filename-corruption fixtures; no live spool-directory replacement",
+  "fault_case_count": 9,
+  "worker_progress_verified": true,
+  "original_template_files_changed": false,
+  "public_observations_contain_ids_paths_or_raw_bodies": false,
+  "cases": [
+    {
+      "case": "metadata_job_fifo_safe_error",
+      "passed": true,
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 23.936
+      }
+    },
+    {
+      "case": "metadata_job_fifo_health",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 32.697
+      }
+    },
+    {
+      "case": "metadata_job_outside_symlink_safe_error",
+      "passed": true,
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 24.12
+      }
+    },
+    {
+      "case": "metadata_job_outside_symlink_health",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 27.649
+      }
+    },
+    {
+      "case": "metadata_job_oversized_safe_error",
+      "passed": true,
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 27.679
+      }
+    },
+    {
+      "case": "metadata_job_oversized_health",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 28.417
+      }
+    },
+    {
+      "case": "metadata_job_duplicate_owner_safe_error",
+      "passed": true,
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 27.31
+      }
+    },
+    {
+      "case": "metadata_job_duplicate_owner_health",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 33.303
+      }
+    },
+    {
+      "case": "metadata_job_duplicate_status_safe_error",
+      "passed": true,
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 26.559
+      }
+    },
+    {
+      "case": "metadata_job_duplicate_status_health",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 28.632
+      }
+    },
+    {
+      "case": "metadata_result_fifo_owner_b_denied",
+      "passed": true,
+      "observed": {
+        "http_status": 403,
+        "elapsed_ms": 26.294
+      }
+    },
+    {
+      "case": "metadata_result_fifo_safe_error",
+      "passed": true,
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 24.4
+      }
+    },
+    {
+      "case": "metadata_result_fifo_health",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 23.914
+      }
+    },
+    {
+      "case": "metadata_result_outside_symlink_owner_b_denied",
+      "passed": true,
+      "observed": {
+        "http_status": 403,
+        "elapsed_ms": 24.227
+      }
+    },
+    {
+      "case": "metadata_result_outside_symlink_safe_error",
+      "passed": true,
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 25.656
+      }
+    },
+    {
+      "case": "metadata_result_outside_symlink_health",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 25.443
+      }
+    },
+    {
+      "case": "metadata_result_oversized_owner_b_denied",
+      "passed": true,
+      "observed": {
+        "http_status": 403,
+        "elapsed_ms": 26.126
+      }
+    },
+    {
+      "case": "metadata_result_oversized_safe_error",
+      "passed": true,
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 24.0
+      }
+    },
+    {
+      "case": "metadata_result_oversized_health",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 27.712
+      }
+    },
+    {
+      "case": "metadata_result_duplicate_status_owner_b_denied",
+      "passed": true,
+      "observed": {
+        "http_status": 403,
+        "elapsed_ms": 28.616
+      }
+    },
+    {
+      "case": "metadata_result_duplicate_status_safe_error",
+      "passed": true,
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 30.104
+      }
+    },
+    {
+      "case": "metadata_result_duplicate_status_health",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 26.621
+      }
+    },
+    {
+      "case": "metadata_worker_progress_with_faults_present",
+      "passed": true,
+      "observed": {
+        "terminal_rejected": true,
+        "pipeline_not_called": true
+      }
+    },
+    {
+      "case": "metadata_fault_files_removed_exactly",
+      "passed": true,
+      "observed": {
+        "crafted_spool_files_removed": 13,
+        "unexpected_replacements": 0
+      }
+    },
+    {
+      "case": "metadata_owner_a_recovers_after_faults",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "retained_rejection_readable": true,
+        "elapsed_ms": 34.883
+      }
+    },
+    {
+      "case": "metadata_owner_b_still_denied_after_recovery",
+      "passed": true,
+      "observed": {
+        "http_status": 403,
+        "elapsed_ms": 31.046
+      }
+    },
+    {
+      "case": "metadata_recovery_health",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 30.488
+      }
+    },
+    {
+      "case": "metadata_final_cleanup",
+      "passed": true,
+      "observed": {
+        "additional_spool_files_removed": 0,
+        "remaining_crafted_spool_files": 0
+      }
+    }
+  ]
+}

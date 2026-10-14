@@ -33,3 +33,4 @@ biozero/**/*.pyc
 biozero/**/*.pyo
 biozero/**/*.pyd
 .aider*
+.biozero/

@@ -53,19 +53,26 @@ type resultsResponse struct {
 /// Throws [FatalInputError] when required flags or TLS config are invalid.
 ///
 /// Example: `go run ./main.go --file sample.fastq --client-id researcher-1`
-func main() {
+func main() { os.Exit(runCLI()) }
+
+func runCLI() int {
 	filePath := flag.String("file", "", "path to file to upload")
 	uploadURL := flag.String("upload-url", "http://localhost:8081/upload", "upload endpoint")
 	resultsURL := flag.String("results-url", "http://localhost:8082/results", "results endpoint base")
 	clientID := flag.String("client-id", "", "client identifier")
 	pollSeconds := flag.Int("poll-seconds", 2, "poll interval seconds")
 	maxPollErrors := flag.Int("max-poll-errors", 5, "max consecutive poll errors before exit")
+	waitTimeout := flag.Duration("wait-timeout", 12*time.Minute, "total result polling deadline")
 	mtlsCert := flag.String("mtls-cert", "", "client TLS cert (PEM)")
 	mtlsKey := flag.String("mtls-key", "", "client TLS key (PEM)")
 	caCert := flag.String("ca-cert", "", "CA cert bundle (PEM)")
 	serverCert := flag.String("server-cert", "", "server cert for encrypting payload (PEM)")
 	signKey := flag.String("sign-key", "", "client private key for signing payload (PEM)")
 	flag.Parse()
+	if *waitTimeout <= 0 || *pollSeconds <= 0 || *maxPollErrors < 0 {
+		fmt.Fprintln(os.Stderr, "invalid polling configuration")
+		return 1
+	}
 
 	// Validate required file input before any processing.
 	if *filePath == "" {
@@ -129,32 +136,82 @@ func main() {
 	}
 
 	fmt.Printf("uploaded job %s\n", jobID)
-	consecutiveErrors := 0
-	// Poll results-api until processing completes or errors exceed threshold.
-	for {
-		status, payload, err := fetchResults(client, *resultsURL, jobID)
-		// Handle transient polling errors with retries.
-		if err != nil {
-			consecutiveErrors++
-			// Exit when error threshold is exceeded.
-			if consecutiveErrors > *maxPollErrors {
-				fatalf("results error: %v", err)
-			}
-			fmt.Printf("results error: %v (retrying)\n", err)
-			time.Sleep(time.Duration(*pollSeconds) * time.Second)
-			// Continue polling after transient errors.
-			continue
+	ctx, cancel := context.WithTimeout(context.Background(), *waitTimeout)
+	defer cancel()
+	status, payload, err := pollResults(ctx, client, *resultsURL, jobID, time.Duration(*pollSeconds)*time.Second, *maxPollErrors)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "results error: %v\n", err)
+		if errors.Is(err, context.DeadlineExceeded) {
+			return 4
 		}
-		consecutiveErrors = 0
-		// Stop polling once processing completes.
-		if status == "processed" {
-			fmt.Printf("results:\n%s\n", payload)
-			// Break once final results are available.
-			break
-		}
-		fmt.Printf("status: %s, waiting...\n", status)
-		time.Sleep(time.Duration(*pollSeconds) * time.Second)
+		return 1
 	}
+	fmt.Printf("status: %s\nresults:\n%s\n", status, payload)
+	code, _ := terminalExitCode(status)
+	return code
+
+}
+
+// Exit codes: 0 validated execution, 2 incomplete/legacy, 3 rejected/failed,
+// 4 deadline/worker timeout, 1 transport, configuration or protocol error.
+func terminalExitCode(status string) (int, bool) {
+	switch status {
+	case "succeeded":
+		return 0, true
+	case "incomplete", "processed":
+		return 2, true
+	case "rejected", "failed":
+		return 3, true
+	case "timed_out":
+		return 4, true
+	}
+	return 1, false
+}
+func pollResults(ctx context.Context, client *http.Client, baseURL, jobID string, interval time.Duration, maxErrors int) (string, string, error) {
+	if interval <= 0 || maxErrors < 0 {
+		return "", "", fmt.Errorf("invalid polling configuration")
+	}
+	consecutive := 0
+	for {
+		if err := ctx.Err(); err != nil {
+			return "", "", err
+		}
+		status, payload, err := fetchResultsContext(ctx, client, baseURL, jobID)
+		if err != nil {
+			if ctx.Err() != nil {
+				return "", "", ctx.Err()
+			}
+			var statusErr *resultsHTTPError
+			if errors.As(err, &statusErr) && statusErr.StatusCode >= 400 && statusErr.StatusCode < 500 && statusErr.StatusCode != 429 {
+				return "", "", err
+			}
+			consecutive++
+			if consecutive > maxErrors {
+				return "", "", err
+			}
+		} else {
+			consecutive = 0
+			if _, terminal := terminalExitCode(status); terminal {
+				return status, payload, nil
+			}
+			if status != "uploaded" && status != "running" && status != "pending" {
+				return "", "", fmt.Errorf("unknown result status %q", status)
+			}
+		}
+		timer := time.NewTimer(interval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return "", "", ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
+type resultsHTTPError struct{ StatusCode int }
+
+func (err *resultsHTTPError) Error() string {
+	return fmt.Sprintf("results HTTP status %d", err.StatusCode)
 }
 
 /// newHTTPClient constructs an HTTP client with optional mTLS.
@@ -574,8 +631,11 @@ func uploadFile(client *http.Client, url, path, clientID, sha, encAlg, encKey, s
 ///
 /// Example: `status, payload, err := fetchResults(client, baseURL, jobID)`
 func fetchResults(client *http.Client, baseURL, jobID string) (string, string, error) {
+	return fetchResultsContext(context.Background(), client, baseURL, jobID)
+}
+func fetchResultsContext(parent context.Context, client *http.Client, baseURL, jobID string) (string, string, error) {
 	url := fmt.Sprintf("%s/%s", strings.TrimRight(baseURL, "/"), jobID)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(parent, 30*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	// Fail fast when request construction fails.
@@ -591,16 +651,8 @@ func fetchResults(client *http.Client, baseURL, jobID string) (string, string, e
 	}
 	defer resp.Body.Close()
 
-	// Handle a not-found status without treating it as fatal.
-	if resp.StatusCode == http.StatusNotFound {
-		// Return not_found to indicate job does not yet exist.
-		return "not_found", "", nil
-	}
-	// Return error for any non-OK status.
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		// Return error when server responds with failure.
-		return "", "", fmt.Errorf("results failed: %s", string(body))
+		return "", "", &resultsHTTPError{StatusCode: resp.StatusCode}
 	}
 
 	var payload resultsResponse

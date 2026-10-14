@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "case": "TestAdmissionDistinctBindMountPublicationAndRecovery",
+  "scope": "file publication and restart on three distinct bind mounts; no real TLS or scientific inference",
+  "returncode": 0,
+  "elapsed_seconds": 0.447116,
+  "test_binary_sha256": "bdd87bed740f8d2c5ccdc55790a160c057fb78fda89e1c311b65b5309e416bf7",
+  "container_image_id": "sha256:56807cd2a07caa5783fbae4069a169f4f2b9e2eed41a4a35b3fc0652860ac61c",
+  "source_sha256": {
+    "main.go": "a4f1ffcea40d3b1187eeeda33ced74c2f45d86fe0f5001fc53220085cac190af",
+    "admission.go": "19e4a98c4e0ef314ec9db7477eed40e34e7b4c41e2f80b70c38cbe1bc204ea31",
+    "securefiles.go": "babf5c7350f4e338ddeedc92de2200909358c6e808e9dabe6a768cc2aa2b5c51",
+    "streamupload.go": "d06e54ff42e7a78117ce03dc96679124f527f2d6d54953c2cf9aad9bfee26061",
+    "admission_test.go": "4d4431a35dad574e3eee65f3ce8d77753a44f3fc4caefe49b7c8aef0d815252c",
+    "upload_handler_test.go": "caf9160a92cfd40c56977712bb7097e648d827abb115d0e3b208a98b3392d617",
+    "main_test.go": "acf7a7cbaf6a3acf04fcdcbfd6a3ec665398ed92b0c26848a010bb2148aee2a4",
+    "go.mod": "b00ab30bf229c906a5b97cb5bb6b4592fde9c17c72c7bb17586b6b038b602461"
+  },
+  "verdict": "PASS",
+  "private_receipt_sha256": "b3b39aace0a334c3c7807f574dbdab91e55027e96b2159b2d3462405f19acfd5",
+  "source_files_verified": 8,
+  "reported_by": "Atlas; Chiquis verified the retained receipt and eight source hashes",
+  "real_tls_or_inference_verified": false
+}

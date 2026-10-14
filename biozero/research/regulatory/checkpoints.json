@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "source_repository": "https://github.com/kostkalab/seillra.git",
+  "source_commit": "217469410410e07b6663372da847426ffd172855",
+  "source_configuration": "dist/seillra/dat/config.yaml",
+  "total_checkpoint_bytes": 400312985,
+  "transfer_budget_bytes": 1073741824,
+  "usage": "Internal research only. Do not redistribute Drive-derived checkpoints; their specific distribution terms have not been established.",
+  "license_notes": {
+    "pinned_llra_source": "MIT; verify the source LICENSE at the pinned commit",
+    "original_sei_model": "Zenodo record 4906997, CC-BY-4.0",
+    "functionlab_source": "Separate academic software license; do not treat all upstream assets as MIT",
+    "derived_drive_checkpoints": "Specific terms not established; no redistribution"
+  },
+  "files": [
+    {
+      "component": "trunk_fp32",
+      "filename": "trunk-fp32.pth",
+      "drive_id": "1SvbtVTrZZFHjAIiYQdYoDScYxMeEWe8t",
+      "size_bytes": 294123463,
+      "sha256": "346677580a9bfcdab1bc83735e12c17c8f5d2ec76eb91a45b4e3b2a91f59bf40"
+    },
+    {
+      "component": "trunk_cpu",
+      "filename": "trunk-cpu.pth",
+      "drive_id": "1MTTLYGQN_SL80MvkAhHPqPvpYkX5QCLu",
+      "size_bytes": 73832623,
+      "sha256": "28a1a49ca62e4d67a62c170df3751f7255db6eea3923455c119c762dde446308"
+    },
+    {
+      "component": "head64_fp32",
+      "filename": "head64-fp32.pth",
+      "drive_id": "1olKKq3E0xrPDtztDhVUN_XI1cj9iqpqh",
+      "size_bytes": 20935181,
+      "sha256": "7fd1f2ee86a83e8a985dff13a1164c9f32a0fcb60f8309d38019e1ad17797d35"
+    },
+    {
+      "component": "head64_cpu",
+      "filename": "head64-cpu.pth",
+      "drive_id": "1xbioJZnY9p-2xp0QlLrgYxqVf16epupC",
+      "size_bytes": 6075542,
+      "sha256": "e50fe852023657a60952698c591b291df0e4db3111a0e8ea122546f70eee27c3"
+    },
+    {
+      "component": "projection_fp32",
+      "filename": "projection-fp32.pth",
+      "drive_id": "1evPQSYXzuzkESqlAryPa72DyxkNnK2lp",
+      "size_bytes": 5346176,
+      "sha256": "e77794f8964af32a7c4b2d40f820ba6b41a0e8fdcfdbc8a244da5630b431d6ec"
+    }
+  ]
+}

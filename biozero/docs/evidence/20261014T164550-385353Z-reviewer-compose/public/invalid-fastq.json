@@ -1,0 +1,27 @@
+{
+  "job_id": "0e3601a893ff2c01",
+  "experiment_id": "invalid-fastq",
+  "status": "failed",
+  "error_code": "",
+  "data": {
+    "status": "failed",
+    "upload_sha256": "98e4174b51457df85676eca5997ce6040eec13437452dd8bf3bf60456497f885",
+    "processed_sha256": "2ac54409a6816ad1637a06323513cf041d7747eda8f836aeb07cd81885980c19",
+    "signature_valid": true,
+    "decrypted": true,
+    "release_status": "withheld",
+    "error_code": "pipeline_failed",
+    "pipeline_output": {
+      "schema_version": 1,
+      "mode": "variants",
+      "pipeline_status": "failed",
+      "errors": [
+        {
+          "stage": "validate_fastq",
+          "code": "invalid_input"
+        }
+      ]
+    },
+    "scientific_evaluation": {}
+  }
+}

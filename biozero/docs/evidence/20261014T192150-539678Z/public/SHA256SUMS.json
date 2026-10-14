@@ -1,0 +1,12 @@
+{
+  "admission-summary.json": "256a91eed1a88f4f6a2588c0cb437384cd213abaf62d2e8422e2095985ae9fda",
+  "manifest.json": "5c5d6be7ba47fb28de071151e652fffffe10cb9fbfa0662aaaea5b676e55f4c4",
+  "metadata-summary.json": "195bba6accc1d16e5d918b47a4dc773f3d3794638c3167eaa974ef49bdc6e3e4",
+  "metrics.json": "aa8b3dba7a09c6717e8508295b70156adcf1b2e8b885f6a907798e8cfb82c1cf",
+  "output-summary.json": "8708b86d93cab99721382ac6f673bd59bf8ab06b8508e9dfcad87da84954cbbf",
+  "run-1-derivation.json": "e7c3bfa64af10134cfa7ff36fcfba6b1a34e2ee9a31ef336a7455ce1d4078cbc",
+  "run-1.vcf": "e1192e49bb37fd4e0f8b3f745556a3d7434fbc57b030e747035a7597aaa23f95",
+  "run-2-derivation.json": "3fbbd80ad83222908e606d3b142da5507c2d23f4f6ec003446fb2f3f5895cd96",
+  "run-2.vcf": "e1192e49bb37fd4e0f8b3f745556a3d7434fbc57b030e747035a7597aaa23f95",
+  "soc-summary.json": "6ba56f51d660378e53508e859963944764f4e237329669bcea2ee47d3a1305a4"
+}

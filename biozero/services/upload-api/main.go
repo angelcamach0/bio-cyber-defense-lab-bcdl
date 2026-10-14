@@ -8,7 +8,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -16,9 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -42,7 +39,7 @@ type jobRecord struct {
 	EncKeyWrapped     bool   `json:"enc_key_wrapped,omitempty"`
 	EncKeyWrapAlg     string `json:"enc_key_wrap_alg,omitempty"`
 	SigAlg            string `json:"sig_alg,omitempty"`
-	Sig              string `json:"sig,omitempty"`
+	Sig               string `json:"sig,omitempty"`
 	ClientCertSubject string `json:"client_cert_subject,omitempty"`
 	ClientCertIssuer  string `json:"client_cert_issuer,omitempty"`
 	ClientCertSerial  string `json:"client_cert_serial,omitempty"`
@@ -67,21 +64,216 @@ type errorResponse struct {
 /// Throws [FatalServerError] when TLS setup fails or the listener cannot start.
 ///
 /// Example: `go run ./main.go`
+func validateServerSecurity(certPath, keyPath, caPath string) error {
+	mode := envOr("BIOZERO_SECURITY_MODE", "protected")
+	if mode != "protected" && mode != "demo" {
+		return fmt.Errorf("BIOZERO_SECURITY_MODE must be protected or demo")
+	}
+	if mode == "protected" && (certPath == "" || keyPath == "" || caPath == "") {
+		return fmt.Errorf("protected mode requires server certificate, key, and client CA")
+	}
+	if (certPath == "") != (keyPath == "") {
+		return fmt.Errorf("TLS certificate and key must be supplied together")
+	}
+	return nil
+}
+func uploadIdentity(r *http.Request) (string, error) {
+	supplied := r.FormValue("client_id")
+	if r.TLS != nil {
+		if len(r.TLS.PeerCertificates) == 0 || len(r.TLS.VerifiedChains) == 0 {
+			return "", fmt.Errorf("verified client certificate required")
+		}
+		owner := r.TLS.PeerCertificates[0].Subject.CommonName
+		if !isValidClientID(owner) || (supplied != "" && supplied != owner) {
+			return "", fmt.Errorf("client identity disagrees with certificate")
+		}
+		return owner, nil
+	}
+	if envOr("BIOZERO_SECURITY_MODE", "protected") != "demo" {
+		return "", fmt.Errorf("mTLS required")
+	}
+	if supplied == "" {
+		supplied = r.Header.Get("X-Client-Id")
+	}
+	if !isValidClientID(supplied) {
+		return "", fmt.Errorf("invalid client identity")
+	}
+	return supplied, nil
+}
+
+const maxJobMetadataBytes = 64 << 10
+const maxJobErrorCodeBytes = 64
+const maxJobErrorMessageBytes = 512
+
+// Reserve the exact current worker lifecycle fields without truncating any
+// submitted metadata. NUL maximizes JSON expansion: six encoded bytes per byte.
+func projectedJobJSON(job jobRecord) ([]byte, error) {
+	job.Status = "incomplete" // Longest current persisted status: ten bytes.
+	return json.MarshalIndent(struct {
+		jobRecord
+		StartedAt    string `json:"started_at"`
+		ErrorCode    string `json:"error_code"`
+		ErrorMessage string `json:"error_message"`
+	}{job, "2000-01-01T00:00:00Z", strings.Repeat("\x00", maxJobErrorCodeBytes), strings.Repeat("\x00", maxJobErrorMessageBytes)}, "", "  ")
+}
+
+// uploadAdmissionHandler owns one lifetime-locked admission store.
+type uploadAdmissionHandler struct {
+	store   *admissionStore
+	limiter *rateLimiter
+	jobKey  string
+	initErr error
+}
+
+func newUploadHandler(uploadDir, jobsDir string, maxUploadBytes int64, jobKey string, limiter *rateLimiter) http.Handler {
+	dataDir := filepath.Dir(uploadDir)
+	if filepath.Clean(jobsDir) != filepath.Join(dataDir, "jobs") {
+		return &uploadAdmissionHandler{initErr: admissionError("admission_layout_invalid")}
+	}
+	store, err := openAdmissionStore(dataDir, defaultAdmissionPolicy(maxUploadBytes))
+	return &uploadAdmissionHandler{store: store, limiter: limiter, jobKey: jobKey, initErr: err}
+}
+
+func (handler *uploadAdmissionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONError(w, 405, "method_not_allowed", "method not allowed")
+		return
+	}
+	if handler.initErr != nil || handler.store == nil || !handler.store.healthy() {
+		writeJSONError(w, 503, "admission_state_unavailable", "upload admission unavailable")
+		return
+	}
+	cn, serial, err := requestPrincipal(r)
+	if err != nil {
+		writeJSONError(w, 403, "identity_invalid", "verified certificate owner required")
+		return
+	}
+	if !handler.limiter.Allow(cn) {
+		writeJSONError(w, 429, "rate_limited", "rate limit exceeded")
+		return
+	}
+	if r.ContentLength > handler.store.policy.MaxBodyBytes {
+		writeJSONError(w, 413, "payload_too_large", "payload too large")
+		return
+	}
+	entry, err := handler.store.reserve(cn, serial)
+	if err != nil {
+		status := 503
+		if err.Error() == "quota_exceeded" || err.Error() == "upload_concurrency_exceeded" {
+			status = 429
+		}
+		writeJSONError(w, status, err.Error(), "upload admission denied")
+		return
+	}
+	// This bound applies to wire bytes even for chunked bodies. Header parsing
+	// occurs after durable reservation; stdlib MIME headers still have a 10MiB cap.
+	r.Body = http.MaxBytesReader(w, r.Body, handler.store.policy.MaxBodyBytes)
+	defer r.Body.Close()
+	_ = http.NewResponseController(w).SetReadDeadline(time.Now().Add(30 * time.Second))
+	streamed, err := streamMultipart(r.Context(), r, handler.store, entry)
+	reject := func(status int, code string) {
+		if handler.store.abort(entry) != nil {
+			writeJSONError(w, 503, "admission_state_unavailable", "upload admission unavailable")
+			return
+		}
+		writeJSONError(w, status, code, "upload rejected")
+	}
+	if err != nil {
+		status := 400
+		switch err.Error() {
+		case "metadata_too_large", "payload_too_large":
+			status = 413
+		case "storage_error":
+			status = 500
+		}
+		if !handler.store.healthy() {
+			writeJSONError(w, 503, "admission_state_unavailable", "upload admission unavailable")
+			return
+		}
+		reject(status, err.Error())
+		return
+	}
+	clientID, err := uploadIdentity(r)
+	if err != nil {
+		reject(403, "identity_invalid")
+		return
+	}
+	if headerHash := r.Header.Get("X-Content-SHA256"); headerHash != "" && headerHash != streamed.SHA256 {
+		reject(400, "hash_mismatch")
+		return
+	}
+	subject, issuer, certificateSerial := clientCertInfo(r)
+	encKey := streamed.Fields.Get("enc_key")
+	wrapped := false
+	wrapAlg := ""
+	if handler.jobKey != "" && encKey != "" {
+		encKey, err = wrapSensitiveValue(encKey, handler.jobKey)
+		if err != nil {
+			reject(500, "enc_key_wrap_failed")
+			return
+		}
+		wrapped = true
+		wrapAlg = "aes-256-gcm"
+	}
+	job := jobRecord{JobID: entry.JobID, Status: "uploaded", UploadedAt: time.Now().UTC().Format(time.RFC3339),
+		OriginalName: streamed.Filename, SizeBytes: streamed.Size, SHA256: streamed.SHA256, ClientID: clientID,
+		EncAlg: streamed.Fields.Get("enc_alg"), EncKey: encKey, EncKeyWrapped: wrapped, EncKeyWrapAlg: wrapAlg,
+		SigAlg: streamed.Fields.Get("sig_alg"), Sig: streamed.Fields.Get("sig"),
+		ClientCertSubject: subject, ClientCertIssuer: issuer, ClientCertSerial: certificateSerial}
+	jobJSON, err := json.MarshalIndent(job, "", "  ")
+	if err != nil {
+		reject(500, "job_encode_failed")
+		return
+	}
+	projected, err := projectedJobJSON(job)
+	if err != nil {
+		reject(500, "job_encode_failed")
+		return
+	}
+	if len(projected) > maxJobMetadataBytes {
+		reject(413, "metadata_too_large")
+		return
+	}
+	if len(entry.JobID+"_"+sanitizeFilename(job.OriginalName)) > 255 {
+		reject(400, "invalid_filename")
+		return
+	}
+	if r.Context().Err() != nil {
+		reject(400, "upload_cancelled")
+		return
+	}
+	if err := handler.store.commit(entry, job, jobJSON); err != nil {
+		writeJSONError(w, 503, "admission_state_unavailable", "upload admission unavailable")
+		return
+	}
+	if handler.store.acknowledge(func() {
+		writeJSONResponse(w, map[string]string{"job_id": entry.JobID, "status": "uploaded"})
+	}) != nil {
+		writeJSONError(w, 503, "admission_state_unavailable", "upload admission unavailable")
+	}
+}
+
 func main() {
 	addr := envOr("BIOZERO_UPLOAD_ADDR", ":8081")
 	dataDir := envOr("BIOZERO_DATA_DIR", "./data")
 	certPath := os.Getenv("BIOZERO_TLS_CERT")
 	keyPath := os.Getenv("BIOZERO_TLS_KEY")
 	caPath := os.Getenv("BIOZERO_TLS_CA")
-	maxUploadBytes := envOrInt64("BIOZERO_MAX_UPLOAD_BYTES", 25*1024*1024)
+	if err := validateServerSecurity(certPath, keyPath, caPath); err != nil {
+		log.Fatal(err)
+	}
+	policy, err := admissionPolicyFromEnv()
+	if err != nil {
+		log.Fatal("admission startup error: admission_config_invalid")
+	}
 	rateLimit := envOrInt("BIOZERO_RATE_LIMIT", 60)
 	jobKey := os.Getenv("BIOZERO_JOB_KEY")
 
-	uploadDir := filepath.Join(dataDir, "uploads")
-	jobsDir := filepath.Join(dataDir, "jobs")
-	// Ensure state directories exist before accepting requests.
-	mustMkdirAll(uploadDir)
-	mustMkdirAll(jobsDir)
+	store, err := openAdmissionStore(dataDir, policy)
+	if err != nil {
+		log.Fatalf("admission startup error: %s", err)
+	}
+	defer store.Close()
 
 	limiter := newRateLimiter(rateLimit, time.Minute)
 	// Periodically prune rate limiter state to control memory usage.
@@ -89,159 +281,23 @@ func main() {
 
 	// API boundary: health probe for UI and orchestration checks.
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		if !store.healthy() {
+			writeJSONError(w, 503, "admission_state_unavailable", "upload admission unavailable")
+			return
+		}
 		// Respond quickly to indicate liveness.
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
 
 	// API boundary: accepts external multipart uploads and writes job records.
-	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
-		// Guard against unsupported methods to limit surface area.
-		if r.Method != http.MethodPost {
-			writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed")
-			// Return to stop processing non-upload methods.
-			return
-		}
-
-		// Apply per-client throttling to protect storage and CPU.
-		if !limiter.Allow(clientIP(r)) {
-			writeJSONError(w, http.StatusTooManyRequests, "rate_limited", "rate limit exceeded")
-			// Return to enforce throttling before any work is done.
-			return
-		}
-
-		// Enforce declared size limits before parsing the body.
-		if r.ContentLength > maxUploadBytes {
-			writeJSONError(w, http.StatusRequestEntityTooLarge, "payload_too_large", "payload too large")
-			// Return to avoid reading oversized request bodies.
-			return
-		}
-
-		// Enforce upload size limits early to protect memory and disk.
-		r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
-		// Parse the multipart form for file and metadata fields.
-		if err := r.ParseMultipartForm(32 << 20); err != nil {
-			writeJSONError(w, http.StatusBadRequest, "invalid_form", "invalid multipart form")
-			// Return to avoid accessing invalid multipart fields.
-			return
-		}
-
-		file, header, err := r.FormFile("file")
-		// Reject requests missing the expected file field.
-		if err != nil {
-			writeJSONError(w, http.StatusBadRequest, "missing_file", "missing file field")
-			// Return because file content is required.
-			return
-		}
-		// Ensure the uploaded file stream is closed even on errors.
-		defer file.Close()
-
-		clientID := r.FormValue("client_id")
-		// Accept client_id from either form field or header for compatibility.
-		if clientID == "" {
-			clientID = r.Header.Get("X-Client-Id")
-		}
-		// Reject anonymous uploads to preserve attribution and access control.
-		if clientID == "" {
-			writeJSONError(w, http.StatusBadRequest, "missing_client_id", "missing client_id")
-			// Return because client identity is required for tracking.
-			return
-		}
-		// Validate client ID characters to avoid path/log injection.
-		if !isValidClientID(clientID) {
-			writeJSONError(w, http.StatusBadRequest, "invalid_client_id", "invalid client_id")
-			// Return to prevent storing unsafe identifiers.
-			return
-		}
-
-		// Generate a random job ID for cross-service coordination.
-		jobID := randomID(8)
-		storedName := fmt.Sprintf("%s_%s", jobID, sanitizeFilename(header.Filename))
-		storedPath := filepath.Join(uploadDir, storedName)
-
-		size, hash, err := saveAndHash(file, storedPath)
-		// Abort on storage failure to avoid partial job records.
-		if err != nil {
-			log.Printf("upload save error: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "storage_error", "failed to store upload")
-			// Return because storage failed and job record would be inconsistent.
-			return
-		}
-
-		// Re-check size after writing in case content-length was missing/misreported.
-		if size > maxUploadBytes {
-			_ = os.Remove(storedPath)
-			writeJSONError(w, http.StatusRequestEntityTooLarge, "payload_too_large", "payload too large")
-			// Return to enforce size limits and avoid dangling uploads.
-			return
-		}
-
-		// Enforce client-provided integrity header when present.
-		if headerHash := r.Header.Get("X-Content-SHA256"); headerHash != "" && headerHash != hash {
-			_ = os.Remove(storedPath)
-			writeJSONError(w, http.StatusBadRequest, "hash_mismatch", "content hash mismatch")
-			// Return to prevent accepting corrupted or tampered data.
-			return
-		}
-
-		// Capture mTLS metadata for downstream authorization checks.
-		certSubject, certIssuer, certSerial := clientCertInfo(r)
-		// Optionally wrap sensitive key material before writing job records to disk.
-		encKey := r.FormValue("enc_key")
-		encKeyWrapped := false
-		encKeyWrapAlg := ""
-		// SECURITY: wrap enc_key at rest to avoid cleartext key storage.
-		if jobKey != "" && encKey != "" {
-			wrapped, err := wrapSensitiveValue(encKey, jobKey)
-			// Fail closed if encryption fails to avoid storing sensitive material.
-			if err != nil {
-				log.Printf("enc_key wrap error: %v", err)
-				writeJSONError(w, http.StatusInternalServerError, "enc_key_wrap_failed", "failed to secure enc_key")
-				// Return to avoid persisting unprotected secrets.
-				return
-			}
-			encKey = wrapped
-			encKeyWrapped = true
-			encKeyWrapAlg = "aes-256-gcm"
-		}
-
-		// Job records are the coordination point for enclave-runner and results-api.
-		job := jobRecord{
-			JobID:             jobID,
-			Status:            "uploaded",
-			UploadedAt:        time.Now().UTC().Format(time.RFC3339),
-			OriginalName:      header.Filename,
-			SizeBytes:         size,
-			SHA256:            hash,
-			ClientID:          clientID,
-			EncAlg:            r.FormValue("enc_alg"),
-			EncKey:            encKey,
-			EncKeyWrapped:     encKeyWrapped,
-			EncKeyWrapAlg:     encKeyWrapAlg,
-			SigAlg:            r.FormValue("sig_alg"),
-			Sig:               r.FormValue("sig"),
-			ClientCertSubject: certSubject,
-			ClientCertIssuer:  certIssuer,
-			ClientCertSerial:  certSerial,
-		}
-
-		// Persist the job record for enclave-runner to pick up.
-		if err := writeJSON(filepath.Join(jobsDir, jobID+".json"), job); err != nil {
-			log.Printf("job record write error: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "job_write_failed", "failed to write job record")
-			// Return to avoid confirming an unpersisted job.
-			return
-		}
-
-		resp := map[string]string{"job_id": jobID, "status": "uploaded"}
-		// Return the job ID for clients to poll results-api.
-		writeJSONResponse(w, resp)
-	})
+	http.Handle("/upload", &uploadAdmissionHandler{store: store, limiter: limiter, jobKey: jobKey})
 
 	// Configure server timeouts to protect against slow clients.
 	server := &http.Server{
 		Addr:              addr,
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      15 * time.Second,
 		IdleTimeout:       30 * time.Second,
 		MaxHeaderBytes:    1 << 20,
@@ -271,40 +327,6 @@ func main() {
 	log.Fatal(server.ListenAndServe())
 	// Return is unreachable because log.Fatal exits, but keep flow explicit.
 	return
-}
-
-/// saveAndHash writes the upload to disk and computes SHA-256.
-///
-/// Brief description of what the function does.
-/// - Streams the input to disk while hashing to avoid buffering.
-///
-/// Parameters:
-///   src - Multipart file stream from the client upload.
-///   destPath - Destination path for the stored upload.
-///
-/// Returns size in bytes, hex-encoded SHA-256, and an error if any step fails.
-///
-/// Throws [IOError] when disk write or hashing fails.
-///
-/// Example: `size, hash, err := saveAndHash(file, "/data/uploads/job.bin")`
-func saveAndHash(src multipart.File, destPath string) (int64, string, error) {
-	out, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
-	if err != nil {
-		// Return the IO error to let the caller respond with 500.
-		return 0, "", err
-	}
-	// Ensure the output file is closed on all paths.
-	defer out.Close()
-
-	hasher := sha256.New()
-	tee := io.TeeReader(src, hasher)
-	size, err := io.Copy(out, tee)
-	if err != nil {
-		// Return IO errors so the caller can delete partial output.
-		return 0, "", err
-	}
-	// Return computed size and hex digest for integrity checks.
-	return size, hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 /// clientCertInfo extracts mTLS client certificate metadata when present.
@@ -400,30 +422,6 @@ func randomID(n int) string {
 	_, _ = rand.Read(buf)
 	// Return hex encoding for easy transport/storage.
 	return hex.EncodeToString(buf)
-}
-
-/// writeJSON persists a value as indented JSON on disk.
-///
-/// Brief description of what the function does.
-/// - Serializes job records for enclave-runner consumption.
-///
-/// Parameters:
-///   path - Destination file path for JSON output.
-///   v - Value to marshal into JSON.
-///
-/// Returns an error when serialization or writing fails.
-///
-/// Throws [IOError] when file writing fails.
-///
-/// Example: `err := writeJSON("/data/jobs/123.json", job)`
-func writeJSON(path string, v any) error {
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		// Return marshal errors to avoid writing invalid JSON.
-		return err
-	}
-	// Return any write error to the caller for error handling.
-	return os.WriteFile(path, data, 0640)
 }
 
 /// writeJSONResponse serializes a value into the HTTP response body.
@@ -539,55 +537,6 @@ func envOrInt(key string, fallback int) int {
 	}
 	// Return parsed value for valid configuration.
 	return parsed
-}
-
-/// envOrInt64 returns a 64-bit numeric env var or fallback.
-///
-/// Brief description of what the function does.
-/// - Parses int64 config values safely with fallback defaults.
-///
-/// Parameters:
-///   key - Environment variable name.
-///   fallback - Default value when env is unset or invalid.
-///
-/// Returns the parsed int64 or fallback.
-///
-/// Throws [ParseError] when env value is malformed; fallback is used.
-///
-/// Example: `maxBytes := envOrInt64("BIOZERO_MAX_UPLOAD_BYTES", 25*1024*1024)`
-func envOrInt64(key string, fallback int64) int64 {
-	val := os.Getenv(key)
-	if val == "" {
-		// Return fallback when unset to avoid zero-values.
-		return fallback
-	}
-	parsed, err := strconv.ParseInt(val, 10, 64)
-	if err != nil {
-		// Return fallback on parse errors.
-		return fallback
-	}
-	// Return parsed value for valid configuration.
-	return parsed
-}
-
-/// mustMkdirAll creates directories or exits the process.
-///
-/// Brief description of what the function does.
-/// - Ensures required directories exist before starting the server.
-///
-/// Parameters:
-///   path - Directory path to create if missing.
-///
-/// Returns no value; terminates process on failure.
-///
-/// Throws [FatalIOError] when directory creation fails.
-///
-/// Example: `mustMkdirAll("/data/uploads")`
-func mustMkdirAll(path string) {
-	// Fail fast if the filesystem layout cannot be prepared.
-	if err := os.MkdirAll(path, 0755); err != nil {
-		log.Fatalf("failed to create %s: %v", path, err)
-	}
 }
 
 type rateLimiter struct {

@@ -1,139 +1,24 @@
-/* BioZero MVP UI theme: styling for the local console talking to nginx/API. */
-:root {
-  --bg: #0f1c1f;
-  --panel: #17272b;
-  --accent: #00b28a;
-  --text: #e8f6f1;
-  --muted: #a5c2bb;
-  --danger: #ff6b6b;
-  --warn: #f5b041;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: "Trebuchet MS", "Lucida Sans", Arial, sans-serif;
-  background: radial-gradient(circle at top, #183137, #0b1316 70%);
-  color: var(--text);
-  min-height: 100vh;
-}
-
-header {
-  padding: 24px 32px 12px;
-}
-
-header h1 {
-  margin: 0 0 8px;
-  font-size: 2rem;
-}
-
-header p {
-  margin: 0;
-  color: var(--muted);
-}
-
-main {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  padding: 16px 32px 32px;
-}
-
-.panel {
-  background: var(--panel);
-  border: 1px solid #224148;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
-}
-
-.panel h2 {
-  margin-top: 0;
-  font-size: 1.2rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 12px;
-  color: var(--muted);
-}
-
-input[type="text"],
-input[type="file"] {
-  display: block;
-  margin-top: 6px;
-  width: 100%;
-  background: #0c1518;
-  color: var(--text);
-  border: 1px solid #2a505a;
-  border-radius: 6px;
-  padding: 8px;
-}
-
-button {
-  background: var(--accent);
-  border: none;
-  color: #00281f;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-button:focus-visible,
-input:focus-visible {
-  outline: 2px solid #7dffd7;
-  outline-offset: 2px;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.status-line {
-  margin-top: 12px;
-  color: var(--muted);
-}
-
-pre {
-  background: #0c1518;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #24424a;
-  overflow: auto;
-  max-height: 320px;
-}
-
-.health div {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  color: var(--muted);
-}
-
-.status {
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  background: #21363c;
-}
-
-.status.ok {
-  background: #0f4035;
-  color: #7dffd7;
-}
-
-.status.fail {
-  background: #402020;
-  color: #ffb3b3;
-}
-
-footer {
-  text-align: center;
-  padding: 16px;
-  color: var(--muted);
-}
+:root { color-scheme: dark; font-family: system-ui, sans-serif; color: #e5edf3; background: #0c1720; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+header, main, footer { max-width: 920px; margin: auto; padding: 28px; }
+header { padding-top: 64px; }
+.brand { color: #6fe3b5; letter-spacing: .22em; font-weight: 700; font-size: 14px; }
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.08; margin: 18px 0; }
+h2 { font-size: 1.3rem; } h3 { font-size: 1rem; }
+p, footer { color: #a8bbc9; line-height: 1.6; }
+.panel { border: 1px solid #29404f; border-radius: 14px; padding: 26px; background: #12232e; margin-bottom: 24px; }
+label { display: block; color: #cfdee8; margin: 16px 0; }
+input, select { display: block; width: 100%; background: #0c1720; border: 1px solid #476173; color: #e5edf3; border-radius: 6px; padding: 12px; margin-top: 7px; font: inherit; }
+button { cursor: pointer; border: 0; border-radius: 6px; background: #6fe3b5; color: #092219; padding: 12px 18px; font: inherit; font-weight: 650; }
+button.secondary { color: #d3e2ec; background: #284251; } button:disabled { opacity: .5; cursor: default; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 18px; } .row label { flex: 1; }
+.history { margin-top: 18px; border-top: 1px solid #29404f; }
+pre { background: #0c1720; padding: 18px; border-radius: 8px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: #bfd0dc; line-height: 1.5; }
+.muted { font-size: .85rem; overflow-wrap: anywhere; }
+.badge { border-radius: 20px; background: #354350; padding: 7px 12px; font-size: .8rem; white-space: nowrap; }
+.badge.passed { background: #163f30; color: #9ef0c9; }
+dl { display: grid; grid-template-columns: 160px 1fr; gap: 10px; } dt { color: #a8bbc9; } dd { margin: 0; }
+footer { font-size: .8rem; border-top: 1px solid #29404f; padding-bottom: 50px; }
+[hidden] { display: none !important; }
+@media (max-width: 620px) { .row { align-items: flex-start; flex-direction: column; } .row label { width: 100%; } header, main, footer { padding: 20px; } header { padding-top: 40px; } }

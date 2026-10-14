@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "scope": "actual protected native uploads with intentionally excessive pipeline/evaluator output; no biological model",
+  "case_count": 10,
+  "cases": [
+    {
+      "case": "output_pipeline_limit_is_failed_and_withheld",
+      "passed": true,
+      "observed": {
+        "failed": true,
+        "withheld": true
+      }
+    },
+    {
+      "case": "output_pipeline_crypto_and_original_hash_preserved",
+      "passed": true,
+      "observed": {
+        "crypto_verified_before_output_failure": true,
+        "original_hash_preserved": true
+      }
+    },
+    {
+      "case": "output_pipeline_valid_json_prefix_not_released",
+      "passed": true,
+      "observed": {
+        "partial_json_released": false,
+        "result_bytes": 754
+      }
+    },
+    {
+      "case": "output_pipeline_descendant_and_plaintext_cleaned",
+      "passed": true,
+      "observed": {
+        "descendant_marker_absent": true,
+        "plaintext_absent": true
+      }
+    },
+    {
+      "case": "output_pipeline_failure_nonowner_denied",
+      "passed": true,
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "output_evaluator_limit_withholds_successful_execution",
+      "passed": true,
+      "observed": {
+        "execution_succeeded": true,
+        "science_withheld": true
+      }
+    },
+    {
+      "case": "output_evaluator_crypto_and_original_hash_preserved",
+      "passed": true,
+      "observed": {
+        "crypto_verified": true,
+        "original_hash_preserved": true
+      }
+    },
+    {
+      "case": "output_evaluator_passed_json_prefix_not_accepted",
+      "passed": true,
+      "observed": {
+        "evaluation_failed": true,
+        "passed_metrics_released": false
+      }
+    },
+    {
+      "case": "output_evaluator_descendant_and_plaintext_cleaned",
+      "passed": true,
+      "observed": {
+        "descendant_marker_absent": true,
+        "plaintext_absent": true
+      }
+    },
+    {
+      "case": "output_evaluator_withheld_nonowner_denied",
+      "passed": true,
+      "observed": {
+        "http_status": 403
+      }
+    }
+  ],
+  "artifact_or_total_disk_quota_verified": false
+}

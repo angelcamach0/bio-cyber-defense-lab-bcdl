@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "root-only unit fixtures isolate foreign UID rejection; actual services ran non-root separately",
+  "cases": [
+    {
+      "module": "enclave-runner",
+      "test": "TestMetadataFilesRejectFIFOFinalAndAncestorSymlinks/bad_owner",
+      "verdict": "PASS"
+    },
+    {
+      "module": "results-api",
+      "test": "TestForeignOwnedMetadataAsRoot",
+      "verdict": "PASS"
+    }
+  ],
+  "fixture_owner_uid": 65534,
+  "fixture_mode": "0600",
+  "test_process_euid": 0,
+  "service_root_execution": false,
+  "source_hashes": {
+    "biozero/services/enclave-runner/metadata.go": "18a82fa4104cb91090fb8e374be81afc94267eeef7d6b8cbb69a913781b29dd3",
+    "biozero/services/enclave-runner/metadata_test.go": "f6150ae030a57186d186022a1be6a67b6f7fe82f96ea87589d5a226fe590de00",
+    "biozero/services/results-api/metadata.go": "c5d88cf361137e0ffc046b73d1d6aaf703b821cd8121c95357cd7e595234cb14",
+    "biozero/services/results-api/metadata_contract_test.go": "90f01adf6d7d717c2ea31f4da43983b66ebe20669a5030a2b06cf2c63f3be33d"
+  },
+  "commands": [
+    "sudo -n /usr/lib/golang/bin/go test -run ^TestMetadataFilesRejectFIFOFinalAndAncestorSymlinks$/^bad_owner$ -v -count=1 ./... (worker module)",
+    "sudo -n /usr/lib/golang/bin/go test -run ^TestForeignOwnedMetadataAsRoot$ -v -count=1 ./... (results module)"
+  ]
+}
