@@ -1,0 +1,586 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-14T15:06:58.139740+00:00",
+  "project": "bz-review-20261014-150658-139518",
+  "status": "passed",
+  "cases": [
+    {
+      "case": "upload_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200
+      }
+    },
+    {
+      "case": "results_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200
+      }
+    },
+    {
+      "case": "upload_mtls_certificate_required",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "results_mtls_certificate_required",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "gateway_https_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200
+      }
+    },
+    {
+      "case": "anonymous_session_denied",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "two_distinct_reviewer_sessions",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "foreign_origin_denied",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "missing_csrf_denied",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "unknown_experiment_denied",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "reviewer_a_valid_run_1",
+      "verdict": "PASS",
+      "observed": {
+        "status": "succeeded",
+        "release_status": "evaluated_passed",
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "case": "reviewer_b_cannot_read_a_1",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 404
+      }
+    },
+    {
+      "case": "api_certificate_b_cannot_read_a_1",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "original_upload_hash_immutable_1",
+      "verdict": "PASS",
+      "observed": {
+        "upload_sha256": "0442693f876e9890a676d75381f95f93f278d13b610712b425b235914a448385",
+        "processed_sha256": "ea7a3d152f9418a35cdede30225d239cd9e20e6f996c870935925b82c3f3a06d"
+      }
+    },
+    {
+      "case": "reviewer_a_valid_run_2",
+      "verdict": "PASS",
+      "observed": {
+        "status": "succeeded",
+        "release_status": "evaluated_passed",
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "case": "reviewer_b_cannot_read_a_2",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 404
+      }
+    },
+    {
+      "case": "api_certificate_b_cannot_read_a_2",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "original_upload_hash_immutable_2",
+      "verdict": "PASS",
+      "observed": {
+        "upload_sha256": "de96130db325d0bb90279e6a9e99243d7e607f35b415898ca6e4ba222fe3d0d5",
+        "processed_sha256": "ea7a3d152f9418a35cdede30225d239cd9e20e6f996c870935925b82c3f3a06d"
+      }
+    },
+    {
+      "case": "normalized_science_repeat",
+      "verdict": "PASS",
+      "observed": {
+        "evaluation_status": "passed",
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "reproducible_callset": true
+      }
+    },
+    {
+      "case": "malformed_fastq_failed_and_withheld",
+      "verdict": "PASS",
+      "observed": {
+        "status": "failed",
+        "release_status": "withheld"
+      }
+    },
+    {
+      "case": "gateway_restart_invalidates_session",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "relogin_recovers_own_runs",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "relogin_recovers_own_result",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "restart_preserves_owner_isolation",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 404
+      }
+    },
+    {
+      "case": "reviewer_b_run_history_isolated",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "logout_revokes_session",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "container_controls_upload-api",
+      "verdict": "PASS",
+      "observed": {
+        "id": "24b8256d9e32a2d07eeb27014ff4562e79c0524c5e24fd10ccccc0449a85fd2a",
+        "image": "sha256:ec3c2b0e414e417950c1eafaef33eb3ea95c4a4eee0b4667ef0c5ee26df445f6",
+        "user": "1000:1000",
+        "readonly": true,
+        "privileged": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "network": "bz-review-20261014-150658-139518_api",
+        "pids": 64,
+        "memory": 134217728,
+        "cpu": 250000000,
+        "mounts": [
+          {
+            "target": "/pki",
+            "readonly": true
+          },
+          {
+            "target": "/data/jobs",
+            "readonly": false
+          },
+          {
+            "target": "/data/uploads",
+            "readonly": false
+          }
+        ]
+      }
+    },
+    {
+      "case": "container_controls_results-api",
+      "verdict": "PASS",
+      "observed": {
+        "id": "152cda947d36fb358abfc8765371f1a31065f3502ddca33d3b828ed9cec147a0",
+        "image": "sha256:1cd9d985ed457b9b53573f618fcb243501b5ad8348c004a29542d75487c29ad0",
+        "user": "1000:1000",
+        "readonly": true,
+        "privileged": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "network": "bz-review-20261014-150658-139518_api",
+        "pids": 64,
+        "memory": 134217728,
+        "cpu": 250000000,
+        "mounts": [
+          {
+            "target": "/pki",
+            "readonly": true
+          },
+          {
+            "target": "/data/jobs",
+            "readonly": true
+          },
+          {
+            "target": "/data/results",
+            "readonly": true
+          }
+        ]
+      }
+    },
+    {
+      "case": "container_controls_enclave-runner",
+      "verdict": "PASS",
+      "observed": {
+        "id": "e83bbc06c3e535848d51714bb987df23068d48009a91bdc5856af104c4adc985",
+        "image": "sha256:6856e6b4d343d86d46e779fa04ace74bbe76994d2a5392bbafad38da161991ef",
+        "user": "1000:1000",
+        "readonly": true,
+        "privileged": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "network": "none",
+        "pids": 128,
+        "memory": 536870912,
+        "cpu": 1000000000,
+        "mounts": [
+          {
+            "target": "/benchmarks",
+            "readonly": true
+          },
+          {
+            "target": "/pipeline",
+            "readonly": true
+          },
+          {
+            "target": "/pki",
+            "readonly": true
+          },
+          {
+            "target": "/reference",
+            "readonly": true
+          },
+          {
+            "target": "/rules",
+            "readonly": true
+          },
+          {
+            "target": "/data/artifacts",
+            "readonly": false
+          },
+          {
+            "target": "/data/jobs",
+            "readonly": false
+          },
+          {
+            "target": "/data/results",
+            "readonly": false
+          },
+          {
+            "target": "/data/uploads",
+            "readonly": true
+          }
+        ]
+      }
+    },
+    {
+      "case": "container_controls_reviewer-gateway",
+      "verdict": "PASS",
+      "observed": {
+        "id": "dfab80f0bbc6bc62e023b95752cfee0358845e195df4dad372df314db7f79ef9",
+        "image": "sha256:0dd46dd4ada4e31072133175044b6263a716a2a079e5edbae25c921c30559b0f",
+        "user": "1000:1000",
+        "readonly": true,
+        "privileged": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "network": "bz-review-20261014-150658-139518_api",
+        "pids": 64,
+        "memory": 134217728,
+        "cpu": 250000000,
+        "mounts": [
+          {
+            "target": "/config",
+            "readonly": true
+          },
+          {
+            "target": "/fixtures",
+            "readonly": true
+          },
+          {
+            "target": "/pki",
+            "readonly": true
+          },
+          {
+            "target": "/state",
+            "readonly": false
+          },
+          {
+            "target": "/ui",
+            "readonly": true
+          }
+        ]
+      }
+    },
+    {
+      "case": "real_browser_ui_tls_and_session_isolation",
+      "verdict": "PASS",
+      "observed": {
+        "report_file": "browser-checks.json",
+        "checks": 23,
+        "javascript_error_count": 0
+      }
+    }
+  ],
+  "architecture": "aarch64",
+  "scope": "real Compose containers; HTTPS HTTP session flow and synthetic allele presence",
+  "browser_rendering": "passed",
+  "cleanup": "passed",
+  "commit": "b8731934fbe7c7dc00bf51fa978ce370361b3f74",
+  "dirty": true,
+  "source_hashes": {
+    "biozero/infra/compose/docker-compose.yml": "b544f547933d77ced14fe3350a0ab3ed4c4910b5eda20221499fc570c8fe1710",
+    "biozero/infra/compose/run_reviewer_experiment.py": "5a0c9b6d5b45c16c3d02fff47cc7acea82b98e26dfa9348a6be2c37578043ba3",
+    "biozero/infra/PKI/gen-pki.sh": "643eaee6b88f86c24ab53e147e49bf437a6f0217f78167450c007a0377b9dbaa",
+    "biozero/infra/PKI/prepare-runtime.sh": "b77949ab796abe2d0e77d315c701a188485a49598ed1bc779ee3a298b20c61e5",
+    "biozero/infra/compose/prepare-reviewers.py": "c9c3ed91c6fd277acc32b6622371da2e51650976e91af21bcfe79c1ded58a111",
+    "biozero/bio/pipeline/pipeline.py": "28c86a95c93b51a4189374d98e57e7b9251c495d26a872149da4fe7c0c142206",
+    "biozero/bio/benchmarks/evaluate_variants.py": "11b05cdf46f997332cb20c2d1ab1c898b228ac2a59aa449964de0ea8aa7c5b3e",
+    "biozero/services/upload-api/main.go": "311945d1494f260ae184a324ecb46f34b82be33dc5510d90050ff1a24b5dad5d",
+    "biozero/services/upload-api/Dockerfile": "22e50a83ea8a51e12576f582747e56b6e8752e016a4764294ffc51ee929b3222",
+    "biozero/services/upload-api/go.mod": "b00ab30bf229c906a5b97cb5bb6b4592fde9c17c72c7bb17586b6b038b602461",
+    "biozero/services/results-api/main.go": "738ef0560024c654001cca189fc5eeac972aba505800b3dbe378514a4e50f0fd",
+    "biozero/services/results-api/Dockerfile": "e4b01aa04a2a1c7af9f486caae5c0d7a531d5aeba1908cfaf9018b1755ac255e",
+    "biozero/services/results-api/go.mod": "77986266336e5d0707546e24da438dffa12f7f9301efb8821f02d710461b7668",
+    "biozero/services/enclave-runner/main.go": "7cb27dcc572b657dd675103aa0ed6ac0b0d7b06bb632c5c7da8537686aa85b62",
+    "biozero/services/enclave-runner/Dockerfile": "8671dfbd830212551160b2224cd446f1abea4aa6006b1160ece35bcb64d7e463",
+    "biozero/services/enclave-runner/go.mod": "c490f8042b79ba9c138463bc4e36a12728402327f6be508a72c21644caea6cc9",
+    "biozero/services/reviewer-gateway/main.go": "8faabbb24c00ecf3cf7996c7e19de246195f7d3a4a1d8fddf7f09d1558cc56d9",
+    "biozero/services/reviewer-gateway/Dockerfile": "27a9df4cc26f348d03edc581b1fdadf841498c9e561c727b8db3fb97aa318ef6",
+    "biozero/services/reviewer-gateway/go.mod": "d0f3e2cbb93a5eedb6539ac02d85096af7cc34b8af34161463113b8e5e798ed8",
+    "biozero/bio/fixtures/variant-smoke/reference.fa": "e4871638ee57abc3e33b58262a9fcd123be2d9f0c5658429d38e0bbb0bf64d08",
+    "biozero/bio/fixtures/variant-smoke/reads.fastq": "ea7a3d152f9418a35cdede30225d239cd9e20e6f996c870935925b82c3f3a06d",
+    "biozero/bio/fixtures/variant-smoke/expected.vcf": "8406e77d30fd59bed570dd932d3f9ddf28917908f4d65c99b328e47525ecdddc",
+    "biozero/bio/fixtures/variant-smoke/invalid.fastq": "2ac54409a6816ad1637a06323513cf041d7747eda8f836aeb07cd81885980c19",
+    "biozero/ui/app.js": "a3a955e75acdf1f1c02829c263633970279c02adabe4ad19ef00eb84825a6d21",
+    "biozero/ui/index.html": "512238e90acffe7e240be43845458cfb7ad9eaf001fbc0929534bb64dcbb5f2c",
+    "biozero/ui/styles.css": "afd37c1bbaa5fb535dd54afdea2705e45323bee5195dee89fe4df8d538020963",
+    "biozero/infra/compose/browser_checks.py": "399d879d7514e1d243577b64b415b31eca20de97aa5c65a307b581bbee56f08c",
+    "biozero/infra/bootstrap/browser-linux-aarch64-py311.requirements.txt": "ba250c9fa8bf66bfe3598b1c6441e7b95f86a9b58c4f196fe0456b37b5d17761"
+  },
+  "compose_version": "5.6.0",
+  "configuration": {
+    "origin": "https://127.0.0.1:8083",
+    "loopback_ports": {
+      "upload": 8081,
+      "results": 8082
+    },
+    "pipeline_mode": "variants",
+    "security_mode": "protected",
+    "single_worker": true
+  },
+  "containers": {
+    "upload-api": {
+      "id": "24b8256d9e32a2d07eeb27014ff4562e79c0524c5e24fd10ccccc0449a85fd2a",
+      "image": "sha256:ec3c2b0e414e417950c1eafaef33eb3ea95c4a4eee0b4667ef0c5ee26df445f6",
+      "user": "1000:1000",
+      "readonly": true,
+      "privileged": false,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "network": "bz-review-20261014-150658-139518_api",
+      "pids": 64,
+      "memory": 134217728,
+      "cpu": 250000000,
+      "mounts": [
+        {
+          "target": "/pki",
+          "readonly": true
+        },
+        {
+          "target": "/data/jobs",
+          "readonly": false
+        },
+        {
+          "target": "/data/uploads",
+          "readonly": false
+        }
+      ]
+    },
+    "results-api": {
+      "id": "152cda947d36fb358abfc8765371f1a31065f3502ddca33d3b828ed9cec147a0",
+      "image": "sha256:1cd9d985ed457b9b53573f618fcb243501b5ad8348c004a29542d75487c29ad0",
+      "user": "1000:1000",
+      "readonly": true,
+      "privileged": false,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "network": "bz-review-20261014-150658-139518_api",
+      "pids": 64,
+      "memory": 134217728,
+      "cpu": 250000000,
+      "mounts": [
+        {
+          "target": "/pki",
+          "readonly": true
+        },
+        {
+          "target": "/data/jobs",
+          "readonly": true
+        },
+        {
+          "target": "/data/results",
+          "readonly": true
+        }
+      ]
+    },
+    "enclave-runner": {
+      "id": "e83bbc06c3e535848d51714bb987df23068d48009a91bdc5856af104c4adc985",
+      "image": "sha256:6856e6b4d343d86d46e779fa04ace74bbe76994d2a5392bbafad38da161991ef",
+      "user": "1000:1000",
+      "readonly": true,
+      "privileged": false,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "network": "none",
+      "pids": 128,
+      "memory": 536870912,
+      "cpu": 1000000000,
+      "mounts": [
+        {
+          "target": "/benchmarks",
+          "readonly": true
+        },
+        {
+          "target": "/pipeline",
+          "readonly": true
+        },
+        {
+          "target": "/pki",
+          "readonly": true
+        },
+        {
+          "target": "/reference",
+          "readonly": true
+        },
+        {
+          "target": "/rules",
+          "readonly": true
+        },
+        {
+          "target": "/data/artifacts",
+          "readonly": false
+        },
+        {
+          "target": "/data/jobs",
+          "readonly": false
+        },
+        {
+          "target": "/data/results",
+          "readonly": false
+        },
+        {
+          "target": "/data/uploads",
+          "readonly": true
+        }
+      ]
+    },
+    "reviewer-gateway": {
+      "id": "dfab80f0bbc6bc62e023b95752cfee0358845e195df4dad372df314db7f79ef9",
+      "image": "sha256:0dd46dd4ada4e31072133175044b6263a716a2a079e5edbae25c921c30559b0f",
+      "user": "1000:1000",
+      "readonly": true,
+      "privileged": false,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "network": "bz-review-20261014-150658-139518_api",
+      "pids": 64,
+      "memory": 134217728,
+      "cpu": 250000000,
+      "mounts": [
+        {
+          "target": "/config",
+          "readonly": true
+        },
+        {
+          "target": "/fixtures",
+          "readonly": true
+        },
+        {
+          "target": "/pki",
+          "readonly": true
+        },
+        {
+          "target": "/state",
+          "readonly": false
+        },
+        {
+          "target": "/ui",
+          "readonly": true
+        }
+      ]
+    }
+  },
+  "worker_tool_versions": {
+    "python3": "Python 3.12.3",
+    "minimap2": "2.26-r1175",
+    "samtools": "samtools 1.19.2",
+    "bcftools": "bcftools 1.19"
+  },
+  "finished_at": "2026-10-14T15:07:34.032877+00:00",
+  "public_files": [
+    "valid-1.json",
+    "valid-2.json",
+    "repeat-metrics.json",
+    "invalid-fastq.json",
+    "manifest.json",
+    "browser-checks.json",
+    "browser-valid-desktop.png",
+    "browser-valid-mobile.png",
+    "browser-invalid-desktop.png",
+    "browser-session-isolation.png"
+  ]
+}

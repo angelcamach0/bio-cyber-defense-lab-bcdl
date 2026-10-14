@@ -1,0 +1,5 @@
+# Observed CPython 3.11/Linux aarch64 wheels; not a cross-platform lock.
+playwright==1.64.0 --hash=sha256:727d20be6a0884e946b2471774dd960ec95519ba533e61329038526d9aea9a23
+greenlet==3.5.6 --hash=sha256:45bfd2b51e38aaa5f9849f114d9c7c1d75f69187c849b3549cd64c465283abfa
+pyee==13.0.1 --hash=sha256:af2f8fede4171ef667dfded53f96e2ed0d6e6bd7ee3bb46437f77e3b57689228
+typing_extensions==4.16.0 --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8

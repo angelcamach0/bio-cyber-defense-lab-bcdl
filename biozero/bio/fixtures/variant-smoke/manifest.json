@@ -1,0 +1,15 @@
+{
+  "experiment_id": "BZ-EXP-001",
+  "seed": 20261014,
+  "reference_length": 6000,
+  "read_length": 150,
+  "read_count": 1171,
+  "expected_snp_count": 3,
+  "scope": "Synthetic error-free haploid SNP presence only; no genotype, indel, human-genome, or clinical claims.",
+  "sha256": {
+    "reference.fa": "e4871638ee57abc3e33b58262a9fcd123be2d9f0c5658429d38e0bbb0bf64d08",
+    "reads.fastq": "ea7a3d152f9418a35cdede30225d239cd9e20e6f996c870935925b82c3f3a06d",
+    "expected.vcf": "8406e77d30fd59bed570dd932d3f9ddf28917908f4d65c99b328e47525ecdddc",
+    "invalid.fastq": "2ac54409a6816ad1637a06323513cf041d7747eda8f836aeb07cd81885980c19"
+  }
+}

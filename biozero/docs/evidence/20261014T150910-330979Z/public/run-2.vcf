@@ -1,0 +1,7 @@
+##fileformat=VCFv4.2
+##source=BioZero-normalized-allele-presence-export
+##BioZeroScope=Allele presence only; genotype quality filters and annotations omitted
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+synthetic	1001	.	C	A	.	.	.
+synthetic	2501	.	T	A	.	.	.
+synthetic	4501	.	C	A	.	.	.

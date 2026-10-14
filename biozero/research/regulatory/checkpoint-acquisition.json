@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-10-14T14:12:37.407766+00:00",
+  "status": "verified",
+  "source_repository": "https://github.com/kostkalab/seillra.git",
+  "source_commit": "217469410410e07b6663372da847426ffd172855",
+  "results": [
+    {
+      "component": "trunk_fp32",
+      "actual_size_bytes": 294123463,
+      "actual_sha256": "346677580a9bfcdab1bc83735e12c17c8f5d2ec76eb91a45b4e3b2a91f59bf40",
+      "expected_sha256": "346677580a9bfcdab1bc83735e12c17c8f5d2ec76eb91a45b4e3b2a91f59bf40",
+      "verified": true
+    },
+    {
+      "component": "trunk_cpu",
+      "actual_size_bytes": 73832623,
+      "actual_sha256": "28a1a49ca62e4d67a62c170df3751f7255db6eea3923455c119c762dde446308",
+      "expected_sha256": "28a1a49ca62e4d67a62c170df3751f7255db6eea3923455c119c762dde446308",
+      "verified": true
+    },
+    {
+      "component": "head64_fp32",
+      "actual_size_bytes": 20935181,
+      "actual_sha256": "7fd1f2ee86a83e8a985dff13a1164c9f32a0fcb60f8309d38019e1ad17797d35",
+      "expected_sha256": "7fd1f2ee86a83e8a985dff13a1164c9f32a0fcb60f8309d38019e1ad17797d35",
+      "verified": true
+    },
+    {
+      "component": "head64_cpu",
+      "actual_size_bytes": 6075542,
+      "actual_sha256": "e50fe852023657a60952698c591b291df0e4db3111a0e8ea122546f70eee27c3",
+      "expected_sha256": "e50fe852023657a60952698c591b291df0e4db3111a0e8ea122546f70eee27c3",
+      "verified": true
+    },
+    {
+      "component": "projection_fp32",
+      "actual_size_bytes": 5346176,
+      "actual_sha256": "e77794f8964af32a7c4b2d40f820ba6b41a0e8fdcfdbc8a244da5630b431d6ec",
+      "expected_sha256": "e77794f8964af32a7c4b2d40f820ba6b41a0e8fdcfdbc8a244da5630b431d6ec",
+      "verified": true
+    }
+  ],
+  "charged_bytes": 435387199,
+  "body_bytes_observed": 434338623,
+  "budget_bytes": 1073741824,
+  "accounting": "actual response-body bytes plus conservative unreconciled read reservations; not a TLS wire counter",
+  "attempts": [
+    {
+      "component": "trunk_fp32",
+      "status": "failed",
+      "duration_seconds": 180.007
+    },
+    {
+      "component": "trunk_fp32",
+      "status": "verified",
+      "duration_seconds": 13.512
+    },
+    {
+      "component": "trunk_cpu",
+      "status": "verified",
+      "duration_seconds": 4.029
+    },
+    {
+      "component": "head64_fp32",
+      "status": "verified",
+      "duration_seconds": 4.287
+    },
+    {
+      "component": "head64_cpu",
+      "status": "verified",
+      "duration_seconds": 2.706
+    },
+    {
+      "component": "projection_fp32",
+      "status": "verified",
+      "duration_seconds": 2.721
+    }
+  ],
+  "downloader_sha256": "b641ef8ad2a64f93498cb86e799279f6b4844b4c482819f10fee1074f1985ba7",
+  "scope": "Artifact acquisition only; no checkpoint loading, inference, biological accuracy or savings is validated.",
+  "usage": "Internal research only. Do not redistribute Drive-derived checkpoints; their specific distribution terms have not been established."
+}

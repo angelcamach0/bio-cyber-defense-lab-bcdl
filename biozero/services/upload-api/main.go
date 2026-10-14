@@ -42,7 +42,7 @@ type jobRecord struct {
 	EncKeyWrapped     bool   `json:"enc_key_wrapped,omitempty"`
 	EncKeyWrapAlg     string `json:"enc_key_wrap_alg,omitempty"`
 	SigAlg            string `json:"sig_alg,omitempty"`
-	Sig              string `json:"sig,omitempty"`
+	Sig               string `json:"sig,omitempty"`
 	ClientCertSubject string `json:"client_cert_subject,omitempty"`
 	ClientCertIssuer  string `json:"client_cert_issuer,omitempty"`
 	ClientCertSerial  string `json:"client_cert_serial,omitempty"`
@@ -67,12 +67,52 @@ type errorResponse struct {
 /// Throws [FatalServerError] when TLS setup fails or the listener cannot start.
 ///
 /// Example: `go run ./main.go`
+func validateServerSecurity(certPath, keyPath, caPath string) error {
+	mode := envOr("BIOZERO_SECURITY_MODE", "protected")
+	if mode != "protected" && mode != "demo" {
+		return fmt.Errorf("BIOZERO_SECURITY_MODE must be protected or demo")
+	}
+	if mode == "protected" && (certPath == "" || keyPath == "" || caPath == "") {
+		return fmt.Errorf("protected mode requires server certificate, key, and client CA")
+	}
+	if (certPath == "") != (keyPath == "") {
+		return fmt.Errorf("TLS certificate and key must be supplied together")
+	}
+	return nil
+}
+func uploadIdentity(r *http.Request) (string, error) {
+	supplied := r.FormValue("client_id")
+	if r.TLS != nil {
+		if len(r.TLS.PeerCertificates) == 0 || len(r.TLS.VerifiedChains) == 0 {
+			return "", fmt.Errorf("verified client certificate required")
+		}
+		owner := r.TLS.PeerCertificates[0].Subject.CommonName
+		if !isValidClientID(owner) || (supplied != "" && supplied != owner) {
+			return "", fmt.Errorf("client identity disagrees with certificate")
+		}
+		return owner, nil
+	}
+	if envOr("BIOZERO_SECURITY_MODE", "protected") != "demo" {
+		return "", fmt.Errorf("mTLS required")
+	}
+	if supplied == "" {
+		supplied = r.Header.Get("X-Client-Id")
+	}
+	if !isValidClientID(supplied) {
+		return "", fmt.Errorf("invalid client identity")
+	}
+	return supplied, nil
+}
+
 func main() {
 	addr := envOr("BIOZERO_UPLOAD_ADDR", ":8081")
 	dataDir := envOr("BIOZERO_DATA_DIR", "./data")
 	certPath := os.Getenv("BIOZERO_TLS_CERT")
 	keyPath := os.Getenv("BIOZERO_TLS_KEY")
 	caPath := os.Getenv("BIOZERO_TLS_CA")
+	if err := validateServerSecurity(certPath, keyPath, caPath); err != nil {
+		log.Fatal(err)
+	}
 	maxUploadBytes := envOrInt64("BIOZERO_MAX_UPLOAD_BYTES", 25*1024*1024)
 	rateLimit := envOrInt("BIOZERO_RATE_LIMIT", 60)
 	jobKey := os.Getenv("BIOZERO_JOB_KEY")
@@ -136,21 +176,9 @@ func main() {
 		// Ensure the uploaded file stream is closed even on errors.
 		defer file.Close()
 
-		clientID := r.FormValue("client_id")
-		// Accept client_id from either form field or header for compatibility.
-		if clientID == "" {
-			clientID = r.Header.Get("X-Client-Id")
-		}
-		// Reject anonymous uploads to preserve attribution and access control.
-		if clientID == "" {
-			writeJSONError(w, http.StatusBadRequest, "missing_client_id", "missing client_id")
-			// Return because client identity is required for tracking.
-			return
-		}
-		// Validate client ID characters to avoid path/log injection.
-		if !isValidClientID(clientID) {
-			writeJSONError(w, http.StatusBadRequest, "invalid_client_id", "invalid client_id")
-			// Return to prevent storing unsafe identifiers.
+		clientID, identityErr := uploadIdentity(r)
+		if identityErr != nil {
+			writeJSONError(w, http.StatusForbidden, "identity_invalid", "verified certificate owner required")
 			return
 		}
 
@@ -419,11 +447,36 @@ func randomID(n int) string {
 func writeJSON(path string, v any) error {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
-		// Return marshal errors to avoid writing invalid JSON.
 		return err
 	}
-	// Return any write error to the caller for error handling.
-	return os.WriteFile(path, data, 0640)
+	file, err := os.CreateTemp(filepath.Dir(path), ".biozero-*.tmp")
+	if err != nil {
+		return err
+	}
+	name := file.Name()
+	defer os.Remove(name)
+	if err = file.Chmod(0600); err == nil {
+		_, err = file.Write(data)
+	}
+	if err == nil {
+		err = file.Sync()
+	}
+	closeErr := file.Close()
+	if err != nil {
+		return err
+	}
+	if closeErr != nil {
+		return closeErr
+	}
+	if err = os.Rename(name, path); err != nil {
+		return err
+	}
+	dir, err := os.Open(filepath.Dir(path))
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+	return dir.Sync()
 }
 
 /// writeJSONResponse serializes a value into the HTTP response body.

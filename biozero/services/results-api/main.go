@@ -26,8 +26,11 @@ type errorResponse struct {
 
 // resultResponse wraps job status and optional result payload.
 type resultResponse struct {
-	Status string          `json:"status"`
-	Data   json.RawMessage `json:"data,omitempty"`
+	Status       string          `json:"status"`
+	LegacyStatus string          `json:"legacy_status,omitempty"`
+	ErrorCode    string          `json:"error_code,omitempty"`
+	ErrorMessage string          `json:"error_message,omitempty"`
+	Data         json.RawMessage `json:"data,omitempty"`
 }
 
 // jobRecord represents the minimal job metadata needed for authorization.
@@ -37,6 +40,8 @@ type jobRecord struct {
 	OriginalName     string `json:"original_name"`
 	ClientID         string `json:"client_id"`
 	ClientCertSerial string `json:"client_cert_serial,omitempty"`
+	ErrorCode        string `json:"error_code,omitempty"`
+	ErrorMessage     string `json:"error_message,omitempty"`
 }
 
 /// main registers HTTP handlers and starts the results API server.
@@ -59,6 +64,9 @@ func main() {
 	keyPath := os.Getenv("BIOZERO_TLS_KEY")
 	caPath := os.Getenv("BIOZERO_TLS_CA")
 	rateLimit := envOrInt("BIOZERO_RATE_LIMIT", 120)
+	if err := validateServerSecurity(certPath, keyPath, caPath); err != nil {
+		log.Fatal(err)
+	}
 
 	resultsDir := filepath.Join(dataDir, "results")
 	jobsDir := filepath.Join(dataDir, "jobs")
@@ -78,73 +86,7 @@ func main() {
 	})
 
 	// API boundary: serves results produced by enclave-runner.
-	http.HandleFunc("/results/", func(w http.ResponseWriter, r *http.Request) {
-		// Guard against unsupported methods to reduce surface area.
-		if r.Method != http.MethodGet {
-			writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed")
-			// Return to stop processing non-read requests.
-			return
-		}
-		// Apply per-client throttling to protect storage and CPU.
-		if !limiter.Allow(clientIP(r)) {
-			writeJSONError(w, http.StatusTooManyRequests, "rate_limited", "rate limit exceeded")
-			// Return to enforce throttling before file I/O.
-			return
-		}
-
-		jobID := strings.TrimPrefix(r.URL.Path, "/results/")
-		// Reject missing job IDs to avoid ambiguous lookups.
-		if jobID == "" {
-			writeJSONError(w, http.StatusBadRequest, "missing_job_id", "missing job id")
-			// Return to avoid scanning the filesystem with empty IDs.
-			return
-		}
-		// Validate job ID format to avoid path traversal risks.
-		if !isValidJobID(jobID) {
-			writeJSONError(w, http.StatusBadRequest, "invalid_job_id", "invalid job id")
-			// Return to prevent unsafe filesystem access.
-			return
-		}
-		// Enforce that jobID is a single path component to prevent directory traversal.
-		if strings.Contains(jobID, "/") || strings.Contains(jobID, "\\") || strings.Contains(jobID, "..") {
-			writeJSONError(w, http.StatusBadRequest, "invalid_job_id", "invalid job id")
-			// Return to prevent constructing unsafe filesystem paths.
-			return
-		}
-
-		// Results are written by enclave-runner once processing is complete.
-		resultPath := filepath.Join(resultsDir, jobID+".json")
-		if data, err := os.ReadFile(resultPath); err == nil {
-			// Enforce job-level authorization before returning results.
-			if !authorizedForJob(r, jobsDir, jobID) {
-				writeJSONError(w, http.StatusForbidden, "forbidden", "forbidden")
-				// Return to avoid leaking result data.
-				return
-			}
-			// Return processed results to the caller.
-			writeJSONResponse(w, resultResponse{Status: "processed", Data: data})
-			return
-		}
-
-		// Fall back to the job record to signal "pending" if processing isn't done.
-		jobPath := filepath.Join(jobsDir, jobID+".json")
-		if _, err := os.Stat(jobPath); err == nil {
-			// Enforce job-level authorization before returning status.
-			if !authorizedForJob(r, jobsDir, jobID) {
-				writeJSONError(w, http.StatusForbidden, "forbidden", "forbidden")
-				// Return to avoid leaking job existence.
-				return
-			}
-			// Return pending status while the runner processes the job.
-			writeJSONResponse(w, resultResponse{Status: "pending"})
-			return
-		}
-
-		// Return not found when neither job nor results exist.
-		writeJSONError(w, http.StatusNotFound, "job_not_found", "job not found")
-		// Return to end the request after a not-found response.
-		return
-	})
+	http.Handle("/results/", newResultsHandler(jobsDir, resultsDir, limiter))
 
 	// Configure server timeouts to protect against slow clients.
 	server := &http.Server{
@@ -177,6 +119,94 @@ func main() {
 	log.Fatal(server.ListenAndServe())
 	// Return is unreachable because log.Fatal exits, but keep flow explicit.
 	return
+}
+
+func validateServerSecurity(certPath, keyPath, caPath string) error {
+	mode := envOr("BIOZERO_SECURITY_MODE", "protected")
+	if mode != "protected" && mode != "demo" {
+		return fmt.Errorf("BIOZERO_SECURITY_MODE must be protected or demo")
+	}
+	if mode == "protected" && (certPath == "" || keyPath == "" || caPath == "") {
+		return fmt.Errorf("protected mode requires server certificate, key, and client CA")
+	}
+	if (certPath == "") != (keyPath == "") {
+		return fmt.Errorf("TLS certificate and key must be supplied together")
+	}
+	return nil
+}
+
+func newResultsHandler(jobsDir, resultsDir string, limiter *rateLimiter) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			writeJSONError(w, 405, "method_not_allowed", "method not allowed")
+			return
+		}
+		if !limiter.Allow(clientIP(r)) {
+			writeJSONError(w, 429, "rate_limited", "rate limit exceeded")
+			return
+		}
+		jobID := strings.TrimPrefix(r.URL.Path, "/results/")
+		if !isValidJobID(jobID) {
+			writeJSONError(w, 400, "invalid_job_id", "invalid job id")
+			return
+		}
+		job, err := readJob(filepath.Join(jobsDir, jobID+".json"))
+		if err != nil {
+			if os.IsNotExist(err) {
+				writeJSONError(w, 404, "job_not_found", "job not found")
+			} else {
+				writeJSONError(w, 500, "job_read_failed", "job record cannot be read")
+			}
+			return
+		}
+		if job.JobID != jobID {
+			writeJSONError(w, 500, "job_record_invalid", "job record invalid")
+			return
+		}
+		if !authorizedJob(r, job) {
+			writeJSONError(w, 403, "forbidden", "forbidden")
+			return
+		}
+		data, err := os.ReadFile(filepath.Join(resultsDir, jobID+".json"))
+		if err == nil {
+			var result struct {
+				JobID  string `json:"job_id"`
+				Status string `json:"status"`
+			}
+			if json.Unmarshal(data, &result) != nil || result.JobID != jobID || !knownTerminal(result.Status) {
+				writeJSONError(w, 500, "result_record_invalid", "result record invalid")
+				return
+			}
+			response := resultResponse{Status: result.Status, Data: data}
+			if result.Status == "processed" {
+				response.Status = "incomplete"
+				response.LegacyStatus = "processed"
+				response.ErrorCode = "legacy_result_unverified"
+				response.ErrorMessage = "historical processed result has not been validated under the current contract"
+			}
+			writeJSONResponse(w, response)
+			return
+		}
+		if !os.IsNotExist(err) {
+			writeJSONError(w, 500, "result_read_failed", "result cannot be read")
+			return
+		}
+		switch job.Status {
+		case "uploaded", "running":
+			writeJSONResponse(w, resultResponse{Status: job.Status})
+		case "rejected", "failed", "timed_out":
+			writeJSONResponse(w, resultResponse{Status: job.Status, ErrorCode: job.ErrorCode, ErrorMessage: job.ErrorMessage})
+		default:
+			writeJSONError(w, 500, "result_missing", "job state has no valid corresponding result")
+		}
+	})
+}
+func knownTerminal(status string) bool {
+	switch status {
+	case "succeeded", "incomplete", "rejected", "failed", "timed_out", "processed":
+		return true
+	}
+	return false
 }
 
 /// writeJSONResponse serializes a value into the HTTP response body.
@@ -387,27 +417,19 @@ func isValidJobID(jobID string) bool {
 ///
 /// Example: `if !authorizedForJob(r, jobsDir, jobID) { ... }`
 func authorizedForJob(r *http.Request, jobsDir, jobID string) bool {
-	jobPath := filepath.Join(jobsDir, jobID+".json")
-	job, err := readJob(jobPath)
-	if err != nil {
-		// Return false to avoid leaking job data when read fails.
-		return false
-	}
-
-	// Prefer cert-based auth when available and recorded.
-	if r.TLS != nil && len(r.TLS.PeerCertificates) > 0 && job.ClientCertSerial != "" {
+	job, err := readJob(filepath.Join(jobsDir, jobID+".json"))
+	return err == nil && authorizedJob(r, job)
+}
+func authorizedJob(r *http.Request, job jobRecord) bool {
+	if r.TLS != nil {
+		if len(r.TLS.PeerCertificates) == 0 || len(r.TLS.VerifiedChains) == 0 || job.ClientCertSerial == "" || job.ClientID == "" {
+			return false
+		}
 		cert := r.TLS.PeerCertificates[0]
-		// Return whether the client cert matches the recorded serial.
-		return cert.SerialNumber.String() == job.ClientCertSerial
+		return cert.SerialNumber != nil && cert.SerialNumber.String() == job.ClientCertSerial && cert.Subject.CommonName == job.ClientID
 	}
-
-	clientID := r.Header.Get("X-Client-Id")
-	if clientID == "" {
-		// Return false when no client ID is provided.
-		return false
-	}
-	// Return whether the client ID matches job ownership.
-	return clientID == job.ClientID
+	// The insecure identity header exists only for an explicitly selected local demo.
+	return envOr("BIOZERO_SECURITY_MODE", "protected") == "demo" && job.ClientCertSerial == "" && job.ClientID != "" && r.Header.Get("X-Client-Id") == job.ClientID
 }
 
 /// readJob loads a job record from disk.

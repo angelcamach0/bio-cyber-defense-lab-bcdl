@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-10-14T14:28:51.568840+00:00",
+  "experiment": "SCI01-trained-weight-synthetic-runtime",
+  "status": "passed",
+  "scope": "One seeded synthetic mutation pair; trained-checkpoint compatibility/resources/numeric differences, not biological accuracy.",
+  "reports": {
+    "fp32_network_namespace": {
+      "status": "passed",
+      "checks": {
+        "batch_one": true,
+        "finite": true,
+        "one_hot_1x4x4096": true,
+        "phase_within_time_budget": true,
+        "repeat_identical": true,
+        "rss_within_ceiling": true,
+        "shape_1x61": true
+      },
+      "trained_weights_loaded": true,
+      "strict_state_dict": true,
+      "weights_only": true,
+      "source_commit": "217469410410e07b6663372da847426ffd172855",
+      "checkpoint_sha256": {
+        "head64_fp32": "7fd1f2ee86a83e8a985dff13a1164c9f32a0fcb60f8309d38019e1ad17797d35",
+        "projection_fp32": "e77794f8964af32a7c4b2d40f820ba6b41a0e8fdcfdbc8a244da5630b431d6ec",
+        "trunk_fp32": "346677580a9bfcdab1bc83735e12c17c8f5d2ec76eb91a45b4e3b2a91f59bf40"
+      },
+      "python": "3.11.17",
+      "torch": "2.14.1+cpu",
+      "architecture": "aarch64",
+      "initial_engine": "x86",
+      "effective_engine": "x86",
+      "qconfig": null,
+      "seed": 20261014,
+      "threads": 1,
+      "batch": 1,
+      "input_shape": [
+        1,
+        4,
+        4096
+      ],
+      "input_sha256": "608b332797c78293dc3583af5d91c85767a02658b355bea797b2bf7f429a52c5",
+      "pairs": 1,
+      "load_seconds": 0.6466039840015583,
+      "warmup_seconds": 11.23263645201223,
+      "peak_rss_bytes": 953081856,
+      "supervisor": {
+        "cpu_time_total_limit_seconds": 481,
+        "memory_enforcement": "50 ms RSS watchdog plus self-reported peak; not RLIMIT_AS or a kernel allocation cap",
+        "returncode": 0,
+        "rss_ceiling_bytes": 3221225472,
+        "seconds": 36.69579616900592,
+        "seconds_per_phase": 120,
+        "watchdog_peak_rss_bytes": 953098240
+      },
+      "scope": "Seeded synthetic mutation pairs; trained-weight compatibility and resource/numeric observations only; biological validation pending.",
+      "measured_pair_seconds": [
+        11.27429717600171
+      ],
+      "repeat_pair_seconds": [
+        11.2598339929973
+      ]
+    },
+    "cpu_qnnpack_network_namespace": {
+      "status": "passed",
+      "checks": {
+        "batch_one": true,
+        "finite": true,
+        "one_hot_1x4x4096": true,
+        "phase_within_time_budget": true,
+        "quantized_conv1d_present": true,
+        "quantized_linear_present": true,
+        "repeat_identical": true,
+        "rss_within_ceiling": true,
+        "shape_1x61": true
+      },
+      "trained_weights_loaded": true,
+      "strict_state_dict": true,
+      "weights_only": true,
+      "source_commit": "217469410410e07b6663372da847426ffd172855",
+      "checkpoint_sha256": {
+        "head64_cpu": "e50fe852023657a60952698c591b291df0e4db3111a0e8ea122546f70eee27c3",
+        "projection_fp32": "e77794f8964af32a7c4b2d40f820ba6b41a0e8fdcfdbc8a244da5630b431d6ec",
+        "trunk_cpu": "28a1a49ca62e4d67a62c170df3751f7255db6eea3923455c119c762dde446308"
+      },
+      "python": "3.11.17",
+      "torch": "2.14.1+cpu",
+      "architecture": "aarch64",
+      "initial_engine": "x86",
+      "effective_engine": "qnnpack",
+      "qconfig": "fbgemm",
+      "seed": 20261014,
+      "threads": 1,
+      "batch": 1,
+      "input_shape": [
+        1,
+        4,
+        4096
+      ],
+      "input_sha256": "608b332797c78293dc3583af5d91c85767a02658b355bea797b2bf7f429a52c5",
+      "pairs": 1,
+      "load_seconds": 6.9727640519995475,
+      "warmup_seconds": 18.977595510004903,
+      "peak_rss_bytes": 957833216,
+      "supervisor": {
+        "cpu_time_total_limit_seconds": 481,
+        "memory_enforcement": "50 ms RSS watchdog plus self-reported peak; not RLIMIT_AS or a kernel allocation cap",
+        "returncode": 0,
+        "rss_ceiling_bytes": 3221225472,
+        "seconds": 67.13946922600735,
+        "seconds_per_phase": 120,
+        "watchdog_peak_rss_bytes": 957841408
+      },
+      "scope": "Seeded synthetic mutation pairs; trained-weight compatibility and resource/numeric observations only; biological validation pending.",
+      "measured_pair_seconds": [
+        18.77187020999554
+      ],
+      "repeat_pair_seconds": [
+        18.841434661997482
+      ]
+    },
+    "cpu_default_engine_prior_run": {
+      "status": "passed",
+      "checks": {
+        "batch_one": true,
+        "finite": true,
+        "one_hot_1x4x4096": true,
+        "phase_within_time_budget": true,
+        "quantized_conv1d_present": true,
+        "quantized_linear_present": true,
+        "repeat_identical": true,
+        "rss_within_ceiling": true,
+        "shape_1x61": true
+      },
+      "trained_weights_loaded": true,
+      "strict_state_dict": true,
+      "weights_only": true,
+      "source_commit": "217469410410e07b6663372da847426ffd172855",
+      "checkpoint_sha256": {
+        "head64_cpu": "e50fe852023657a60952698c591b291df0e4db3111a0e8ea122546f70eee27c3",
+        "projection_fp32": "e77794f8964af32a7c4b2d40f820ba6b41a0e8fdcfdbc8a244da5630b431d6ec",
+        "trunk_cpu": "28a1a49ca62e4d67a62c170df3751f7255db6eea3923455c119c762dde446308"
+      },
+      "python": "3.11.17",
+      "torch": "2.14.1+cpu",
+      "architecture": "aarch64",
+      "initial_engine": "x86",
+      "effective_engine": "x86",
+      "qconfig": "fbgemm",
+      "seed": 20261014,
+      "threads": 1,
+      "batch": 1,
+      "input_shape": [
+        1,
+        4,
+        4096
+      ],
+      "input_sha256": "608b332797c78293dc3583af5d91c85767a02658b355bea797b2bf7f429a52c5",
+      "pairs": 1,
+      "load_seconds": 8.081643715006066,
+      "warmup_seconds": 73.2159009379975,
+      "peak_rss_bytes": 1192751104,
+      "supervisor": {
+        "cpu_time_total_limit_seconds": 481,
+        "memory_enforcement": "50 ms RSS watchdog plus self-reported peak; not RLIMIT_AS or a kernel allocation cap",
+        "returncode": 0,
+        "rss_ceiling_bytes": 3221225472,
+        "seconds": 239.39535019100003,
+        "seconds_per_phase": 120,
+        "watchdog_peak_rss_bytes": 1192583168
+      },
+      "scope": "Seeded synthetic mutation pairs; trained-weight compatibility and resource/numeric observations only; biological validation pending.",
+      "measured_pair_seconds": [
+        77.8411925840046
+      ],
+      "repeat_pair_seconds": [
+        77.5277262860036
+      ]
+    }
+  },
+  "raw_report_sha256": {
+    "model-probe-eb43bcc653094496ab742915cce6a5f9.json": "9a50ca7c79164b7c233c148d21c2aa11abeca3cd3907465d58369f39fbf1ffc4",
+    "model-probe-e992b09f00254f2a9b05336cb0a94b28.json": "fe8f1fc102dadc7cc1f9de5ac1fef7f6595d8ad4e4d06fc4d8dc207fe31323c5",
+    "model-probe-06a9ed6d0194439eafe8da27878dd8d5.json": "0776a1af6e3216a619ff111455ae16775fc1e59e37b907194aef94a838f92a59"
+  },
+  "numeric_comparison_qnnpack": {
+    "status": "measured",
+    "pairs": 1,
+    "differences": {
+      "ref_projection": {
+        "maximum_absolute": 0.3037757873535156,
+        "mean_absolute": 0.04394532208804224
+      },
+      "alt_projection": {
+        "maximum_absolute": 0.2668459415435791,
+        "mean_absolute": 0.0509127799085662
+      },
+      "variant_delta": {
+        "maximum_absolute": 0.04055619239807129,
+        "mean_absolute": 0.01016279051965866
+      }
+    },
+    "scope": "Numerical differences on synthetic input only; no biological accuracy or selective recomputation claim."
+  },
+  "qnnpack_to_fp32_measured_time_ratio": 1.6650146715977157,
+  "decision": {
+    "compatibility": "go_for_the_measured_pair",
+    "selective_recompute_economics": "provisional_no_go_for_current_measured_case",
+    "reason": "Quantized pass is slower than FP32 before gate overhead or reruns; this single case does not establish behavior across biological data.",
+    "necessary_rerun_fraction_upper_bound_if_gate_cost_zero": -0.6650146715977157,
+    "next": "Freeze appropriate biological track/context and preflight a small FP32 sample before considering a 100-pair data benchmark; keep cheaper-policy work conditional."
+  },
+  "network_isolation": "The new FP32/QNNPACK runs used unshare user+network namespaces; only loopback interface was present. The earlier default-engine run used blocked factories but no kernel network isolation.",
+  "biological_validation": "pending",
+  "novelty": "not_established",
+  "recomputation_savings": "not_demonstrated"
+}

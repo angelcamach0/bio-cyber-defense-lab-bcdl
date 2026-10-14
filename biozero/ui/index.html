@@ -1,80 +1,41 @@
 <!doctype html>
-<!--
-  BioZero MVP UI: fronts the API proxy for upload/results/alert and surfaces
-  health checks for the services configured in nginx.
--->
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>BioZero MVP Console</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <header>
-      <h1>BioZero MVP Console</h1>
-      <p>Upload → Process → Results → Response</p>
-    </header>
-
-    <main>
-      <section class="panel">
-        <h2>Service Health</h2>
-        <div class="health" id="healthStatus">
-          <div><span>Upload API</span><span class="status" data-service="upload">unknown</span></div>
-          <div><span>Results API</span><span class="status" data-service="results">unknown</span></div>
-          <div><span>ZeroResponder</span><span class="status" data-service="zr">unknown</span></div>
-        </div>
-        <button id="refreshHealth">Refresh Health</button>
-      </section>
-
-      <section class="panel">
-        <h2>Upload FASTQ</h2>
-        <label>
-          Client ID
-          <input
-            type="text"
-            id="clientId"
-            value="researcher-1"
-            maxlength="64"
-            pattern="[A-Za-z0-9_-]{1,64}"
-            required
-          />
-        </label>
-        <label>
-          FASTQ File
-          <input type="file" id="fileInput" accept=".fastq,.fq,.txt" />
-        </label>
-        <button id="uploadBtn">Upload & Process</button>
-        <div class="status-line" id="uploadStatus">Idle</div>
-      </section>
-
-      <section class="panel">
-        <h2>Job Results</h2>
-        <div class="status-line" id="jobMeta">No job yet</div>
-        <pre id="resultsBox">{}</pre>
-      </section>
-
-      <section class="panel">
-        <h2>Trigger Alert</h2>
-        <label>
-          Webhook Secret
-          <input
-            type="password"
-            id="alertSecret"
-            maxlength="256"
-            autocomplete="off"
-            placeholder="Optional"
-          />
-        </label>
-        <button id="alertBtn">Send Test Alert</button>
-        <pre id="alertBox">{}</pre>
-      </section>
-    </main>
-
-    <footer>
-      <small>BioZero MVP UI (local demo)</small>
-    </footer>
-
-    <script src="app.js"></script>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BioZero · Laboratory review</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header><div class="brand">BIOZERO</div><h1>Evidence you can review.</h1><p>Run a prepared synthetic experiment and inspect its execution and scientific evaluation.</p></header>
+<main>
+  <section id="loginPanel" class="panel">
+    <h2>Reviewer sign-in</h2>
+    <p>Use the reviewer ID and access code provided by your local administrator.</p>
+    <form id="loginForm">
+      <label>Reviewer ID<input id="reviewerId" name="reviewer" autocomplete="username" maxlength="64" required></label>
+      <label>Access code<input id="accessCode" type="password" autocomplete="current-password" maxlength="128" required></label>
+      <button id="signInBtn" type="submit">Sign in</button>
+    </form>
+  </section>
+  <section id="workspace" class="panel" hidden>
+    <div class="row"><h2 id="identityLabel">Review workspace</h2><button id="signOutBtn" class="secondary" type="button">Sign out</button></div>
+    <p>Your identity owns each new run. Only prepared synthetic inputs are available in this milestone.</p>
+    <label>Prepared experiment<select id="experimentSelect"></select></label>
+    <p id="experimentScope" class="muted"></p>
+    <button id="runBtn" type="button">Run experiment</button>
+    <div class="row history"><label>Previous runs<select id="runSelect"></select></label><button id="viewRunBtn" class="secondary" type="button">View report</button></div>
+  </section>
+  <p id="statusMessage" role="status" aria-live="polite">Sign in to begin.</p>
+  <section id="reportPanel" class="panel" hidden>
+    <div class="row"><h2>Experiment report</h2><span id="releaseBadge" class="badge">Not assessed</span></div>
+    <p id="jobLabel" class="muted"></p>
+    <dl><dt>Execution</dt><dd id="executionStatus">—</dd><dt>Scientific release</dt><dd id="scientificStatus">—</dd></dl>
+    <h3>Scientific evaluation</h3><pre id="evaluationReport">No scientific evaluation is available yet.</pre>
+    <h3>Execution evidence</h3><pre id="executionReport">Waiting for the worker.</pre>
+  </section>
+</main>
+<footer>Synthetic allele validation only. This demonstration does not establish clinical validity, biological novelty, or a hardware enclave.</footer>
+<script src="/app.js"></script>
+</body>
 </html>
