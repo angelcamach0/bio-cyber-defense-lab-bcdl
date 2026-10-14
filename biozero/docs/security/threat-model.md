@@ -206,3 +206,53 @@ responder container was rerun. Other payload/PKI/config reads, arbitrary kernel 
 latency, trusted host/UID and mutable owner provenance remain residual risks.
 TM-01 admission/storage budgets and TM-02 immutable authenticated owner records
 are next adopted gates; this change does not close TM-04/05/06/08 or effective SOC.
+
+## TM-01 retained-input and command-output work
+
+The [admission contract](admission-contract.md) defines a further TM-01 subgate:
+all enabled upload interfaces use persistent global/per-verified-CN job and byte
+accounting, with reservations before body reads and charges retained after worker
+completion or a lost HTTP acknowledgement. CN renewal shares its bucket; quota
+identity cannot come from a form/header/IP. One uploader owns the locked ledger.
+Missing/corrupt state over retained data fails closed without an empty baseline.
+Policy is pinned, and migration, legacy adoption and operator reclamation remain
+pending. These controls do not authenticate mutable authorization metadata.
+
+Worker captures now limit pipeline/evaluator stdout to1MiB and stderr to64KiB.
+Overflow cancels the process group and withholds partial scientific output;
+oversized serialized results become an explicit small failed/withheld envelope
+that preserves original hashes and established crypto flags. Optional alignment
+warnings alone do not fail an otherwise independent scientific evaluation.
+Wrapper-internal memory, full SAM output, target maps and generated artifacts
+remain separately unbounded. This does not close all CPU/RAM/disk paths.
+
+The first local candidate passed78 native checks, but its separate Compose run
+failed publication between bind mounts after ten controls. Both receipts retain
+their original source hashes. Equal filesystem device IDs did not establish
+cross-mount hardlink support. The revised layout stages each input/job within
+its destination mount, preserving narrow mounts and no-clobber publication;
+its acceptance must be recorded separately after fresh execution. See STATUS
+for the final candidate's evidence rather than treating the earlier78 as proof
+of the subsequent correction.
+
+Fresh corrected native `../evidence/20261014T192150-539678Z/public/` passed78
+checks, and rebuilt Compose `../evidence/20261014T192150-561120Z-reviewer-compose/public/`
+passed30 plus cleanup. They preserve ownership/crypto/scientific boundaries
+while exercising the corrected layout. The separately reported real three-mount
+handler/restart regression is `../evidence/20261014T192234-593374Z-admission-mount/public/`.
+It used no real TLS or inference. Native small-quota checks and the gateway
+integration are separate runs; concurrent CLI/gateway exhaustion of one retained
+principal's final slot remains additional acceptance rather than an inferred test.
+
+TM-01 remains open for generated SAM/BAM/BCF/VCF/reference copies, result/event/
+receipt/registry totals, caches, filesystem quotas and retention. The free-space
+sensor cannot prevent unrelated writers filling disk. TM-02 immutable owner
+records, queue/leases, shared host/UID trust and effective SOC remain open.
+
+The small caQTL [acquisition receipt](../../research/regulatory/small-source-acquisition.json)
+and [structure receipt](../../research/regulatory/small-source-structure.json)
+advance TM-06 source-byte/terms visibility. Complete published size/MD5 and local
+SHA pins were verified within a separate50MiB ledger, without changing the model
+transfer ledger. Descriptive decoding does not establish genomic REF/liftover,
+effect mapping, context or training independence. Raw rows remain private and
+zero biological loci have been inferred; those scientific gates remain open.

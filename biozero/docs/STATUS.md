@@ -1,10 +1,16 @@
 # BioZero implementation status
 
 Updated 2026-10-14. Local branch: biozero/reproducible-milestone.
-Base: b8731934fbe7c7dc00bf51fa978ce370361b3f74. Implementation commit:
+Base: b8731934fbe7c7dc00bf51fa978ce370361b3f74. First-milestone implementation commit:
 a27221c6f2174ea9d116779fcd47c88f9794dddb, published in
 [draft PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
 No merge or deployment occurred. See the live PR for subsequent documentation commits.
+
+This local acceptance record was written before publication, from a dirty
+working tree above parent `2ad6b91c35e324cde7af882e4011fdffa9435805`. CI for that
+committed parent does not validate this new source. See the live PR for subsequent
+head/CI. Dated receipts below retain their exact source snapshots; a previous
+green run does not approve a subsequent correction.
 
 ## Verified synthetic milestone
 
@@ -41,7 +47,7 @@ allele-presence fixture, not genotype, indel, human-genome or clinical accuracy.
 Execution status and scientific release are separate. An unassessed successful
 execution does not approve science. Failed/missing/inconsistent evaluation is withheld.
 
-The Python suites passed 81 tests across pipeline, benchmark, native/browser/SOC
+At the earlier security/metadata checkpoint, the Python suites passed 81 tests across pipeline, benchmark, native/browser/SOC
 contracts, supervisors, operator preflight, bounded download/control acquisition
 and biological-adapter validation; test/vet passed in all seven Go modules. Vale also ran gateway and responder tests with
 the race detector. PKI acceptance passed including gateway key scope. Current
@@ -137,6 +143,78 @@ read or arbitrary filesystem IO latency. TM-01 global admission/storage limits
 and TM-02 authenticated immutable ownership remain next; shared host/UID trust,
 queue/leases, effective response and biological gates are unchanged.
 
+## Retained-input admission and bounded-output acceptance
+
+Atlas implemented durable global/per-principal input admission shared by every
+Upload API client, before body reads. Verified certificate CN selects the quota;
+certificate renewal does not create a new principal bucket. The ledger retains
+charges after terminal processing, restart, lost responses or gateway registry
+loss. It reserves pending/retained payloads and metadata headroom, streams bounded
+multipart input, holds an exclusive uploader-instance lock and fails closed on
+ambiguous storage/accounting. It does not adopt legacy inputs by inventing an
+empty baseline. The [admission contract](security/admission-contract.md) records
+policy and the required persistence boundary. Defaults are 64 global/16 per-CN
+retained jobs, 512 MiB global/128 MiB per-CN input charges, two global/one per-CN
+active uploads and a 128 MiB free-space floor. Policy is pinned in the ledger;
+changing it requires a reviewed migration, not resetting or rewriting charges.
+
+Chiquis bounded worker pipeline/evaluator stdout to 1,048,576 bytes and stderr to
+65,536 bytes, with cancellation of the process group on overflow. A passed JSON
+prefix followed by excess bytes cannot approve science. Oversized serialized
+results fall back to a small failed/withheld envelope within the existing
+16,777,216-byte metadata-reader cap, retaining provenance and established crypto
+flags. These limits cover command capture/result serialization; SAM/BAM/BCF/VCF,
+reference copies, cache and total retained output still need storage controls.
+The Python wrapper's own tool capture and optional alignment's total SAM/target
+map size are also outside these worker-boundary capture limits.
+
+Pre-correction native receipt `evidence/20261014T190933-375408Z/public/` passed
+78 assertions, including 15 retained-input admission and 10 excessive-output
+cases in addition to scientific/SOC/metadata acceptance. The run records dirty
+parent `2ad6b91c...`. Local `make test` also passed 86 Python tests and test/vet
+for seven Go modules. These are evidence for that candidate, not a later fix.
+Luci independently approved that native bundle's 11 public files and 10 checksums.
+The original snapshot is retained separately from the corrected acceptance below.
+
+Four-service Compose receipt
+`evidence/20261014T190933-378316Z-reviewer-compose/public/` failed after its first
+10 checks with `prepared_run_submission_failed`; scoped cleanup passed. Publication
+returned `EXDEV` from admission staging into uploads/jobs mounted as separate bind
+mounts, despite matching device IDs. Atlas's correction stages payloads under
+uploads and metadata under jobs so each no-clobber hard link stays inside its
+own mount; admission retains only its ledger/instance lock. No extra mount or
+payload duplication was added. Legacy admission staging fails closed without
+silent adoption. Preserve the failed receipt. Corrected source needs fresh
+native/Compose hashes and acceptance; this failure is not an authorization or
+scientific PASS.
+
+Corrected native receipt `evidence/20261014T192150-539678Z/public/` passed all
+78 checks. Rebuilt four-service receipt
+`evidence/20261014T192150-561120Z-reviewer-compose/public/` passed 30 checks and
+scoped cleanup, including actual gateway submissions/scientific release and the
+exact admission/key/data mount scope. Local `make test` passed 86 Python tests
+and seven Go test/vet modules for this corrected source. Atlas's upload race test
+passed; a separate real three-bind-mount publication/restart regression is retained
+at `evidence/20261014T192234-593374Z-admission-mount/public/` with eight reviewed
+source/test hashes. That mount regression did not run TLS, inference or science.
+The failed Compose and pre-correction native receipts remain unchanged.
+Luci's final independent review approved 32 selected public exports: 19 fresh,
+two failed-Compose and 11 historical-native files. The full native inventory had
+246 hashes with seven differences confined to documentation; executed sources
+matched. Compose matched 34/34 runtime hashes and five checksums. No fresh browser or regulatory
+model/checkpoint run was performed in this correction round.
+
+These are local acceptance receipts for the dirty parent2ad snapshot. At this
+record's writing, publication and new hosted CI for the reviewed source had not
+yet occurred; use the live PR for later head/checks. CI for parent2ad cannot be
+relabeled as CI for these changes.
+
+TM-01 is split into input admission/command-output subgates and still-pending
+artifact/result/event/receipt/cache disk budgets and retention. Free-space checks
+are sensors, not a filesystem quota. TM-02 immutable authenticated ownership,
+queue/leases, multiple workers, effective response and external deployment are
+not completed by this input/capture acceptance.
+
 ## Actual runtime and limits
 
 Observed: RHEL 9.8 aarch64, one CPU, about 5.45 GiB host RAM, Docker 29.9.0.
@@ -186,6 +264,27 @@ contains only allowlisted metadata/metrics, not DNA or prediction vectors.
 It has zero experimental truth cases and leaves biological feasibility pending.
 This different input does not revise the earlier FP32/QNNPACK cost comparison.
 
+## Small biological-source acquisition
+
+Nora identified an individual public Zenodo file rather than the incompatible
+35.6 GB archive. Chiquis subsequently acquired `lead_caQTL_variants.tsv.gz`
+(10,497,915 bytes) and README (5,043 bytes) from record 1405945, with published MD5
+and computed SHA256 pins. [Acquisition receipt](../research/regulatory/small-source-acquisition.json)
+records the internal-research CC-BY-4.0 source and 10,512,921 charged dataset bytes
+under 50 MiB, preserving the earlier 4,251-byte control charge. Checkpoint charges
+and cached weights were not reset or downloaded again.
+
+The separate [structure receipt](../research/regulatory/small-source-structure.json)
+records complete CRC-checked gzip decoding: 297,308 descriptive rows and
+29,004,438 expanded bytes, with no column/type errors. Technical SNV counts are
+not approved inference cases. Raw rows are private and biological loci inferred
+remain **zero**. The source is GRCh37/population LCL caQTL data; the frozen model
+protocol uses hg38 and nine GM12878 ATAC tracks. Header/dictionary aliases,
+coordinate/REF/strand mapping, focal-peak correspondence, biological context,
+ties, normalization, selection/splits and training-overlap review remain pending.
+See [Nora's source investigation](research/2026-10-14-small-caqtl-sources.md).
+This file is not established as the exact inaccessible Synapse/DART v2 table.
+
 ## Next gates
 
 - The unhealthy-registry latch was tightened for already-in-flight requests;
@@ -204,8 +303,9 @@ This different input does not revise the earlier FP32/QNNPACK cost comparison.
   Candidate Synapse syn60756043 version 2 metadata is readable, but anonymous
   file download returned 403. Actual TSV size/hash/header and effect-allele
   semantics await authorized access; no biological cases have been scored.
-  An author-linked original caQTL archive is35.6 GB and cannot fit the 50 MiB gate;
-  no individual usable file/schema/license was verified from that alternative.
+  An author-linked original caQTL archive is35.6 GB and cannot fit the 50 MiB gate.
+  The separately acquired small Zenodo source advances acquisition/structure
+  only; it needs reviewed GRCh37-to-hg38, peak/context and selection semantics.
   Source verification receipts, frozen normalization/selection and real ten-locus
   adapter evidence are required before the hundred-locus evaluation. Source
   standard errors/confidence intervals are retained when provided; disjoint 4 kb
@@ -214,7 +314,15 @@ This different input does not revise the earlier FP32/QNNPACK cost comparison.
 - Public genomic benchmark, queues/multiple workers, production keys/identity,
   response actions and Oracle deployment. Optional nginx/responder profiles
   were not part of the four-service acceptance run.
+- Publish the independently reviewed corrected working tree and observe
+  its own hosted CI. Artifact quotas/retention and TM-02 remain separate security
+  gates; native78/Compose30 prove local input/capture acceptance, not the whole
+  platform or CI for an unpublished snapshot.
 
 Daily hosted research remains enabled at 09:00 America/New_York and has produced
 its first report. Names, ownership, feedback and handoff rules persist in the team
 runbook and private Notion team plan. No production readiness or novelty is claimed.
+Chiquis reread the existing worker/controller registry during this checkpoint:
+both are active/enabled and the worker remains daily 09:00 America/New_York.
+No schedule was changed/duplicated and this reread does not establish an
+additional research report.

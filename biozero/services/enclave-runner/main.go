@@ -291,7 +291,12 @@ func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, dec
 			executeJob(ctx, job, &result, uploadDir, decryptedDir, rules, privateKeyPath, signerCertPath, pipelinePath, referencePath, jobKey, pipelineTimeout)
 		}()
 		result.ProcessedAt = time.Now().UTC().Format(time.RFC3339)
-		if err := writeJSON(resultPath, result); err != nil {
+		result, resultJSON, err := boundedResultRecord(result)
+		if err != nil {
+			log.Print("worker metadata error: metadata_result_encode_failed")
+			continue
+		}
+		if err := writeJSONBytes(resultPath, resultJSON); err != nil {
 			log.Print("worker metadata error: metadata_result_write_failed")
 			continue
 		}
@@ -505,12 +510,20 @@ func assessScientificRelease(ctx context.Context, result *resultRecord, referenc
 		}
 		report[input.name+"_sha256"] = digest
 	}
-	cmd := exec.CommandContext(ctx, "python3", evaluatorPath, "--reference", referencePath, "--expected", truthPath, "--observed", pipeline.Outputs.Observed)
+	commandCtx, cancelCommand := context.WithCancel(ctx)
+	defer cancelCommand()
+	cmd := exec.CommandContext(commandCtx, "python3", evaluatorPath, "--reference", referencePath, "--expected", truthPath, "--observed", pipeline.Outputs.Observed)
 	configureProcessCancellation(cmd)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	stopForOutput := outputLimitCancellation(cmd, cancelCommand)
+	stdout := newOutputCapture(maxEvaluatorStdoutBytes, stopForOutput)
+	stderr := newOutputCapture(maxCommandStderrBytes, stopForOutput)
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 	err := cmd.Run()
+	if stdout.Exceeded() || stderr.Exceeded() {
+		store("evaluation_output_limit", "scientific evaluator exceeded its output budget")
+		return
+	}
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		store("evaluation_timed_out", "scientific evaluator exceeded the execution budget")
 		return
@@ -1175,8 +1188,9 @@ func threatPanelAlignment(parent context.Context, fastaPath, fastqPath string) (
 		// Return warning when stdout cannot be captured.
 		return stats, "failed to read minimap2 stdout"
 	}
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	stopForOutput := outputLimitCancellation(cmd, cancel)
+	stderr := newOutputCapture(maxCommandStderrBytes, stopForOutput)
+	cmd.Stderr = stderr
 	if err := cmd.Start(); err != nil {
 		// Return warning when minimap2 cannot be started.
 		return stats, "failed to start minimap2"
@@ -1206,17 +1220,26 @@ func threatPanelAlignment(parent context.Context, fastaPath, fastqPath string) (
 		}
 	}
 
-	if err := cmd.Wait(); err != nil {
+	scanError := scanner.Err()
+	if scanError != nil {
+		// Stop children before waiting once their stdout cannot be consumed.
+		stopForOutput()
+		_ = stdout.Close()
+	}
+	err = cmd.Wait()
+	if stderr.Exceeded() {
+		return alignmentStats{Targets: map[string]int{}}, "minimap2 exceeded its diagnostic output budget"
+	}
+	if scanError != nil {
+		return alignmentStats{Targets: map[string]int{}}, "failed to parse minimap2 output"
+	}
+	if err != nil {
 		msg := strings.TrimSpace(stderr.String())
 		if msg == "" {
 			msg = "minimap2 failed"
 		}
 		// Return warning when minimap2 exits with error.
 		return stats, msg
-	}
-	if err := scanner.Err(); err != nil {
-		// Return warning when scanner fails to parse output.
-		return stats, "failed to parse minimap2 output"
 	}
 	// Return collected stats when alignment completes.
 	return stats, ""
@@ -1748,10 +1771,15 @@ func runPipelineContext(parent context.Context, path, input, referencePath, outD
 	defer cancel()
 	cmd := exec.CommandContext(ctx, path, args...)
 	configureProcessCancellation(cmd)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	stopForOutput := outputLimitCancellation(cmd, cancel)
+	stdout := newOutputCapture(maxPipelineStdoutBytes, stopForOutput)
+	stderr := newOutputCapture(maxCommandStderrBytes, stopForOutput)
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 	err := cmd.Run()
+	if stdout.Exceeded() || stderr.Exceeded() {
+		return nil, "pipeline exceeded its output budget", "pipeline_output_limit"
+	}
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return nil, "pipeline exceeded its execution budget", "pipeline_timed_out"
 	}

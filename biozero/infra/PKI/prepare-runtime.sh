@@ -10,7 +10,8 @@ if [[ "$(id -u)" == 0 ]]; then
 fi
 for directory in "$DATA_DIR" "$DATA_DIR/uploads" "$DATA_DIR/jobs" \
   "$DATA_DIR/results" "$DATA_DIR/artifacts" "$DATA_DIR/actions" \
-  "$DATA_DIR/reviewer" "$DATA_DIR/security-events" "$DATA_DIR/security-deliveries"; do
+  "$DATA_DIR/reviewer" "$DATA_DIR/security-events" "$DATA_DIR/security-deliveries" \
+  "$DATA_DIR/admission"; do
   if [[ -L "$directory" ]]; then
     echo "Refusing symlink runtime directory: $directory" >&2
     exit 1

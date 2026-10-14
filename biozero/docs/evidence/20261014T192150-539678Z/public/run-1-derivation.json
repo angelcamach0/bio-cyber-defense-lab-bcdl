@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "format": "VCFv4.2",
+  "scope": "normalized allele presence; no genotype, quality, filter or annotation preservation",
+  "normalized_allele_count": 3,
+  "alleles_preserved": true,
+  "source_vcf_sha256": "10b1782ce409e6301a9eb3a127d483a637b8ec9048199258631ab0b0ecc9c8c3",
+  "reference_sha256": "e4871638ee57abc3e33b58262a9fcd123be2d9f0c5658429d38e0bbb0bf64d08",
+  "export_vcf_sha256": "e1192e49bb37fd4e0f8b3f745556a3d7434fbc57b030e747035a7597aaa23f95"
+}

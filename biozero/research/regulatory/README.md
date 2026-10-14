@@ -110,3 +110,37 @@ watchdog is not a kernel allocation cap. Prediction vectors and full case report
 stay private. A control PASS leaves biological feasibility pending: its ALT is
 artificial and it has no experimental effect label. Actual ten/hundred-locus
 measurements remain pending authorized data and the frozen scientific protocol.
+
+## Small public caQTL source: acquisition and descriptive inspection
+
+The Kumasaka/Knights/Gaffney [Zenodo record1405945](https://zenodo.org/records/1405945)
+provides an open CC-BY-4.0 alternative source. The complete lead-variant gzip
+and README were acquired with their published size/MD5 and new SHA256 pins.
+See [acquisition receipt](small-source-acquisition.json),
+[structure receipt](small-source-structure.json) and
+[source investigation](../../docs/research/2026-10-14-small-caqtl-sources.md).
+This is not a copy of the inaccessible Synapse DART v2 file.
+
+Use the existing private cache without another transfer:
+
+```bash
+python3 -B biozero/research/regulatory/small_dataset_fetch.py \
+  --prefix .biozero/regulatory-assets
+python3 -B biozero/research/regulatory/inspect_small_source.py \
+  --source .biozero/regulatory-assets/datasets/lead_caQTL_variants.tsv.gz
+```
+
+A fresh installation may add `--fetch` to the first command for the fixed public
+files. The separate persistent50MiB dataset ledger includes the earlier4,251-byte
+UCSC control and retains failed/partial charges. Current charge is10,512,921 bytes;
+the checkpoint ledger remains435,387,199 bytes. Never remove/reset ledgers to
+repeat downloads over retained data. Raw files, source rows and model vectors
+stay private; the two linked receipts export only descriptive metadata/counts.
+
+Complete gzip/CRC inspection found297,308 rows and29,004,438 expanded bytes under
+the512MiB expansion/8,192-byte line limits. The source is GRCh37 population LCL
+caQTL, while the frozen model protocol uses hg38/GM12878 tracks. Header aliases,
+one-based coordinates, focal-peak mapping, Beta/ALT orientation, liftover/strand/
+REF checks, context, training overlap and the ten/100 split still require a
+reviewed normalization freeze before inference. These descriptive counts are
+not selected biological cases. Zero experimental loci have been scored.

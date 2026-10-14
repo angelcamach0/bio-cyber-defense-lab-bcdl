@@ -172,3 +172,46 @@ Next: TM-01 measurable global/per-client admission and storage limits, then TM-0
 authenticated immutable ownership. Remaining biological10/100 loci, queues/leases,
 evolving benign adversary scenarios, effective SOC, production identity/storage/
 keys, cloud deployment/attestation and final deliverables remain adopted gates.
+
+## Retained-input/output and small-source checkpoint — 2026-10-14
+
+The original matrix/audit above retains snapshot 2994d055. This update records a
+dirty admission/output implementation above parent 2ad6b91c, not a new whole-project
+completion or approval from CI for the committed parent.
+
+| Updated requirement | Artifact/evidence | Status at this checkpoint | Remaining gate |
+| --- | --- | --- | --- |
+| Shared global/principal pending and retained input accounting | [Admission contract](../security/admission-contract.md); corrected native 78/78 at `docs/evidence/20261014T192150-539678Z/public/`, including 15 admission cases | Local acceptance and independent review passed | Publication/new CI; pinned-policy migration and explicit legacy adoption remain separate |
+| Bounded worker command capture and serialized results | Native 10 output cases in that 78-case receipt; local 86 Python/seven Go test-vet passed | Corrected local source verified | Preserve group cancellation, truthful failure/withholding and provenance; Python tool capture, artifacts and total disk remain outside this subgate |
+| Actual container packaging of admission | Corrected `docs/evidence/20261014T192150-561120Z-reviewer-compose/public/`: 30/30 + cleanup; three-bind-mount regression `docs/evidence/20261014T192234-593374Z-admission-mount/public/` | Local container acceptance passed | Preserve failed pre-correction Compose receipt and source-specific review; regression alone is not TLS/science evidence |
+| Complete storage/resource management | Same contract explicitly excludes SAM/BAM/BCF/VCF/reference copies, all retained result/event/receipt/registry totals and cache | Artifact quotas/retention pending | Measured policies and durable retention/accounting before calling TM-01 complete; free-space sensor alone is not a hard quota |
+| Immutable authenticated ownership and concurrent job processing | TM-02 threat-model finding; broader datastore/queue roadmap | Pending | Canonical CN quota accounting does not authenticate mutable owner JSON or establish leases/idempotent multi-worker claiming |
+| Accessible bounded biological candidate | [Acquisition receipt](../../research/regulatory/small-source-acquisition.json): 10,497,915-byte gzip + 5,043-byte README, SHA/MD5 pins, Zenodo 1405945/CC-BY-4.0 source | Acquired for internal research; dataset charge 10,512,921 below 50 MiB | Review exact normalization/effect/build/peak/context and source usage before creating cases; not the exact Synapse/DART v2 file |
+| Whole-file structure and denominator preservation | [Structure receipt](../../research/regulatory/small-source-structure.json): complete CRC decode, 297,308 rows, zero type/column errors | Descriptive source inspection complete; zero biological cases inferred | GRCh37-to-hg38/REF/strand mapping, ties/peak rules, context/head agreement, selection/splits and training overlap; ten real loci before 100 evaluation slots |
+| CI for current changes | Existing CI of committed parent2ad, previous CI receipts above | New working-tree code not validated by that CI | Publish the reviewed snapshot and observe its own checks; do not transfer old CI provenance to new sources |
+
+Nora's [small-source report](../research/2026-10-14-small-caqtl-sources.md) separates
+primary documentation/code support from unapproved header aliases and mapping.
+Population-LCL caQTL effects are not automatically GM12878-specific truth. The
+technical SNV row count is not an eligible/evaluated-case count; original Sei
+chromosome holdouts alone do not prove the rank64 checkpoint's full training
+history. The ten/hundred biological gates remain pending, as do effective SOC,
+cloud/attestation, production identity and the wider adopted roadmap.
+Luci approved the pre-correction native bundle's 11 public files/10 checksums;
+that approval is tied to its source snapshot. Pre-correction native 78 at
+`docs/evidence/20261014T190933-375408Z/public/` and Compose FAIL-after-10 at
+`docs/evidence/20261014T190933-378316Z-reviewer-compose/public/` are retained.
+`EXDEV` across separate
+bind mounts despite equal device IDs led to the corrected mount-local staging;
+no extra mount/payload duplication or silent legacy adoption was added. The
+final independent review approved 32 selected exports: 19 fresh, two failed
+Compose and 11 historical-native files. Native's seven differences among 246
+hashes were documentation only; Compose matched 34 runtime hashes/five checksums.
+Local acceptance does not close all
+TM-01 storage/retention or TM-02, nor establish new hosted CI before publication.
+
+The coordinator reread the
+existing active/enabled daily worker/controller without edits or duplicates;
+the configuration observation is not a new daily-report receipt. This update was
+written before publication; consult the live PR for the subsequent head/CI rather
+than inferring a fresh hosted PASS from parent2ad or the local receipts.

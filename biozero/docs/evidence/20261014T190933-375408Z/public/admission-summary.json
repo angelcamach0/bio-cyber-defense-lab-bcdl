@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "scope": "real native HTTPS retained-input admission; no pipeline, model or full-disk quota",
+  "case_count": 15,
+  "cases": [
+    {
+      "case": "admission_principal_a_first_upload_admitted",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "payload_bytes": 14
+      }
+    },
+    {
+      "case": "admission_a_terminal_rejection_keeps_readable_result",
+      "passed": true,
+      "observed": {
+        "actual_worker": true,
+        "pipeline_not_called": true
+      }
+    },
+    {
+      "case": "admission_nonowner_b_cannot_read_a",
+      "passed": true,
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "admission_a_retained_quota_precedes_malformed_parse",
+      "passed": true,
+      "observed": {
+        "http_status": 429,
+        "safe_error_code": "quota_exceeded",
+        "inputs_unchanged": true
+      }
+    },
+    {
+      "case": "admission_principal_b_has_independent_slot",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "retained_jobs": 2
+      }
+    },
+    {
+      "case": "admission_b_terminal_rejection_keeps_readable_result",
+      "passed": true,
+      "observed": {
+        "actual_worker": true,
+        "pipeline_not_called": true
+      }
+    },
+    {
+      "case": "admission_nonowner_a_cannot_read_b",
+      "passed": true,
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "admission_second_uploader_excluded",
+      "passed": true,
+      "observed": {
+        "second_instance_exited": true,
+        "first_health_http_status": 200
+      }
+    },
+    {
+      "case": "admission_restart_preserves_terminal_retained_charge",
+      "passed": true,
+      "observed": {
+        "http_status": 429,
+        "retained_jobs": 2,
+        "inputs_unchanged": true
+      }
+    },
+    {
+      "case": "admission_restart_preserves_original_result_access",
+      "passed": true,
+      "observed": {
+        "original_rejection_readable": true
+      }
+    },
+    {
+      "case": "admission_global_first_upload_admitted",
+      "passed": true,
+      "observed": {
+        "http_status": 200,
+        "global_job_cap": 1
+      }
+    },
+    {
+      "case": "admission_global_cap_denies_other_principal",
+      "passed": true,
+      "observed": {
+        "http_status": 429,
+        "safe_error_code": "quota_exceeded",
+        "inputs_unchanged": true
+      }
+    },
+    {
+      "case": "admission_missing_ledger_startup_failclosed",
+      "passed": true,
+      "observed": {
+        "startup_failed": true,
+        "retained_inputs_unchanged": true,
+        "empty_baseline_created": false
+      }
+    },
+    {
+      "case": "admission_corrupt_ledger_startup_failclosed",
+      "passed": true,
+      "observed": {
+        "startup_failed": true,
+        "retained_inputs_unchanged": true,
+        "empty_baseline_created": false
+      }
+    },
+    {
+      "case": "admission_created_processes_stopped",
+      "passed": true,
+      "observed": {
+        "created_processes_stopped": true
+      }
+    }
+  ],
+  "body_limit_bytes": 1024,
+  "global_job_cap": 2,
+  "principal_job_cap": 1,
+  "principal_names_ids_paths_and_raw_responses_public": false
+}

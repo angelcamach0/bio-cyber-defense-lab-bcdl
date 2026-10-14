@@ -9,7 +9,8 @@ flowchart LR
   Browser[Reviewer browser] -->|HTTPS session, Origin and CSRF| Gateway[Reviewer gateway]
   Gateway -->|Own mTLS identity, prepared signed/encrypted input| Upload[Upload API]
   CLI[Uploader CLI A or B] -->|Individual mTLS, signed/encrypted input| Upload
-  Upload --> Jobs[Durable job and encrypted upload files]
+  Upload --> Admission[Durable pending and retained input admission]
+  Admission --> Jobs[Durable job and encrypted upload files]
   Jobs --> Worker[Single worker: verify digest/signature, decrypt]
   Worker -->|Only accepted input| Pipeline[FASTQ validation and explicit stats/variants pipeline]
   Pipeline --> Evaluator[Independent synthetic truth evaluator]
@@ -40,12 +41,26 @@ fixture-held demo signing material. The worker verifies cryptography before
 analysis: Upload API queue acceptance alone does not approve an input. Original
 upload digests are preserved; derived digests are separate.
 
+The locally accepted input gate accounts for global/principal pending and retained
+inputs before reading their bodies; verified certificate CN selects that policy
+bucket. Terminal jobs retain their charges. Ledger ambiguity fails closed rather
+than reconstructing an empty baseline from mutable owner records. This is input
+admission, not a full disk/retention quota. A failed publication across separate
+bind mounts was preserved; mount-local staging now passes fresh native and
+Compose acceptance. Policy is pinned, terminal processing retains charges and
+legacy staging is not silently adopted. See STATUS and the
+[admission contract](security/admission-contract.md) for source-specific gates.
+
 ## Processing and scientific release
 
 The filesystem job store supports one worker. It validates integrity, signature
 and encryption, decrypts into a per-job temporary workspace, and removes plaintext
 after processing. The container profile additionally bounds its plaintext tmpfs;
 native temporary files do not establish a kernel memory/storage cap.
+The worker also caps command stdout/stderr and serialized results;
+overflow cannot turn a valid JSON prefix into scientific approval. Tool artifact
+sizes, total retained output/cache and general filesystem latency remain separate
+resource gates.
 Cancellation/deadlines stop its process groups; interrupted
 work becomes an explicit failure on restart. Container/process isolation does
 not demonstrate hardware-enclave attestation.
@@ -96,11 +111,17 @@ enforce egress denial. Oracle capacity/deployment remains unverified.
 
 SCI01 loaded verified Sei-LLRA checkpoints and measured one synthetic pair.
 Comparable FP32 was faster than QNNPACK; the current recomputation path has a
-provisional economic no-go. SCI02 is building a real-window FP32 adapter with
+provisional economic no-go. SCI02 has implemented a real-window FP32 adapter with
 fixed GM12878 ATAC-seq head aggregation. Ten-locus preflight and hundred-locus
 biological evaluation require permitted data, explicit effect alleles, frozen
 selection/splits and evidence. Operator tests and mutation controls do not
 complete them. Disjoint windows alone do not remove linkage disequilibrium.
+
+A small public Zenodo source has now been acquired and CRC-inspected within the
+50 MiB budget: 297,308 descriptive caQTL rows, zero loci inferred. It is GRCh37 and
+population-LCL evidence, while the frozen model protocol uses hg38/GM12878 tracks.
+Normalization/build/REF/strand/peak/context and selection/splits remain pending;
+the exact inaccessible Synapse table has not been replaced by an asserted copy.
 
 ZeroResponder currently records simulation. SIEM ingestion, enforced response,
 evolving adversary scenarios, production identity, HSM/KMS, encrypted results,
@@ -121,6 +142,12 @@ changes no firewall, certificate trust or running job. See
 Job/result metadata now has a [bounded reader/lifecycle contract](security/metadata-contract.md).
 Unsafe or ambiguous records fail explicitly without bypassing ownership or
 scientific release. Upload admission reserves the entire current state growth;
-worker diagnostics are bounded separately from full results. Native53 and rebuilt
-Compose30 acceptance are recorded in STATUS; those checks do not establish global
-quotas, immutable owner provenance or general filesystem IO deadlines.
+worker diagnostic copies in jobs are bounded, and results have their own serialized
+size cap. Native53 and rebuilt
+Compose30 acceptance are recorded in STATUS; those checks do not establish the
+new retained-input implementation. Its pre-correction native 78 passed and Compose
+failed after 10 checks. Corrected native 78 and four-service Compose 30 passed;
+independent review approved the selected exports. This local record preceded
+publication/new CI; consult the live PR for subsequent head/checks. Input accounting and
+capture limits do not establish full artifact quotas, retention, immutable owner
+provenance, queues/leases or general filesystem IO deadlines.

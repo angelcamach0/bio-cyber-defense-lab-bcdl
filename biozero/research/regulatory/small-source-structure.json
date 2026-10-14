@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "status": "source_structure_inspected",
+  "source_sha256": "b7a1e169153eff1fbf700270260bc7225f0c4585b1066ab2e2a65583c33a5d2e",
+  "actual_header_columns": [
+    "Peak",
+    "Chr",
+    "Pos",
+    "RsID",
+    "Ref",
+    "Alt",
+    "AF",
+    "Inside_Peak",
+    "P_Lead",
+    "Beta",
+    "SE",
+    "Log10_BF"
+  ],
+  "gzip_complete_crc_read": true,
+  "expanded_bytes": 29004438,
+  "expanded_read_limit_bytes": 536870912,
+  "rows_read": 297308,
+  "column_or_type_errors": {},
+  "inside_peak_values": {
+    "1": 171528,
+    "2": 46979,
+    "0": 78801
+  },
+  "unique_loci": 199326,
+  "loci_with_multiple_peak_ids": 11000,
+  "unique_peaks": 277128,
+  "peaks_with_multiple_lead_rows": 8442,
+  "technical_biallelic_snv_rows": 226346,
+  "finite_beta_and_se_rows": 297308,
+  "positive_se_rows": 297308,
+  "elapsed_seconds": 2.3172,
+  "self_max_rss_kib": 132212,
+  "interpretation": "Descriptive structure only; no genome REF, liftover, peak correspondence, context, selection, normalization or model predictions verified.",
+  "raw_dataset_published": false,
+  "biological_loci_inferred": 0,
+  "interpretation_status": "candidate source; normalization/coordinate/peak/context/selection review pending",
+  "inspector_sha256": "7b950b060587926a129a62c70141e0c6f7adbb57da1e2addf3c1af3e1669daa5"
+}

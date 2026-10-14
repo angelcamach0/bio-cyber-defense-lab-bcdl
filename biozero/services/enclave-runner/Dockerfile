@@ -2,7 +2,7 @@
 FROM golang:1.26-alpine AS build
 WORKDIR /src
 COPY go.mod ./
-COPY main.go security_events.go metadata.go job_lifecycle.go ./
+COPY main.go security_events.go metadata.go job_lifecycle.go output_budget.go ./
 RUN CGO_ENABLED=0 go build -o /out/enclave-runner .
 
 FROM ubuntu:24.04

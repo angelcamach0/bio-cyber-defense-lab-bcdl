@@ -10,6 +10,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"math/big"
 	"mime/multipart"
 	"net/http"
@@ -66,7 +67,12 @@ func uploadHandlerFixture(t *testing.T, jobKey string) (http.Handler, string, st
 	if err := os.Mkdir(jobs, 0700); err != nil {
 		t.Fatal(err)
 	}
-	return newUploadHandler(uploads, jobs, 8<<20, jobKey, newRateLimiter(1000, time.Minute)), uploads, jobs
+	handler := newUploadHandler(uploads, jobs, 8<<20, jobKey, newRateLimiter(1000, time.Minute))
+	if handler.(*uploadAdmissionHandler).initErr != nil {
+		t.Fatal(handler.(*uploadAdmissionHandler).initErr)
+	}
+	t.Cleanup(func() { handler.(*uploadAdmissionHandler).store.Close() })
+	return handler, uploads, jobs
 }
 
 func expectedUploadJob(fields map[string]string, wrapped string) jobRecord {
@@ -85,6 +91,16 @@ func expectedUploadJob(fields map[string]string, wrapped string) jobRecord {
 func assertUploadEntries(t *testing.T, path string, expected int) {
 	t.Helper()
 	entries, err := os.ReadDir(path)
+	if filepath.Base(path) == "jobs" || filepath.Base(path) == "uploads" {
+		filtered := entries[:0]
+		for _, entry := range entries {
+			if entry.Name() == admissionStageName && entry.IsDir() {
+				continue
+			}
+			filtered = append(filtered, entry)
+		}
+		entries = filtered
+	}
 	if err != nil || len(entries) != expected {
 		t.Fatalf("entries=%d expected=%d err=%v", len(entries), expected, err)
 	}
@@ -198,15 +214,18 @@ func TestUploadMetadataExpansionAndWrappingFailureLeaveNoPayload(t *testing.T) {
 }
 
 func TestUploadPersistenceErrorDoesNotBroadlyDeletePayload(t *testing.T) {
-	handler, uploads, jobs := uploadHandlerFixture(t, "")
-	if err := os.Remove(jobs); err != nil {
-		t.Fatal(err)
+	handler, uploads, _ := uploadHandlerFixture(t, "")
+	handler.(*uploadAdmissionHandler).store.failpoint = func(name string) error {
+		if name == "payload_published" {
+			return errors.New("durability failure after publication")
+		}
+		return nil
 	}
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, multipartUpload(t, nil))
 	var result errorResponse
 	json.Unmarshal(response.Body.Bytes(), &result)
-	if response.Code != http.StatusInternalServerError || result.Code != "job_write_failed" {
+	if response.Code != http.StatusServiceUnavailable || result.Code != "admission_state_unavailable" {
 		t.Fatal("persistence failure did not fail acknowledgement")
 	}
 	assertUploadEntries(t, uploads, 1)

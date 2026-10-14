@@ -87,7 +87,7 @@ The snapshot provenance records127 hashes/modes and the older native manifest's
 
 Use make regulatory-tools and make regulatory-preflight to recreate the measured
 CPU-only Python 3.11/Torch environment from exact ARM package/wheel artifacts.
-The default probe preserves Torch's initial motor while requesting Sei's fbgemm
+The default probe preserves Torch's initial quantized engine while requesting Sei's fbgemm
 qconfig. It exercises a small untrained Conv1d+Linear, never a trained checkpoint.
 See [SCI01](../research/2026-10-14-regulatory-feasibility.md) for actual results,
 forced-engine failure, provenance and remaining trained-model/biological gates.
@@ -148,3 +148,76 @@ passed30 controls and cleanup; it did not repeat Firefox. Shared54-case vectors
 run in both Go modules under `make test`; foreign UID fixtures skip for non-root
 and have a separate root-only receipt, not a root-service deployment. See the
 [metadata contract](../security/metadata-contract.md) for limits and residual gates.
+
+## Retained-input and command-output acceptance
+
+`make experiment-soc` now selects `--soc --metadata-faults --output-cases
+--admission-cases`. Use an existing verified prefix rather than acquiring tools
+again for a documentation/evidence review:
+
+```bash
+make experiment-soc BIOZERO_TOOLS_PREFIX=/absolute/path/to/verified-tools
+```
+
+The additional native cases exercise principal/global retained-job accounting,
+terminal charges across uploader restart, second-instance exclusion and
+missing/corrupt-ledger startup failure. Protected uploads also exercise excessive
+pipeline/evaluator output, cleanup of descendants/plaintext and preservation of
+crypto/hash/ownership while science remains withheld. See the
+[admission contract](../security/admission-contract.md) for exact policy,
+streaming/ledger boundaries and separate serialized-result limits.
+
+Pre-correction receipt `evidence/20261014T190933-375408Z/public/` passed78 checks;
+local `make test` passed 86 Python tests/seven Go modules for that working-tree
+snapshot. The related Compose run
+`evidence/20261014T190933-378316Z-reviewer-compose/public/` failed after 10 checks
+at prepared submission and cleaned up. Publication across separate bind mounts
+returned `EXDEV` despite equal device IDs. The correction stages payload/job data
+inside each destination mount and keeps admission's ledger/lock separate; it
+is now covered by the fresh source-specific acceptance below. Legacy admission staging fails closed without
+silent adoption. Do not call the failed run
+passed or apply its earlier native PASS to a corrected source automatically.
+Those failures justified one new acceptance snapshot; they are not relabeled.
+
+Corrected receipt `evidence/20261014T192150-539678Z/public/` passed 78/78.
+Rebuilt four-service `evidence/20261014T192150-561120Z-reviewer-compose/public/`
+passed 30/30 and scoped cleanup; fresh `make test` passed 86 Python tests/seven
+Go modules. The separate actual three-bind-mount publication/restart receipt
+`evidence/20261014T192234-593374Z-admission-mount/public/` covers only that storage
+regression, without TLS/inference. The browser and optional responder profile
+retain their earlier separate source receipts; they were not repeated here.
+Final independent review approved 32 selected exports. Native's seven hash
+differences were docs-only; Compose matched 34 runtime hashes/five checksums.
+This local record was written before publication/new hosted CI; consult the
+live PR for the subsequent head/checks. Preserve every dated source snapshot
+instead of applying old PASS/CI to later changes.
+
+The input ledger retains charges; there is no automatic quota release on worker
+completion, TTL, eviction or policy reset. Missing/corrupt accounting over existing
+data must fail closed rather than create an empty baseline. Do not delete a ledger
+or change a pinned policy to unblock admission. Default retained-job caps are
+64 global/16 per-CN, input-charge caps 512/128 MiB and active streams two/one;
+the free-space floor is a 128 MiB sensor. Certificate renewal shares its CN quota
+but does not override the certificate-serial authorization of existing jobs.
+Artifact/reference copies,
+results/events/receipts/registry totals, cache and retention remain outside this
+input/capture subgate; a free-space sensor is not a hard disk quota.
+
+## Biological-source review without another acquisition
+
+Review the recorded [small-source acquisition](../../research/regulatory/small-source-acquisition.json),
+[structure](../../research/regulatory/small-source-structure.json) and
+[primary-source investigation](../research/2026-10-14-small-caqtl-sources.md).
+They establish cached source bytes/digests and descriptive structure, not prediction
+cases. The gzip (10,497,915 bytes) plus README (5,043 bytes) fit the 50 MiB dataset budget;
+the retained dataset charge is 10,512,921 bytes including the earlier control.
+Do not reset the ledger or download the 35.6 GB archive. Checkpoint accounting is a
+separate preserved ledger; no new model execution is part of this review.
+
+Before scoring, review and freeze exact header/dictionary mapping, GRCh37-to-hg38 and
+REF/ALT/strand correspondence, focal peaks/context, ties/duplicates, splits and
+training overlap. Freeze normalization and selection, then obtain the actual
+ten-locus adapter receipt before 100 separate evaluation loci. CRC-checked 297,308
+source rows and technical SNVs are descriptive denominators, not completed cases.
+Zero biological loci have been inferred. The exact Synapse/DARTv2 access403 remains;
+the small Zenodo source is a separately reviewed alternative.

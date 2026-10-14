@@ -76,3 +76,26 @@ file/directory fsync support are required. Temporary-file fsync followed by an
 atomic no-clobber hard link preserves existing evidence; conflicting or unsafe
 events are rejected, never overwritten. Retain event files: publication is a
 local quarantine intent, not confirmation of relay delivery or response action.
+
+## Command-output and result budgets
+
+Pipeline and evaluator stdout each cap at1MiB; their stderr and optional alignment
+stderr cap at64KiB. An excess byte stops the process group explicitly, including
+descendants holding pipes after the leader exits. Pipeline output overflow is
+`pipeline_output_limit`; evaluator overflow is `evaluation_output_limit` with
+scientific release withheld. A captured prefix is not accepted as successful JSON.
+Observed overflow takes precedence over simultaneous cancellation/deadline; the
+existing shutdown/deadline cases remain when no overflow is observed. Alignment
+scanner failures stop children before waiting; alignment is an optional detector,
+so its warning alone does not withhold the independent variant evaluation.
+
+The final serialized result must fit16MiB. Oversized derived output produces a
+small `failed`/`withheld` envelope with `result_metadata_too_large`, preserving
+identity, timestamp, hashes, size and crypto flags. Oversized derived fields are
+not persisted. This does not silently truncate an accepted result. Tests cover
+exact/+1 budgets, actual child cleanup, scientific withholding and reader-compatible
+fallback. Full worker test/vet and targeted race checks passed locally.
+
+SAM/BAM/BCF/VCF/reference copies, total optional-alignment stdout/target map and
+persistent result/event totals still require separate controls. Capture limits
+are not an artifact/disk quota. See [admission contract](../../docs/security/admission-contract.md).

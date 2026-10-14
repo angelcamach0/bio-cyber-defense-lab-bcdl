@@ -18,8 +18,10 @@ Use that name in conversation and retain the technical ID for task routing.
 | Lucía, or Luci | Security support and evidence | support_security |
 | Atlas | Engineering and reproducibility | engineering |
 | Lía | Engineering support, QA and documentation | support_engineering |
+| Nora | Additional biological-source research | biological_sources |
 
-Support pairs are Vera/Alba, Vale/Luci, and Atlas/Lía. Respect their selected
+Support pairs are Vera/Alba, Vale/Luci, and Atlas/Lía. Nora selected her name
+on the next admission/storage round and assists the research pair with source-access checks. Respect their selected
 names when assigning tasks, giving thanks, and providing concrete feedback.
 These are team names; routing IDs and execution lifecycles remain unchanged.
 

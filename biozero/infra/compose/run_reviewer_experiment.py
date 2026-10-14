@@ -231,7 +231,7 @@ def main():
         summaries = {}
         pki_scopes = {"upload-api": "upload", "results-api": "results", "enclave-runner": "worker", "reviewer-gateway": "gateway"}
         allowed_targets = {
-            "upload-api": {"/data/uploads", "/data/jobs", "/pki"},
+            "upload-api": {"/data/uploads", "/data/jobs", "/data/admission", "/pki"},
             "results-api": {"/data/jobs", "/data/results", "/pki"},
             "enclave-runner": {"/data/uploads", "/data/jobs", "/data/results", "/data/artifacts", "/data/security-events", "/pki", "/rules", "/pipeline", "/reference", "/benchmarks"},
             "reviewer-gateway": {"/pki", "/config", "/state", "/fixtures", "/ui"}}
@@ -245,7 +245,7 @@ def main():
             "enclave-runner": {"/data/uploads", "/pki", "/rules", "/pipeline", "/reference", "/benchmarks"},
             "reviewer-gateway": {"/pki", "/config", "/fixtures", "/ui"}}
         expected_sources = {
-            "upload-api": {"/data/uploads": data / "uploads", "/data/jobs": data / "jobs"},
+            "upload-api": {"/data/uploads": data / "uploads", "/data/jobs": data / "jobs", "/data/admission": data / "admission"},
             "results-api": {"/data/jobs": data / "jobs", "/data/results": data / "results"},
             "enclave-runner": {"/data/" + name: data / name for name in ("uploads", "jobs", "results", "artifacts", "security-events")},
             "reviewer-gateway": {"/config": config, "/state": data / "reviewer", "/fixtures": FIXTURE, "/ui": ROOT / "biozero/ui"}}
@@ -299,6 +299,9 @@ def main():
         source_paths += [ROOT / "biozero/services" / service / filename for service in SERVICES for filename in ("main.go", "Dockerfile", "go.mod")]
         source_paths.append(ROOT / "biozero/services/enclave-runner/security_events.go")
         source_paths.append(ROOT / "biozero/services/enclave-runner/job_lifecycle.go")
+        source_paths.append(ROOT / "biozero/services/enclave-runner/output_budget.go")
+        source_paths += [path for path in sorted((ROOT / "biozero/services/upload-api").glob("*.go"))
+                         if path.name != "main.go" and not path.name.endswith("_test.go")]
         source_paths += [ROOT / "biozero/services" / service / "metadata.go" for service in ("enclave-runner", "results-api")]
         source_paths += [FIXTURE / name for name in ("reference.fa", "reads.fastq", "expected.vcf", "invalid.fastq")]
         source_paths += [ROOT / "biozero/ui" / name for name in ("app.js", "index.html", "styles.css")]

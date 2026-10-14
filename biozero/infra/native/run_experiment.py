@@ -96,7 +96,11 @@ def main():
     parser.add_argument("--mode", choices=["stats", "variants"], default="variants")
     parser.add_argument("--soc", action="store_true", help="Verify worker outbox and authenticated simulated response")
     parser.add_argument("--metadata-faults", action="store_true", help="Verify unsafe metadata rejection and live worker progress")
+    parser.add_argument("--output-cases", action="store_true", help="Verify protected command-output failures and scientific withholding")
+    parser.add_argument("--admission-cases", action="store_true", help="Verify durable input quotas in separate fresh private runtimes")
     args = parser.parse_args()
+    if args.output_cases and args.mode != "variants":
+        parser.error("--output-cases requires variants mode for the scientific evaluator check")
     env = dict(os.environ)
     if args.tools_prefix:
         env["PATH"] = str(args.tools_prefix.resolve() / "bin") + os.pathsep + env["PATH"]
@@ -157,7 +161,8 @@ def main():
         shared = {"BIOZERO_DATA_DIR": str(data), "BIOZERO_SECURITY_MODE": "protected"}
         manifest["configuration"] = {"security_mode": "protected", "pipeline_mode": args.mode,
                                      "single_worker": True, "bound_address": "127.0.0.1",
-                                     "soc_simulation": args.soc, "metadata_faults": args.metadata_faults}
+                                     "soc_simulation": args.soc, "metadata_faults": args.metadata_faults,
+                                     "output_cases": args.output_cases, "admission_cases": args.admission_cases}
         for name, short, addr_var, port in [("upload-api", "upload", "BIOZERO_UPLOAD_ADDR", upload_port),
                                            ("results-api", "results", "BIOZERO_RESULTS_ADDR", results_port)]:
             start(name, {**shared, addr_var: f"127.0.0.1:{port}",
@@ -464,6 +469,100 @@ def main():
                 request_as=request_as, verify_worker_progress=verify_worker_progress,
                 record=record)
             (public / 'metadata-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+        if args.output_cases:
+            output_private = run_dir / 'private/output-faults'
+            output_private.mkdir(mode=0o700)
+            output_observations = []
+
+            def output_case(name, passed, observed):
+                output_observations.append({'case': name, 'passed': bool(passed), 'observed': observed})
+                record(name, passed, observed)
+
+            def replace_worker(settings):
+                nonlocal worker_process
+                stop_processes([worker_process])
+                processes.remove(worker_process)
+                worker_process = start('enclave-runner', settings)
+
+            def overflowing_command(filename, marker, prefix):
+                child = "import time; from pathlib import Path; time.sleep(1); Path(" + repr(str(marker)) + ").touch()"
+                script = ("#!/usr/bin/env python3\nimport subprocess, sys\n"
+                          + "subprocess.Popen([sys.executable, '-c', " + repr(child) + "])\n"
+                          + "sys.stdout.write(" + repr(json.dumps(prefix)) + "); sys.stdout.flush()\n"
+                          + "sys.stdout.write(' ' * 1048577); sys.stdout.flush()\n")
+                path = output_private / filename
+                path.write_text(script)
+                path.chmod(0o700)
+                return path
+
+            marker = output_private / 'pipeline-descendant-marker'
+            command_path = overflowing_command('pipeline.py', marker,
+                {'schema_version': 1, 'mode': 'variants', 'pipeline_status': 'succeeded'})
+            replace_worker({**worker_settings, 'BIOZERO_PIPELINE_PATH': str(command_path)})
+            _, output_job, output_payload = submit(FIXTURE / 'reads.fastq', 'output-pipeline-limit')
+            output_data = output_payload.get('data', {})
+            output_job_record = json.loads((data / 'jobs' / (output_job + '.json')).read_text())
+            output_case('output_pipeline_limit_is_failed_and_withheld',
+                output_payload.get('status') == 'failed' and output_data.get('release_status') == 'withheld'
+                and output_data.get('error_code') == 'pipeline_output_limit',
+                {'failed': output_payload.get('status') == 'failed', 'withheld': output_data.get('release_status') == 'withheld'})
+            output_case('output_pipeline_crypto_and_original_hash_preserved',
+                output_data.get('decrypted') is True and output_data.get('signature_valid') is True
+                and output_data.get('upload_sha256') == output_job_record['sha256']
+                and output_data.get('processed_sha256') == sha(FIXTURE / 'reads.fastq'),
+                {'crypto_verified_before_output_failure': output_data.get('decrypted') is True and output_data.get('signature_valid') is True,
+                 'original_hash_preserved': output_data.get('upload_sha256') == output_job_record['sha256']})
+            result_size = (data / 'results' / (output_job + '.json')).stat().st_size
+            output_case('output_pipeline_valid_json_prefix_not_released',
+                not output_data.get('pipeline_output') and result_size <= 16777216,
+                {'partial_json_released': bool(output_data.get('pipeline_output')), 'result_bytes': result_size})
+            time.sleep(1.1)
+            cleaned = not marker.exists() and not (data / 'decrypted' / (output_job + '_decrypted.bin')).exists()
+            output_case('output_pipeline_descendant_and_plaintext_cleaned', cleaned,
+                        {'descendant_marker_absent': not marker.exists(),
+                         'plaintext_absent': not (data / 'decrypted' / (output_job + '_decrypted.bin')).exists()})
+            denied, _ = request(results_url + '/results/' + output_job, client_b)
+            output_case('output_pipeline_failure_nonowner_denied', denied == 403, {'http_status': denied})
+
+            marker = output_private / 'evaluator-descendant-marker'
+            evaluator = overflowing_command('evaluator.py', marker,
+                {'evaluation_status': 'passed', 'tp': 3, 'fp': 0, 'fn': 0, 'precision': 1, 'recall': 1})
+            replace_worker({**worker_settings, 'BIOZERO_EVALUATOR_PATH': str(evaluator),
+                            'BIOZERO_TRUTH_PATH': str(FIXTURE / 'expected.vcf')})
+            _, science_job, science_payload = submit(FIXTURE / 'reads.fastq', 'output-evaluator-limit')
+            science_data = science_payload.get('data', {})
+            evaluation = science_data.get('scientific_evaluation', {})
+            science_job_record = json.loads((data / 'jobs' / (science_job + '.json')).read_text())
+            output_case('output_evaluator_limit_withholds_successful_execution',
+                science_payload.get('status') == 'succeeded' and science_data.get('release_status') == 'withheld'
+                and evaluation.get('evaluation_error_code') == 'evaluation_output_limit',
+                {'execution_succeeded': science_payload.get('status') == 'succeeded', 'science_withheld': science_data.get('release_status') == 'withheld'})
+            output_case('output_evaluator_crypto_and_original_hash_preserved',
+                science_data.get('decrypted') is True and science_data.get('signature_valid') is True
+                and science_data.get('upload_sha256') == science_job_record['sha256']
+                and science_data.get('processed_sha256') == sha(FIXTURE / 'reads.fastq'),
+                {'crypto_verified': science_data.get('decrypted') is True and science_data.get('signature_valid') is True,
+                 'original_hash_preserved': science_data.get('upload_sha256') == science_job_record['sha256']})
+            output_case('output_evaluator_passed_json_prefix_not_accepted',
+                evaluation.get('evaluation_status') == 'failed' and 'tp' not in evaluation,
+                {'evaluation_failed': evaluation.get('evaluation_status') == 'failed', 'passed_metrics_released': 'tp' in evaluation})
+            time.sleep(1.1)
+            cleaned = not marker.exists() and not (data / 'decrypted' / (science_job + '_decrypted.bin')).exists()
+            output_case('output_evaluator_descendant_and_plaintext_cleaned', cleaned,
+                        {'descendant_marker_absent': not marker.exists(),
+                         'plaintext_absent': not (data / 'decrypted' / (science_job + '_decrypted.bin')).exists()})
+            denied, _ = request(results_url + '/results/' + science_job, client_b)
+            output_case('output_evaluator_withheld_nonowner_denied', denied == 403, {'http_status': denied})
+            replace_worker(worker_settings)
+            (public / 'output-summary.json').write_text(json.dumps({'schema_version': 1,
+                'scope': 'actual protected native uploads with intentionally excessive pipeline/evaluator output; no biological model',
+                'case_count': len(output_observations), 'cases': output_observations,
+                'artifact_or_total_disk_quota_verified': False}, indent=2) + '\n')
+        if args.admission_cases:
+            from admission_checks import run_checks as admission_checks
+            admission_summary = admission_checks(run_dir=run_dir, binaries=binaries, pki=pki,
+                                                  env=env, record=record)
+            (public / 'admission-summary.json').write_text(json.dumps(admission_summary, indent=2) + '\n')
         manifest["status"] = "passed"
     except Exception as exc:
         manifest["error"] = str(exc)
