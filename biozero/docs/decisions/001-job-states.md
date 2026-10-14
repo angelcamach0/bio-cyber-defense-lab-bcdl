@@ -26,3 +26,13 @@ tested. User sign-in and principal propagation are a separate implementation gat
 CLI exit codes: 0 succeeded, 2 incomplete/historical, 3 failed/rejected,
 4 timed out, 1 configuration/transport/protocol. The total wait deadline bounds
 polling. No terminal state is presented as pending indefinitely.
+
+## Amendment: reviewer identity gate, 2026-10-14
+
+The restricted shared-certificate proxy above is now the optional `static-ui`
+profile, with no API access. The default reviewer gateway implements individual
+sessions, immutable per-principal mTLS transports and durable ownership. Its
+Compose/Firefox evidence passed 31 integration assertions and 23 browser checks;
+see experiment001 and STATUS for receipts. The original decision is retained as
+history; its identity prerequisite is met for this local reviewer profile.
+Production identity and synchronization across every tab remain separate gates.

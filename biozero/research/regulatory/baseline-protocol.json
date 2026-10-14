@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "protocol_id": "SCI02-GM12878-ATAC-FP32-v1",
+  "model": {
+    "source_repository": "https://github.com/kostkalab/seillra.git",
+    "source_commit": "217469410410e07b6663372da847426ffd172855",
+    "variant": "fp32",
+    "rank": 64,
+    "projection": false,
+    "head_outputs": 21907,
+    "strand_handling": "pinned upstream variant forward, mean of forward and reverse-complement head probabilities"
+  },
+  "tracks": {
+    "annotation_sha256": "3a2cece0a7877dadb2c23e8fcaf57b25ef57523258437201785fde9e537376a9",
+    "context": "GM12878_B_Lymphocyte_Blood",
+    "assay": "ATAC-seq",
+    "ids": [
+      59676,
+      59678,
+      61819,
+      61820,
+      61821,
+      61822,
+      65259,
+      65260,
+      65262
+    ],
+    "indices_zero_based": [
+      10233,
+      10234,
+      10387,
+      10388,
+      10389,
+      10390,
+      12556,
+      12557,
+      12558
+    ]
+  },
+  "score": {
+    "aggregation": "mean_all_tracks",
+    "direction": "ALT-minus-REF",
+    "quantity": "probability_delta",
+    "experimental_effect_conversion": "E=ALT,O=REF keep raw effect; E=REF,O=ALT negate once; all other/unknown pairs reject or pending; do not assume numbered alleles are REF"
+  },
+  "constraints": {
+    "genome_build": "hg38",
+    "window_length": 4096,
+    "center_index": 2048,
+    "allowed_bases": "ACGT",
+    "strand": "+",
+    "padding": false,
+    "max_rss_bytes": 3221225472,
+    "seconds_per_phase": 120,
+    "threads": 1,
+    "batch": 1
+  },
+  "dataset_requirements": {
+    "biological_data_status": "awaiting_authorized_exact_source_and_effect_dictionary",
+    "allowed_kinds": [
+      "biological",
+      "instrumentation_control"
+    ],
+    "permission_scope": "internal_research",
+    "phase_case_counts": {
+      "control": 1,
+      "adapter": 10,
+      "evaluation": 100
+    },
+    "selection_frozen_before_predictions": true,
+    "source_version_and_sha256_required": true,
+    "split_rule": "adapter_and_evaluation_loci_disjoint; reject duplicated/overlapping loci",
+    "effect_definition_requires_explicit_alleles": true,
+    "verified_local_raw_source_required": true,
+    "evaluation_requires_passed_adapter_receipt": true
+  },
+  "metrics": {
+    "biological": [
+      "spearman_rank_correlation",
+      "effect_sign_agreement"
+    ],
+    "denominators": "all submitted, validated, rejected, pending and inferred cases reported separately",
+    "raw_mae_against_beta": false,
+    "causal_or_clinical_claim": false,
+    "sign_agreement_definition": "Primary: equality of mathematical sign(score) and sign(normalized experimental effect), including exact zeros; no posthoc tolerance. Denominator = finite scored cases with known finite effects.",
+    "secondary_sign_agreement": "Exclude exact-zero experimental effects only; predicted zero versus nonzero effect counts as disagreement. Record both zero counts and denominators.",
+    "uncertainty": "When primary source provides confidence intervals or standard errors, preserve them and count intervals containing zero separately; never invent them or exclude uncertain effects from primary metrics after observing predictions.",
+    "undefined_spearman": "Return null with explicit reason for fewer than two pairs or a constant ranked vector; ties use average ranks."
+  },
+  "acceptance": {
+    "adapter": "all ten cases accounted; complete verified windows, allele/strand agreement, finite strict FP32 head outputs and repeat checks within limits",
+    "evaluation": "predefined hundred biological cases and disjoint split; report every outcome and descriptive association with measured effects, including negative findings",
+    "instrumentation_control": "implementation/input/model-path checks only; biological feasibility remains pending"
+  },
+  "scope": "Frozen head/context/score configuration before biological predictions; exact dataset acquisition/schema/selection/effect semantics still required. No biological cases have been evaluated.",
+  "selection": {
+    "seed": "SCI02-GM12878-ATAC-FP32-v1:20261014",
+    "eligibility": "freeze the actual source-to-normalized schema, source filters, effect orientation and permitted usage before predictions; technical SNV/input eligibility only, no score-based or outcome-based choices",
+    "rank_key": "SHA256 UTF-8 seed + newline + genome_build + newline + chrom + newline + decimal position_1based + newline + ref + newline + alt + newline + origin_row_id",
+    "order": "ascending rank_key, then canonical case_id; reject duplicate case IDs and loci in the normalized pool with a recorded reason",
+    "independence": "greedily admit only complete [q-2048,q+2048) windows disjoint from all earlier admitted windows on that chromosome; q=position_1based-1",
+    "allocation": "first10 admitted loci form adapter; next100 form evaluation; freeze all110 before any predictions",
+    "invalid_after_freeze": "count and retain invalid/unavailable loci in their original slots; never replace them to improve the outcome",
+    "no_reselection_from_predictions": true,
+    "require_source_normalization_ledger": true
+  }
+}

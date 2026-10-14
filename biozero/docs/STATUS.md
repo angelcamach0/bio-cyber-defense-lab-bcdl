@@ -41,8 +41,9 @@ allele-presence fixture, not genotype, indel, human-genome or clinical accuracy.
 Execution status and scientific release are separate. An unassessed successful
 execution does not approve science. Failed/missing/inconsistent evaluation is withheld.
 
-The Python suites passed 48 tests across pipeline, benchmark, supervisor,
-operator preflight and bounded downloader; test/vet passed in all seven Go modules. Vale also ran gateway tests with
+The Python suites passed 71 tests across pipeline, benchmark, native/browser
+contracts, supervisors, operator preflight, bounded download/control acquisition
+and biological-adapter validation; test/vet passed in all seven Go modules. Vale also ran gateway tests with
 the race detector. PKI acceptance passed including gateway key scope. Current
 container tools: Python 3.12.3, minimap2 2.26-r1175, samtools 1.19.2, bcftools 1.19.
 Native tools remain fixed in the 39-package Linux ARM64 lock.
@@ -79,6 +80,23 @@ configuration: the quantized first pass already costs more than FP32. Biological
 accuracy, approximately 100 paired biological examples and savings remain pending.
 See [SCI01 report](research/2026-10-14-regulatory-feasibility.md).
 
+SCI02 now has an offline normalized-case adapter, frozen head/context/score and
+deterministic 110-slot selection. Twenty adapter tests cover input failures,
+source/normalization/effect pins, disjoint windows, prior biological 10-locus
+receipt before 100, metrics and partial-failure recovery. Three control acquisition
+boundary tests passed. No DART TSV schema has been assumed or silently mapped.
+
+One public UCSC hg38 window with artificial central C-to-G ALT passed actual
+FP32 head loading and repeat inference in an offline user/network namespace.
+The canonical forward returned two probability tensors of shape 1 × 21,907; all were finite
+in [0,1] and repeat-identical. Nine fixed GM12878 ATAC tracks were used, with the
+61-class projection disabled. Measurement 11.348 s, repeat 11.378 s, self RSS
+927,031,296 bytes. The source, protocol and public export were independently
+reviewed. [Control runtime](../research/regulatory/adapter-control-runtime.json)
+contains only allowlisted metadata/metrics, not DNA or prediction vectors.
+It has zero experimental truth cases and leaves biological feasibility pending.
+This different input does not revise the earlier FP32/QNNPACK cost comparison.
+
 ## Next gates
 
 - The unhealthy-registry latch was tightened for already-in-flight requests;
@@ -97,6 +115,12 @@ See [SCI01 report](research/2026-10-14-regulatory-feasibility.md).
   Candidate Synapse syn60756043 version 2 metadata is readable, but anonymous
   file download returned 403. Actual TSV size/hash/header and effect-allele
   semantics await authorized access; no biological cases have been scored.
+  An author-linked original caQTL archive is35.6 GB and cannot fit the 50 MiB gate;
+  no individual usable file/schema/license was verified from that alternative.
+  Source verification receipts, frozen normalization/selection and real ten-locus
+  adapter evidence are required before the hundred-locus evaluation. Source
+  standard errors/confidence intervals are retained when provided; disjoint 4 kb
+  windows alone do not establish linkage-disequilibrium independence.
   Reopen a recomputation gate only if a representative cheaper pass is measured.
 - Public genomic benchmark, queues/multiple workers, production keys/identity,
   response actions and Oracle deployment. Optional nginx/responder profiles

@@ -1,7 +1,8 @@
 # SCI02: biological regulatory baseline protocol draft
 
 Date: 2026-10-14. Science reviewer: Vera. Coordinator: Chiquis.
-Status: protocol proposal; no biological dataset or scores evaluated yet.
+Status: head/context/score/selection configuration and offline adapter implemented;
+one instrumentation control executed; no biological dataset or effects evaluated.
 
 ## Why this follows SCI01
 
@@ -96,3 +97,38 @@ Nine candidate GM12878 ATAC-seq track IDs in pinned annotations are 59676,
 assay-matched aggregation before predictions. Ten adapter loci and one hundred
 separate evaluation loci cannot yet be fixed without the authorized table and
 effect dictionary. No biological inference ran during this access preflight.
+
+## Implemented adapter and instrumentation evidence
+
+[baseline-protocol.json](../../research/regulatory/baseline-protocol.json) was
+frozen before predictions (SHA2568c3f80a5b59eb3d165764bb5596e1b0451248bd2b0641d430fa6378b73a9126c).
+It fixes the nine ID-to-index mappings, probability-delta mean, raw effect-allele
+conversion, zero/tie metrics and deterministic technical selection. Rank by the
+fixed SHA key, greedily admit disjoint 4,096-base windows, freeze the first 10 and
+next 100 before predictions, and retain failed slots without replacements.
+The exact source filters/schema/effect dictionary still require the actual table.
+Disjoint windows do not establish LD independence or 100 independent observations.
+
+[biological_adapter.py](../../research/regulatory/biological_adapter.py) verifies
+source bytes, permitted/reviewed semantics, complete windows and full frozen case
+payloads. Changing beta, E/O or provenance without changing the reviewed
+normalization is rejected. Hundred-locus execution requires a passed biological
+ten-locus receipt with matching dataset/protocol/weights/selection. Unknown
+prerequisites remain pending. Atomic private per-row progress preserves completed
+cases on failure; input validation and model inference are separate states.
+
+Twenty adapter tests and three acquisition-boundary tests passed. One UCSC public
+reference/artificial-C-to-G control passed actual cached FP32 head loading,
+finite 21,907 probabilities, both strands and exact repeat. Measurement 11.348 s;
+repeat 11.378 s; self RSS 927,031,296 bytes. It has no measured effect and cannot
+count among the ten/hundred biological loci. The [public runtime receipt](../../research/regulatory/adapter-control-runtime.json)
+omits DNA/vectors; full reports remain private. See the
+[adapter commands](../../research/regulatory/README.md) for reconstruction.
+
+Vera checked an [author-linked AFGR distribution](https://github.com/smontgomlab/AFGR/blob/26ddc2b02e0735065c140690f6765b05bccfdb5b/README.md).
+Its archive declares35,612,374,185 bytes; no individual small file was verified.
+The response body was not downloaded. The author-linked source does not prove
+an exact copy of the DART v2 table or its terms. A
+[primary preprocessing notebook](https://github.com/kundajelab/chrombpnet-figures/blob/3a81c09e9cc4f9945d553ce5619da3bc1088106b/src/figures_factory/Fig6/preprocessing/format_af_caqtls.ipynb)
+documents allele2/allele1 effects for its own output; it does not establish which
+flips are already applied to the unread DART v2 bytes.

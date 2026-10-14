@@ -65,3 +65,48 @@ ni invoca torch.compile. Su estado científico permanece pendiente incluso con P
 Seleccionar datos/contexto válidos y un track compatible de la cabeza es el próximo
 gate. Cien pares sintéticos no reemplazan el piloto de 100 pares biológicos;
 las 61 clases proyectadas tampoco equivalen a etiquetas ATAC/DNase experimentales.
+
+## SCI02: normalized real-window adapter
+
+`biological_adapter.py` accepts a normalized local case ledger, not an assumed
+DART TSV schema. `baseline-protocol.json` fixes the source, FP32 rank 64 head,
+21,907 outputs, nine GM12878 ATAC-seq tracks, ALT-minus-REF probability score,
+deterministic disjoint-window selection and zero/tie metric rules. It disables
+the 61-class projection and reuses the pinned both-strands forward.
+
+Source bytes/digests, permitted usage, reviewed schema/effect semantics and the
+normalization/selection snapshots must be verified before biological inference.
+The submitted payload must equal its frozen normalized row, including effects
+and provenance. Evaluation of 100 requires a passed biological 10-locus adapter
+receipt with matching dataset/protocol/weights/selection; an instrumentation
+control cannot satisfy that prerequisite. Disjoint windows do not guarantee
+independence under linkage disequilibrium. Every submitted row remains recorded.
+
+Prepare the fixed public UCSC reference/artificial-C-to-G control:
+
+```bash
+# Cached acquisition by default; --fetch explicitly permits one bounded HTTPS read.
+python3 biozero/research/regulatory/control_fixture.py --fetch
+python3 biozero/research/regulatory/biological_adapter.py \
+  --ledger .biozero/regulatory-assets/datasets/control-case-ledger.json --validate-only
+unshare --user --map-root-user --net .biozero/regulatory/bin/python \
+  biozero/research/regulatory/biological_adapter.py \
+  --ledger .biozero/regulatory-assets/datasets/control-case-ledger.json \
+  --python .biozero/regulatory/bin/python --run
+```
+
+Use the already-created pinned source/checkpoint cache described above. The
+control source has 4,096 bases and a fixed DNA SHA; HTTP metadata timestamps can
+change, so each cache records its own source-byte digest. No fetch happens when
+that validated cache exists. Existing outputs are never replaced with different
+bytes. Redirects, symlinks, FIFOs, oversize responses and mismatched reference
+metadata are rejected. No checkpoint download is part of the adapter.
+
+`--validate-only` uses no Torch and records input readiness separately from
+inference. `--run` supervises a separate CPU process with a 3 GiB RSS watchdog,
+120 s per phase, one thread and batch one. Atomic private progress preserves
+completed rows if execution fails; remaining cases are marked failed. The
+watchdog is not a kernel allocation cap. Prediction vectors and full case reports
+stay private. A control PASS leaves biological feasibility pending: its ALT is
+artificial and it has no experimental effect label. Actual ten/hundred-locus
+measurements remain pending authorized data and the frozen scientific protocol.

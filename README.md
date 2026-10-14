@@ -74,12 +74,17 @@ withheld or unassessed. A completed process alone does not approve scientific re
 - [Implementation status](biozero/docs/STATUS.md)
 - [Agent workflow](AGENTS.md)
 - [Team runbook and daily research](biozero/docs/team/runbook.md)
+- [Requirements, evidence and next gates](biozero/docs/team/requirements-and-gates.md)
 - [Active Notion notebook](https://app.notion.com/p/3ef7dff9bf6c817cb6d0d6d48b68a9d4)
 - [Project flow guide](biozero/docs/PROJECT_FLOW_GUIDE.md)
 
 The coordinator integrates science, security, engineering, and their support
 reviewers. Daily hosted research records source changes separately from code
 implementation. The regulatory-recomputation question remains a feasibility pilot.
+SCI02 now has an offline normalized-window FP32 head adapter and a frozen
+GM12878 ATAC-seq protocol. One public-reference/artificial-ALT control passed
+strict loading and repeated inference; ten/hundred measured biological loci
+remain pending authorized data. See [the adapter setup](biozero/research/regulatory/README.md).
 
 ## License
 

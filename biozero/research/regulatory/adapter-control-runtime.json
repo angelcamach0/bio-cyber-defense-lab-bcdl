@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "protocol_id": "SCI02-GM12878-ATAC-FP32-v1",
+  "protocol_sha256": "8c3f80a5b59eb3d165764bb5596e1b0451248bd2b0641d430fa6378b73a9126c",
+  "phase": "control",
+  "dataset_kind": "instrumentation_control",
+  "dataset_sha256": "b76938b9aabdf417c1b7377f941c7a2e930f83acc4cb0747e85bd4a65fb9c1d8",
+  "ledger_sha256": "4746d7174e1b94ebd73c6beffce2af95abd45a166b31a0b97e4870b7e77efc11",
+  "source_commit": "217469410410e07b6663372da847426ffd172855",
+  "annotation_sha256": "3a2cece0a7877dadb2c23e8fcaf57b25ef57523258437201785fde9e537376a9",
+  "weights_sha256": {
+    "head64_fp32": "7fd1f2ee86a83e8a985dff13a1164c9f32a0fcb60f8309d38019e1ad17797d35",
+    "trunk_fp32": "346677580a9bfcdab1bc83735e12c17c8f5d2ec76eb91a45b4e3b2a91f59bf40"
+  },
+  "track_ids": [
+    59676,
+    59678,
+    61819,
+    61820,
+    61821,
+    61822,
+    65259,
+    65260,
+    65262
+  ],
+  "track_indices_zero_based": [
+    10233,
+    10234,
+    10387,
+    10388,
+    10389,
+    10390,
+    12556,
+    12557,
+    12558
+  ],
+  "projection": false,
+  "head_outputs": 21907,
+  "strict_state_dict": true,
+  "weights_only": true,
+  "threads": 1,
+  "batch": 1,
+  "channel_order": "ACGT",
+  "python": "3.11.17",
+  "torch": "2.14.1+cpu",
+  "architecture": "aarch64",
+  "load_seconds": 0.8048526909988141,
+  "warmup_seconds": 11.35548709599243,
+  "peak_rss_bytes": 927031296,
+  "counts": {
+    "inferred": 1,
+    "pending": 0,
+    "rejected": 0,
+    "submitted": 1,
+    "validated": 1
+  },
+  "checks": {
+    "all_head_probabilities_finite_and_in_unit_interval": true,
+    "batch_one": true,
+    "exact_nine_tracks": true,
+    "full_head_shape_1x21907": true,
+    "projection_disabled": true,
+    "repeat_identical_all_head_outputs": true
+  },
+  "supervisor": {
+    "cpu_time_total_limit_seconds": 481,
+    "memory_enforcement": "50 ms RSS watchdog plus self-reported peak; not RLIMIT_AS or a kernel allocation cap",
+    "returncode": 0,
+    "rss_ceiling_bytes": 3221225472,
+    "seconds": 38.13750226699631,
+    "seconds_per_phase": 120,
+    "watchdog_peak_rss_bytes": 927232000
+  },
+  "scientific_feasibility": "pending",
+  "biological_association": "pending",
+  "strand_handling": "pinned upstream forward: mean forward and reverse-complement head probabilities",
+  "independence_limit": "Disjoint 4096-base windows do not establish linkage-disequilibrium independence.",
+  "status": "passed",
+  "experimental_truth_cases": 0,
+  "control": {
+    "reference_window_sha256": "99279a104d299f7fe1f147072c631b3041d0c27464dac169966a99eb5b70e439",
+    "ref": "C",
+    "alt": "G",
+    "position_1based": 1002049,
+    "seconds": 11.347939172992483,
+    "repeat_seconds": 11.37798262599972,
+    "repeat_identical": true
+  },
+  "network_isolation": {
+    "namespace": "unshare --user --map-root-user --net",
+    "pre_exec_interfaces_verified": [
+      "lo"
+    ],
+    "weights_and_inputs_from_local_cache": true
+  },
+  "private_report_sha256": "d477244eddb736a9b2567f6c614338809cd46d30bd4792142d33713bce2f17f6",
+  "scope": "Implementation/input/FP32 head compatibility on one public reference with artificial ALT; no measured caQTL, biological accuracy or clinical claim.",
+  "source_hashes": {
+    "biozero/research/regulatory/biological_adapter.py": "b8df3e12c45ba1f8afe7d25ba7e0b6f7b34417a2321abb7eeb745260aa289f47",
+    "biozero/research/regulatory/test_biological_adapter.py": "3e0993eb7e2d99089f606541ec056df6caaaa964ed575d0c5724573466db658f",
+    "biozero/research/regulatory/baseline-protocol.json": "8c3f80a5b59eb3d165764bb5596e1b0451248bd2b0641d430fa6378b73a9126c",
+    "biozero/research/regulatory/control_fixture.py": "ca51e3e8ca4d507ba10bbbef3238f57479041e0108993455dc083f1eed4f4014",
+    "biozero/research/regulatory/test_control_fixture.py": "2a060e233675d4ce806205e3362d0fbfc3407e011359287d685f91ebec87f30a",
+    "biozero/research/regulatory/model_probe.py": "983e57f7f6d7462080ddc3be6d1afdc5cea267fe9e0a564e068b0c1584482336",
+    "biozero/research/regulatory/checkpoint_fetch.py": "b641ef8ad2a64f93498cb86e799279f6b4844b4c482819f10fee1074f1985ba7"
+  }
+}
