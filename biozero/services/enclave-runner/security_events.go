@@ -20,7 +20,6 @@ import (
 )
 
 const maxSecurityEventBytes = 64 << 10
-const maxSecurityResultBytes = 16 << 20
 
 // securityEvent is a minimal, local quarantine intent. Publication is not an
 // acknowledgement of relay delivery or execution of a response action.
@@ -305,7 +304,7 @@ func reconcileSecurityEvents(ctx context.Context, resultsDir string) {
 		return
 	}
 	defer dir.Close()
-	entries, err := os.ReadDir(resultsDir)
+	entries, err := metadataEntries(ctx, resultsDir)
 	if err != nil {
 		log.Print("security outbox error: event_results_scan_failed")
 		return
@@ -321,14 +320,12 @@ func reconcileSecurityEvents(ctx context.Context, resultsDir string) {
 		if !isValidJobID(jobID) {
 			continue
 		}
-		file, data, err := openBoundedSecurityFile(filepath.Join(resultsDir, entry.Name()), maxSecurityResultBytes, false)
+		result, err := readResultContext(ctx, filepath.Join(resultsDir, entry.Name()))
 		if err != nil {
 			log.Print("security outbox error: event_result_read_failed")
 			continue
 		}
-		file.Close()
-		var result resultRecord
-		if json.Unmarshal(data, &result) != nil || result.JobID != jobID {
+		if result.JobID != jobID {
 			log.Print("security outbox error: event_result_invalid")
 			continue
 		}

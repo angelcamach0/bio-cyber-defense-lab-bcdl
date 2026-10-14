@@ -217,9 +217,9 @@ func processJobs(jobsDir, uploadDir, resultsDir, decryptedDir string, rules dete
 }
 func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, decryptedDir string, rules detectionRules, privateKeyPath, signerCertPath, pipelinePath, referencePath, jobKey string, pipelineTimeout time.Duration) {
 	reconcileSecurityEvents(ctx, resultsDir)
-	entries, err := os.ReadDir(jobsDir)
+	entries, err := metadataEntries(ctx, jobsDir)
 	if err != nil {
-		log.Printf("read jobs dir error: %v", err)
+		log.Print("worker metadata error: metadata_jobs_scan_failed")
 		return
 	}
 	for _, entry := range entries {
@@ -230,23 +230,22 @@ func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, dec
 			continue
 		}
 		jobPath := filepath.Join(jobsDir, entry.Name())
-		job, err := readJob(jobPath)
+		job, err := readJobContext(ctx, jobPath)
 		if err != nil {
-			log.Printf("job read error %s: %v", entry.Name(), err)
+			log.Print("worker metadata error: metadata_job_read_failed")
 			continue
 		}
 		if !isValidJobID(job.JobID) || entry.Name() != job.JobID+".json" {
-			log.Printf("invalid job record %s", entry.Name())
+			log.Print("worker metadata error: metadata_job_identity_invalid")
 			continue
 		}
 		if job.Status != "uploaded" && job.Status != "running" {
 			continue
 		}
 		resultPath := filepath.Join(resultsDir, job.JobID+".json")
-		if data, err := os.ReadFile(resultPath); err == nil {
-			var previous resultRecord
-			if json.Unmarshal(data, &previous) != nil || previous.JobID != job.JobID || !terminalStatus(previous.Status) {
-				log.Printf("invalid existing result %s", resultPath)
+		if previous, err := readResultContext(ctx, resultPath); err == nil {
+			if previous.JobID != job.JobID || !terminalStatus(previous.Status) {
+				log.Print("worker metadata error: metadata_existing_result_invalid")
 				continue
 			}
 			job.Status = previous.Status
@@ -256,12 +255,12 @@ func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, dec
 				job.Status = "incomplete"
 				job.ErrorCode = "legacy_result_unverified"
 			}
-			if err := writeJSON(jobPath, job); err != nil {
-				log.Printf("job recovery error: %v", err)
+			if err := writeJobRecord(jobPath, job); err != nil {
+				log.Print("worker metadata error: metadata_job_recovery_write_failed")
 			}
 			continue
 		} else if !os.IsNotExist(err) {
-			log.Printf("result read error: %v", err)
+			log.Print("worker metadata error: metadata_result_read_failed")
 			continue
 		}
 		result := resultRecord{SchemaVersion: 1, ReleaseStatus: "withheld", JobID: job.JobID, UploadSHA256: job.SHA256, ClientCertSerial: job.ClientCertSerial,
@@ -283,7 +282,7 @@ func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, dec
 			}
 			job.Status = "running"
 			job.StartedAt = time.Now().UTC().Format(time.RFC3339)
-			if err := writeJSON(jobPath, job); err != nil {
+			if err := writeJobRecord(jobPath, job); err != nil {
 				result.Status = "failed"
 				result.ErrorCode = "job_write_failed"
 				result.ErrorMessage = "cannot persist running state"
@@ -293,7 +292,7 @@ func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, dec
 		}()
 		result.ProcessedAt = time.Now().UTC().Format(time.RFC3339)
 		if err := writeJSON(resultPath, result); err != nil {
-			log.Printf("result write error: %v", err)
+			log.Print("worker metadata error: metadata_result_write_failed")
 			continue
 		}
 		if err := emitPersistedSecurityEvent(result); err != nil {
@@ -303,8 +302,8 @@ func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, dec
 		job.ErrorCode = result.ErrorCode
 		job.ErrorMessage = result.ErrorMessage
 		// Original upload hash/size remain immutable, including encrypted uploads.
-		if err := writeJSON(jobPath, job); err != nil {
-			log.Printf("job update error: %v", err)
+		if err := writeJobRecord(jobPath, job); err != nil {
+			log.Print("worker metadata error: metadata_job_update_write_failed")
 		}
 	}
 }
@@ -1339,20 +1338,7 @@ func toStringSlice(value any) []string {
 ///
 /// Example: `job, err := readJob("/data/jobs/abc.json")`
 func readJob(path string) (jobRecord, error) {
-	var job jobRecord
-	data, err := os.ReadFile(path)
-	// Fail fast when the job file cannot be read.
-	if err != nil {
-		// Return error when the job file cannot be read.
-		return job, err
-	}
-	// Parse the JSON payload into the job struct.
-	if err := json.Unmarshal(data, &job); err != nil {
-		// Return error when job JSON is invalid.
-		return job, err
-	}
-	// Return the parsed job record.
-	return job, nil
+	return readJobContext(context.Background(), path)
 }
 
 /// writeJSON persists a value as indented JSON on disk.
@@ -1374,6 +1360,10 @@ func writeJSON(path string, v any) error {
 	if err != nil {
 		return err
 	}
+	return writeJSONBytes(path, data)
+}
+
+func writeJSONBytes(path string, data []byte) error {
 	file, err := os.CreateTemp(filepath.Dir(path), ".biozero-*.tmp")
 	if err != nil {
 		return err

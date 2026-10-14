@@ -58,7 +58,7 @@ func TestResultsExposeSavedStatusesAndLegacy(t *testing.T) {
 	for _, status := range []string{"succeeded", "incomplete", "rejected", "failed", "timed_out", "processed"} {
 		t.Run(status, func(t *testing.T) {
 			_, results, h := apiFixture(t)
-			data, _ := json.Marshal(map[string]string{"job_id": "abcd1234", "status": status})
+			data, _ := json.Marshal(resultRecord{SchemaVersion: 1, JobID: "abcd1234", Status: status})
 			os.WriteFile(filepath.Join(results, "abcd1234.json"), data, 0600)
 			w := httptest.NewRecorder()
 			h.ServeHTTP(w, verifiedRequest("researcher-a", 1))
@@ -82,7 +82,7 @@ func TestResultsExposeSavedStatusesAndLegacy(t *testing.T) {
 }
 func TestResultsDenyBAndReportCorruption(t *testing.T) {
 	jobs, results, h := apiFixture(t)
-	os.WriteFile(filepath.Join(results, "abcd1234.json"), []byte(`{"job_id":"abcd1234","status":"succeeded"}`), 0600)
+	os.WriteFile(filepath.Join(results, "abcd1234.json"), completeResult(t, "succeeded"), 0600)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, verifiedRequest("researcher-b", 2))
 	if w.Code != 403 {

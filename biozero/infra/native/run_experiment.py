@@ -41,12 +41,12 @@ def context(pki, principal=None):
     return ctx
 
 
-def request(url, ctx, data=None, headers=None):
+def request(url, ctx, data=None, headers=None, timeout=5):
     req = urllib.request.Request(url, data=data, headers=headers or {})
     # Local services use the loopback interface, not an external proxy route.
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), urllib.request.HTTPSHandler(context=ctx))
     try:
-        with opener.open(req, timeout=5) as response:
+        with opener.open(req, timeout=timeout) as response:
             return response.status, response.read()
     except urllib.error.HTTPError as exc:
         return exc.code, exc.read()
@@ -95,6 +95,7 @@ def main():
     parser.add_argument("--tools-prefix", type=pathlib.Path)
     parser.add_argument("--mode", choices=["stats", "variants"], default="variants")
     parser.add_argument("--soc", action="store_true", help="Verify worker outbox and authenticated simulated response")
+    parser.add_argument("--metadata-faults", action="store_true", help="Verify unsafe metadata rejection and live worker progress")
     args = parser.parse_args()
     env = dict(os.environ)
     if args.tools_prefix:
@@ -156,7 +157,7 @@ def main():
         shared = {"BIOZERO_DATA_DIR": str(data), "BIOZERO_SECURITY_MODE": "protected"}
         manifest["configuration"] = {"security_mode": "protected", "pipeline_mode": args.mode,
                                      "single_worker": True, "bound_address": "127.0.0.1",
-                                     "soc_simulation": args.soc}
+                                     "soc_simulation": args.soc, "metadata_faults": args.metadata_faults}
         for name, short, addr_var, port in [("upload-api", "upload", "BIOZERO_UPLOAD_ADDR", upload_port),
                                            ("results-api", "results", "BIOZERO_RESULTS_ADDR", results_port)]:
             start(name, {**shared, addr_var: f"127.0.0.1:{port}",
@@ -242,10 +243,13 @@ def main():
         body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"client_id\"\r\n\r\nresearcher-a\r\n"
                 f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"unsigned.fastq\"\r\n"
                 "Content-Type: application/octet-stream\r\n\r\n").encode() + (FIXTURE / "reads.fastq").read_bytes() + f"\r\n--{boundary}--\r\n".encode()
-        code, raw = request(upload_url + "/upload", client_a, body, {"Content-Type": f"multipart/form-data; boundary={boundary}"})
-        if code != 200:
-            raise RuntimeError(f"Unsigned test submission unexpectedly returned {code}")
-        unsigned_id = json.loads(raw)["job_id"]
+        def new_unsigned_job():
+            code, raw = request(upload_url + "/upload", client_a, body, {"Content-Type": f"multipart/form-data; boundary={boundary}"})
+            if code != 200:
+                raise RuntimeError(f"Unsigned test submission unexpectedly returned {code}")
+            return json.loads(raw)["job_id"]
+
+        unsigned_id = new_unsigned_job()
         deadline = time.monotonic() + 20
         while True:
             _, raw = request(results_url + "/results/" + unsigned_id, client_a)
@@ -363,6 +367,103 @@ def main():
                 'delivery': 'at least once with durable idempotent response',
                 'worker_network_isolation_verified_here': False,
                 'real_containment_verified': False}, indent=2) + '\n')
+        if args.metadata_faults:
+            from metadata_checks import run_checks
+
+            existing_uploads = {entry.name for entry in (data / 'uploads').iterdir()}
+            existing_jobs = {entry.name for entry in (data / 'jobs').iterdir()}
+            oversized_metadata = (f'--{boundary}\r\nContent-Disposition: form-data; name="sig"\r\n\r\n'.encode()
+                                  + b'x' * 65536 + b'\r\n' + body)
+            code, raw = request(upload_url + '/upload', client_a, oversized_metadata,
+                                {'Content-Type': f'multipart/form-data; boundary={boundary}'})
+            error = json.loads(raw)
+            clean = ({entry.name for entry in (data / 'uploads').iterdir()} == existing_uploads
+                     and {entry.name for entry in (data / 'jobs').iterdir()} == existing_jobs)
+            record('metadata_upload_rejects_oversized_job_before_publication',
+                   code == 413 and error.get('code') == 'metadata_too_large' and clean,
+                   {'http_status': code, 'error_code': 'metadata_too_large' if error.get('code') == 'metadata_too_large' else 'unexpected',
+                    'no_new_job_or_payload': clean})
+
+            # Calibrate against the actual retained upload fields, then reserve
+            # worst-case mutable state using the independently frozen contract.
+            template_for_budget = json.loads((data / 'jobs' / (unsigned_id + '.json')).read_text())
+            for field in ('started_at', 'error_code', 'error_message'):
+                template_for_budget.pop(field, None)
+            template_for_budget.update(status='incomplete', started_at='2000-01-01T00:00:00Z',
+                error_code='\x00' * 64, error_message='\x00' * 512, sig='x')
+            projected_base = len(json.dumps(template_for_budget, ensure_ascii=False, indent=2).encode()) - 1
+            boundary_sig_size = 65536 - projected_base
+            if boundary_sig_size < 1:
+                raise RuntimeError('Metadata boundary calibration invalid')
+            boundary_body = (f'--{boundary}\r\nContent-Disposition: form-data; name="sig"\r\n\r\n'.encode()
+                             + b'x' * boundary_sig_size + b'\r\n' + body)
+            code, raw = request(upload_url + '/upload', client_a, boundary_body,
+                                {'Content-Type': f'multipart/form-data; boundary={boundary}'})
+            if code != 200:
+                raise RuntimeError('Metadata projected-boundary upload was not admitted')
+            boundary_job = json.loads(raw)['job_id']
+            stop_at = time.monotonic() + 20
+            boundary_result = None
+            while time.monotonic() < stop_at:
+                code, raw = request(results_url + '/results/' + boundary_job, client_a)
+                if code != 200:
+                    raise RuntimeError('Admitted metadata boundary job became unreadable')
+                boundary_result = json.loads(raw)
+                if boundary_result.get('status') == 'rejected':
+                    break
+                time.sleep(0.1)
+            boundary_result = boundary_result or {}
+            saved_boundary = json.loads((data / 'jobs' / (boundary_job + '.json')).read_text())
+            denial, _ = request(results_url + '/results/' + boundary_job, client_b)
+            readable = (boundary_result and boundary_result.get('status') == 'rejected'
+                and boundary_result.get('data', {}).get('error_code') == 'signature_algorithm_invalid'
+                and saved_boundary['sig'] == 'x' * boundary_sig_size
+                and saved_boundary['sha256'] == template_for_budget['sha256']
+                and saved_boundary['size_bytes'] == template_for_budget['size_bytes']
+                and saved_boundary['client_id'] == template_for_budget['client_id']
+                and saved_boundary['client_cert_serial'] == template_for_budget['client_cert_serial']
+                and (data / 'jobs' / (boundary_job + '.json')).stat().st_size <= 65536
+                and not (data / 'artifacts' / boundary_job).exists() and denial == 403)
+            record('metadata_max_admitted_budget_stays_readable_after_processing', readable,
+                {'projected_budget_bytes': 65536, 'terminal_rejected': boundary_result.get('status') == 'rejected',
+                 'immutable_fields_preserved': bool(readable), 'owner_b_http_status': denial,
+                 'saved_job_bytes': (data / 'jobs' / (boundary_job + '.json')).stat().st_size})
+
+            one_over_body = (f'--{boundary}\r\nContent-Disposition: form-data; name="sig"\r\n\r\n'.encode()
+                             + b'x' * (boundary_sig_size + 1) + b'\r\n' + body)
+            before_jobs = {entry.name for entry in (data / 'jobs').iterdir()}
+            before_uploads = {entry.name for entry in (data / 'uploads').iterdir()}
+            code, raw = request(upload_url + '/upload', client_a, one_over_body,
+                                {'Content-Type': f'multipart/form-data; boundary={boundary}'})
+            refused = (code == 413 and json.loads(raw).get('code') == 'metadata_too_large'
+                and {entry.name for entry in (data / 'jobs').iterdir()} == before_jobs
+                and {entry.name for entry in (data / 'uploads').iterdir()} == before_uploads)
+            record('metadata_one_over_lifecycle_budget_rejected_without_orphan', refused,
+                   {'http_status': code, 'projected_budget_bytes': 65537, 'no_new_job_or_payload': refused})
+
+            def request_as(actor, path, timeout=2):
+                return request(results_url + path, client_a if actor == 'a' else client_b, timeout=timeout)
+
+            def verify_worker_progress(deadline=20):
+                job = new_unsigned_job()
+                stop_at = time.monotonic() + deadline
+                while time.monotonic() < stop_at:
+                    code, raw = request_as('a', '/results/' + job)
+                    result = json.loads(raw)
+                    if code == 200 and result.get('status') == 'rejected':
+                        return {'terminal_rejected': result.get('data', {}).get('error_code') == 'signature_required',
+                                'pipeline_not_called': not (data / 'artifacts' / job).exists()}
+                    time.sleep(0.1)
+                return {'terminal_rejected': False, 'pipeline_not_called': False}
+
+            metadata_private = run_dir / 'private/metadata-faults'
+            metadata_private.mkdir(mode=0o700)
+            template = json.loads((data / 'jobs' / (unsigned_id + '.json')).read_text())
+            summary = run_checks(data_dir=data, private_dir=metadata_private,
+                job_template=template, result_template=unsigned_result['data'],
+                request_as=request_as, verify_worker_progress=verify_worker_progress,
+                record=record)
+            (public / 'metadata-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
         manifest["status"] = "passed"
     except Exception as exc:
         manifest["error"] = str(exc)

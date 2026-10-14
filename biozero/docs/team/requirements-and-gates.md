@@ -154,3 +154,21 @@ effective response as a separate adopted gate: simulation is a prerequisite and
 does not complete the SOC requirement. SIEM integration, actual containment,
 per-source identity, quotas/retention, queue/leases, adversary scenarios, Oracle
 deployment and biological ten/100-locus evaluation remain pending.
+
+## Metadata boundary round — 2026-10-14
+
+This is a further acceptance checkpoint, not completion of the original roadmap.
+TM-03 job/result readers, worker recovery and event reconciliation now follow the
+[metadata contract](../security/metadata-contract.md); both readers pass54 shared
+vectors. Native evidence `docs/evidence/20261014T175423-175221Z/public/` passed53
+checks, including the entire admitted metadata lifecycle at its projected limit,
+rejection one byte over, nine unsafe fixtures and continued real worker progress.
+Rebuilt Compose `docs/evidence/20261014T175423-180461Z-reviewer-compose/public/`
+passed30 controls and cleanup.81 Python tests/seven Go test-vet modules passed.
+Previous50/51-check receipts did not establish lifecycle growth safety and retain
+their historical scope. Root-only unit evidence isolates foreign UID rejection.
+
+Next: TM-01 measurable global/per-client admission and storage limits, then TM-02
+authenticated immutable ownership. Remaining biological10/100 loci, queues/leases,
+evolving benign adversary scenarios, effective SOC, production identity/storage/
+keys, cloud deployment/attestation and final deliverables remain adopted gates.

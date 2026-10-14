@@ -95,6 +95,48 @@ host/UID and storage remain trusted. Lía's [threat model](security/threat-model
 records admission/storage, mutable ownership metadata and unsafe legacy metadata
 reads as next gates. Biological data access remains pending and unchanged.
 
+## Bounded metadata and lifecycle round
+
+Atlas and Vale replaced job/result reads with descriptor-anchored, no-follow,
+regular-file reads: exact private mode/UID, 64 KiB jobs, 16 MiB results and strict
+typed JSON. Both readers pass the same 54-case contract (6 valid, 48 invalid).
+Worker recovery and event reconciliation use that boundary; authorization occurs
+before opening results. Ancestor links, FIFOs, modes/UID, oversized files,
+duplicates, aliases, trailing/deep JSON and legacy results have explicit tests.
+
+Admission projects the entire current lifecycle before accepting a job. A raw
+64 KiB admission guard alone was insufficient: worker state growth could make
+the job unreadable. The corrected projection reserves the longest status, UTC
+start timestamp and worst escaped diagnostics; a common worker writer caps only
+the job's diagnostic copies, retaining full results and original upload fields.
+Legacy jobs without reserve fail closed if a state update cannot fit.
+
+Fresh native receipt `evidence/20261014T175423-175221Z/public/` passed 53 checks:
+the original synthetic/SOC checks, exact projected 65,536-byte admission through
+terminal rejection/B403, 65,537-byte rejection without orphan files, nine unsafe
+metadata fixtures, continued health/new worker progress and exact cleanup.
+The saved boundary job was 62,136 bytes. Its three rejection events came from
+actual jobs; the fault fixtures did not fabricate events. Lía built the fault
+harness; Luci independently checked 8 checksums, all 215 source hashes at review,
+the real budget and private event/result linkage. Earlier 50/51-check receipts
+remain historical and do not establish this lifecycle closure.
+
+Rebuilt four-service receipt
+`evidence/20261014T175423-180461Z-reviewer-compose/public/` passed 30 checks and
+scoped cleanup. Its runtime inventory includes the new metadata/lifecycle files.
+Luci verified all 30 runtime hashes and five checksums, compared exported DTOs
+with retained private records and approved the 15 public native/Compose files.
+This run did not repeat Firefox or the optional responder container. All 81 Python
+tests and seven Go test/vet modules passed; Atlas also ran upload/worker race tests.
+Separate root-only unit fixtures tested foreign UID rejection without running
+services as root: `evidence/20261014T172630-977273Z-metadata-owner/public/`.
+
+See the [metadata contract](security/metadata-contract.md) for exact limits.
+This narrows TM-03 for job/result metadata, not every payload/key/config/artifact
+read or arbitrary filesystem IO latency. TM-01 global admission/storage limits
+and TM-02 authenticated immutable ownership remain next; shared host/UID trust,
+queue/leases, effective response and biological gates are unchanged.
+
 ## Actual runtime and limits
 
 Observed: RHEL 9.8 aarch64, one CPU, about 5.45 GiB host RAM, Docker 29.9.0.

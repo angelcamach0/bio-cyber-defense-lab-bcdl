@@ -183,3 +183,26 @@ revocation, containment, SIEM integration, per-source identity, quotas/retention
 and continuously supervised relay remain pending. TM-01/02/03/04/05/06/08 are not
 closed by these receipts. See [decision003](../decisions/003-security-event-handoff.md)
 and the [event contract](event-contract.md) for adopted semantics.
+
+## Post-review metadata and lifecycle evidence
+
+TM-03's original unsafe-read finding is narrowed by the [metadata contract](metadata-contract.md).
+Job/result readers now anchor no-follow descriptors, check regular type/private
+mode/effective UID, bound bytes and JSON depth, and reject ambiguous typed records.
+Worker recovery/SOC reconciliation use the same parser; API authorization precedes
+result IO. The 54 shared vectors and process/unit fixtures cover the declared scope.
+Native `../evidence/20261014T175423-175221Z/public/` passed53 checks, including
+nine live FIFO/link/oversize/duplicate fixtures, ongoing new worker progress and
+exact cleanup. A projected65,536-byte admitted job remained readable after actual
+terminal rejection;65,537 was refused without orphan files. The initial raw-byte
+cap could not cover lifecycle growth and was replaced by a worst-field projection
+and one bounded worker writer. Full result diagnostics and immutable upload
+fields are retained; older unreserved jobs fail closed before oversized writes.
+
+Rebuilt Compose `../evidence/20261014T175423-180461Z-reviewer-compose/public/`
+passed30 controls and scoped cleanup. Separate root-only fixtures isolate foreign
+UID rejection; their services were not run as root. No browser/model or optional
+responder container was rerun. Other payload/PKI/config reads, arbitrary kernel IO
+latency, trusted host/UID and mutable owner provenance remain residual risks.
+TM-01 admission/storage budgets and TM-02 immutable authenticated owner records
+are next adopted gates; this change does not close TM-04/05/06/08 or effective SOC.

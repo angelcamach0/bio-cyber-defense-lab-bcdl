@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "scope": "native local protected worker -> private outbox -> verified HTTPS relay -> simulated response",
+  "source": "enclave-runner",
+  "event_code": "signature_required",
+  "payload_sha256": "fcc3d272e145182c822c5adc0a6bb010b58ce2c96e3fd5d3c5cf1e0196eea84f",
+  "mode": "simulation",
+  "enforced": false,
+  "delivery": "at least once with durable idempotent response",
+  "worker_network_isolation_verified_here": false,
+  "real_containment_verified": false
+}

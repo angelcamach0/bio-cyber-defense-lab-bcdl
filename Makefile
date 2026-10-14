@@ -22,7 +22,7 @@ experiment:
 	python3 -B biozero/infra/native/run_experiment.py --tools-prefix "$(BIOZERO_TOOLS_PREFIX)"
 
 experiment-soc:
-	python3 -B biozero/infra/native/run_experiment.py --soc --tools-prefix "$(BIOZERO_TOOLS_PREFIX)"
+	python3 -B biozero/infra/native/run_experiment.py --soc --metadata-faults --tools-prefix "$(BIOZERO_TOOLS_PREFIX)"
 
 regulatory-tools:
 	BIOZERO_REGULATORY_PREFIX="$(BIOZERO_REGULATORY_PREFIX)" bash biozero/infra/bootstrap/regulatory-tools.sh

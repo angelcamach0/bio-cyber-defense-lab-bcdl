@@ -1,0 +1,680 @@
+{
+  "schema_version": 1,
+  "started_at": "20261014T175423-175221Z",
+  "mode": "variants",
+  "architecture": "aarch64",
+  "platform": "Linux-5.14.0-687.5.3.el9_8.aarch64-aarch64-with-glibc2.34",
+  "cpu_count": 1,
+  "scope": "local native single-worker synthetic experiment; container isolation and browser users not verified",
+  "fixture_hashes": {
+    "reference.fa": "e4871638ee57abc3e33b58262a9fcd123be2d9f0c5658429d38e0bbb0bf64d08",
+    "reads.fastq": "ea7a3d152f9418a35cdede30225d239cd9e20e6f996c870935925b82c3f3a06d",
+    "expected.vcf": "8406e77d30fd59bed570dd932d3f9ddf28917908f4d65c99b328e47525ecdddc",
+    "invalid.fastq": "2ac54409a6816ad1637a06323513cf041d7747eda8f836aeb07cd81885980c19"
+  },
+  "cases": [
+    {
+      "case": "valid-run-1",
+      "verdict": "PASS",
+      "observed": {
+        "status": "succeeded",
+        "exit_code": 0
+      }
+    },
+    {
+      "case": "client-b-denied-1",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "upload-digest-preserved-1",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "valid-run-2",
+      "verdict": "PASS",
+      "observed": {
+        "status": "succeeded",
+        "exit_code": 0
+      }
+    },
+    {
+      "case": "client-b-denied-2",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "upload-digest-preserved-2",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "synthetic-variants-and-repeat",
+      "verdict": "PASS",
+      "observed": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "unexpected": [],
+        "missing": [],
+        "scope": "normalized allele presence; no genotype or clinical validation",
+        "reproducible_callset": true,
+        "run_difference": [],
+        "evaluation_status": "passed"
+      }
+    },
+    {
+      "case": "invalid-fastq-rejected-for-format",
+      "verdict": "PASS",
+      "observed": {
+        "status": "failed",
+        "exit_code": 3,
+        "format_error": true
+      }
+    },
+    {
+      "case": "mtls-requires-client-certificate",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "unsigned-input-rejected-before-analysis",
+      "verdict": "PASS",
+      "observed": {
+        "status": "rejected"
+      }
+    },
+    {
+      "case": "soc-real-security-rejection-event",
+      "verdict": "PASS",
+      "observed": {
+        "event_code": "signature_required"
+      }
+    },
+    {
+      "case": "soc-terminal-result-recovers-outbox",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "soc-untrusted-tls-rejected",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "soc-missing-secret-rejected",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "soc-wrong-secret-rejected",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "soc-durable-simulation-ack",
+      "verdict": "PASS",
+      "observed": {
+        "mode": "simulation",
+        "enforced": false
+      }
+    },
+    {
+      "case": "soc-single-private-receipt",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "soc-restart-idempotent-redelivery",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "soc-changed-payload-conflict",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 409
+      }
+    },
+    {
+      "case": "soc-trailing-json-rejected",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 400
+      }
+    },
+    {
+      "case": "soc-oversized-body-rejected",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 413
+      }
+    },
+    {
+      "case": "soc-no-effective-action-artifacts",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "metadata_upload_rejects_oversized_job_before_publication",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 413,
+        "error_code": "metadata_too_large",
+        "no_new_job_or_payload": true
+      }
+    },
+    {
+      "case": "metadata_max_admitted_budget_stays_readable_after_processing",
+      "verdict": "PASS",
+      "observed": {
+        "projected_budget_bytes": 65536,
+        "terminal_rejected": true,
+        "immutable_fields_preserved": true,
+        "owner_b_http_status": 403,
+        "saved_job_bytes": 62136
+      }
+    },
+    {
+      "case": "metadata_one_over_lifecycle_budget_rejected_without_orphan",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 413,
+        "projected_budget_bytes": 65537,
+        "no_new_job_or_payload": true
+      }
+    },
+    {
+      "case": "metadata_job_fifo_safe_error",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 23.936
+      }
+    },
+    {
+      "case": "metadata_job_fifo_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 32.697
+      }
+    },
+    {
+      "case": "metadata_job_outside_symlink_safe_error",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 24.12
+      }
+    },
+    {
+      "case": "metadata_job_outside_symlink_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 27.649
+      }
+    },
+    {
+      "case": "metadata_job_oversized_safe_error",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 27.679
+      }
+    },
+    {
+      "case": "metadata_job_oversized_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 28.417
+      }
+    },
+    {
+      "case": "metadata_job_duplicate_owner_safe_error",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 27.31
+      }
+    },
+    {
+      "case": "metadata_job_duplicate_owner_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 33.303
+      }
+    },
+    {
+      "case": "metadata_job_duplicate_status_safe_error",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 26.559
+      }
+    },
+    {
+      "case": "metadata_job_duplicate_status_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 28.632
+      }
+    },
+    {
+      "case": "metadata_result_fifo_owner_b_denied",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403,
+        "elapsed_ms": 26.294
+      }
+    },
+    {
+      "case": "metadata_result_fifo_safe_error",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 24.4
+      }
+    },
+    {
+      "case": "metadata_result_fifo_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 23.914
+      }
+    },
+    {
+      "case": "metadata_result_outside_symlink_owner_b_denied",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403,
+        "elapsed_ms": 24.227
+      }
+    },
+    {
+      "case": "metadata_result_outside_symlink_safe_error",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 25.656
+      }
+    },
+    {
+      "case": "metadata_result_outside_symlink_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 25.443
+      }
+    },
+    {
+      "case": "metadata_result_oversized_owner_b_denied",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403,
+        "elapsed_ms": 26.126
+      }
+    },
+    {
+      "case": "metadata_result_oversized_safe_error",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 24.0
+      }
+    },
+    {
+      "case": "metadata_result_oversized_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 27.712
+      }
+    },
+    {
+      "case": "metadata_result_duplicate_status_owner_b_denied",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403,
+        "elapsed_ms": 28.616
+      }
+    },
+    {
+      "case": "metadata_result_duplicate_status_safe_error",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 500,
+        "safe_error": true,
+        "elapsed_ms": 30.104
+      }
+    },
+    {
+      "case": "metadata_result_duplicate_status_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 26.621
+      }
+    },
+    {
+      "case": "metadata_worker_progress_with_faults_present",
+      "verdict": "PASS",
+      "observed": {
+        "terminal_rejected": true,
+        "pipeline_not_called": true
+      }
+    },
+    {
+      "case": "metadata_fault_files_removed_exactly",
+      "verdict": "PASS",
+      "observed": {
+        "crafted_spool_files_removed": 13,
+        "unexpected_replacements": 0
+      }
+    },
+    {
+      "case": "metadata_owner_a_recovers_after_faults",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "retained_rejection_readable": true,
+        "elapsed_ms": 34.883
+      }
+    },
+    {
+      "case": "metadata_owner_b_still_denied_after_recovery",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403,
+        "elapsed_ms": 31.046
+      }
+    },
+    {
+      "case": "metadata_recovery_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "health_ok": true,
+        "elapsed_ms": 30.488
+      }
+    },
+    {
+      "case": "metadata_final_cleanup",
+      "verdict": "PASS",
+      "observed": {
+        "additional_spool_files_removed": 0,
+        "remaining_crafted_spool_files": 0
+      }
+    }
+  ],
+  "status": "passed",
+  "commit": "b61eed6bd205683d501cfc3c625545e02b86eb1b",
+  "dirty": true,
+  "source_hashes": {
+    ".github/dependabot.yml": "71070abf6a847b4b319bfe922cf5b289ed6f27a74f61098ce5ca8e548db5d684",
+    ".github/workflows/ci.yml": "31591ecbf896aa75d949cf86047907ed866c550a47d1ae87de2ec066d83fa8f5",
+    ".gitignore": "cafcaa0edf15afa9338d598e1ba71924ce82c7ba417da57dbbdefae93fa15c01",
+    "AGENTS.md": "4b3f9a7b71be9031c0062456b1df78f68a6f3ad41f42fb2c471f1ba9761a591f",
+    "LICENSE": "f42cf1c42bbe27d0756c0ca7be42a9c0bdef04d60688781b30f912952e62bf1f",
+    "Makefile": "1d8a47a779ebd8233f7d445bd6e2b01a05cba9a7e70c5ff05c52aef6e91038d5",
+    "NOTICE": "354688b02c8e834cacce981a63a685a0be045b01662ace1e7fa0a1768f29fd1d",
+    "README.md": "55be0c3b93c79fb99f2fd20abc7c7d600cf0b25eae2d07077594322b48e02b08",
+    "biozero/bio/benchmarks/evaluate_variants.py": "11b05cdf46f997332cb20c2d1ab1c898b228ac2a59aa449964de0ea8aa7c5b3e",
+    "biozero/bio/benchmarks/run_variant_smoke.py": "84aaf4b52d83662046fe9832b5bb2ffbbdf6a9e3be60f3f650c37193a1ee5dd9",
+    "biozero/bio/benchmarks/test_evaluate_variants.py": "c3318d950dec538ab701ccaf57b2cbbc00a59dd791d3b3c09d66e6621b82ceec",
+    "biozero/bio/fixtures/variant-smoke/README.md": "b25684cd82c240ffbac05d19a20ce2cd16b34fbd51ebbd2f2852e25069a0ee41",
+    "biozero/bio/fixtures/variant-smoke/expected.vcf": "8406e77d30fd59bed570dd932d3f9ddf28917908f4d65c99b328e47525ecdddc",
+    "biozero/bio/fixtures/variant-smoke/generate.py": "5652326e4c1948719cba5e8dc0ea98ab78f79a689ae8977e6fa7d2c82e84f8c2",
+    "biozero/bio/fixtures/variant-smoke/invalid.fastq": "2ac54409a6816ad1637a06323513cf041d7747eda8f836aeb07cd81885980c19",
+    "biozero/bio/fixtures/variant-smoke/manifest.json": "54751ac105a2553463e414d8d8369dd03b3a02f623fbe39a16e3af925d727693",
+    "biozero/bio/fixtures/variant-smoke/reads.fastq": "ea7a3d152f9418a35cdede30225d239cd9e20e6f996c870935925b82c3f3a06d",
+    "biozero/bio/fixtures/variant-smoke/reference.fa": "e4871638ee57abc3e33b58262a9fcd123be2d9f0c5658429d38e0bbb0bf64d08",
+    "biozero/bio/pipeline/README.md": "f88aff6a8dfbc44df18d7dc4f2a61f4ac8641c60f76fac56c09790d3ade4d1da",
+    "biozero/bio/pipeline/pipeline.py": "28c86a95c93b51a4189374d98e57e7b9251c495d26a872149da4fe7c0c142206",
+    "biozero/bio/pipeline/pipeline.sh": "3fb065c362d05202d85a09fb9122834a19921fe3f70dbb1881b97011fdd0ebda",
+    "biozero/bio/pipeline/test_pipeline.py": "d230a38ce67f19978fab33be438afb4ed5f3a51f84e1debb94fda29b21120b05",
+    "biozero/bio/reference-db/reference.fa": "1a6be98a4b415c99d097d36b8d95863abad3a6b7a26ef04da6ef4fcbbe9b9b15",
+    "biozero/bio/reference-db/rules.json": "49c9c69e2e2afc8b24889e17bd8d6fb47ce554a9a43418a48752773374045d03",
+    "biozero/docs/BioZero_MVP_Attack_Plan.md": "bac1e022d15e58c709054f4877f579ab697b64e750af16de20440028814f9b40",
+    "biozero/docs/BioZero_MVP_Final_Attack_Plan.md": "a49003d81b0b15da8cd526ace58e2ceda9455080b27866a8e87029b84d092a11",
+    "biozero/docs/BioZero_MVP_Missing_Pieces_Blueprint.md": "7eefce4764450b218176afb1d8eff533954e65834656a8f289166b6b193c9e8f",
+    "biozero/docs/BioZero_Pre-Migration_Security_Report.md": "217e3dff97412fa4c395d95a91d7cf8489ce4dc16a7114a88f76f61f92153e50",
+    "biozero/docs/PROJECT_FLOW_GUIDE.md": "8a2a1f0601c7f537d3bf0b6e5439be64769d00e0eede646154fd469d272a0b20",
+    "biozero/docs/STATUS.md": "97a796f12932f5def214a54af69eaa0d47c0f8835ce238fa2ad1c7ff2ee7f64b",
+    "biozero/docs/Sustainment Cyber Security BioZero - Backbone Ultimate Goal.pdf": "580d7434b2767792ff2ac9d7799de100d584922198484e215245d83f166c4d26",
+    "biozero/docs/Sustainment Cyber Security BioZero \u2013 Change Log.pdf": "34c3b348c3feb73bb2ee131148793e82f0057322110cc97abd62c9f672d4a783",
+    "biozero/docs/Sustainment Cyber Security BioZero \u2013 Evidence Log.pdf": "50c1a0134450466f1ed1457aac49985f94898197ae2ce6518926b79e2a6104b1",
+    "biozero/docs/Sustainment Cyber Security BioZero \u2013 Incidents & Troubleshooting Log.pdf": "0e211768e09064030d6a6c21b6c280531be100d0a9e3816aa35e57d90d41a549",
+    "biozero/docs/Sustainment Cyber Security BioZero \u2013 Lessons Learned.pdf": "be544096993d18c6a0b87b529df817a42f7ed4b9107d9fac0e8ea92432fe2c71",
+    "biozero/docs/Sustainment Cyber Security BioZero \u2013 Requirements Traceability.pdf": "245484ed4b3c0546fa2f0090acbf4888cc5c8dae755a02d9a114b858a645c9cf",
+    "biozero/docs/Sustainment Cyber Security BioZero \u2013 Test & Validation Plan.pdf": "1e54d9ec8e4b46d102c3c91d36ea4a60c1d85d05465cf2bc80bf4ae69d5fb7b1",
+    "biozero/docs/Sustainment Cyber Security BioZero \u2192 KBR Presentation \u2013 Slide Drafts.pdf": "2fb0df34b3506984a845b763a37684a585e992314f1433ee189e105e568ae304",
+    "biozero/docs/Sustainment Cyber Security BioZero: Integrated Bio\u2011Cyber Defense Lab Project Implementation Guide.pdf": "4c9e31f1ad958479945dbebe61d8ea20fde17a465ce7bb3ac64c58f329a79be8",
+    "biozero/docs/UI_STRATEGY_PLAN.md": "e37c2ed7e24bba2d45e821f4754828dc88917168c4818506629329089c76c557",
+    "biozero/docs/bio_zero_vm_report_privilege_escalation_user_hardening_incident.md": "8df92707b11cf9d6a4cc602ff3e23f1ee19aa9cef7bf342db6c1a2f359faa136",
+    "biozero/docs/decisions/001-job-states.md": "e358b2716b48971966cdc3d5c215b9be8111cefa72eddbc301eba9b965e36c36",
+    "biozero/docs/decisions/002-local-container-network.md": "b5206a28ef63570aa6dc11930c3280db88153fa2f762a5dfb82e76bd37c687cc",
+    "biozero/docs/decisions/003-security-event-handoff.md": "9affb60781f74b9e56573407ae10c8ef5321235a572e647be4350cd39a7f39e9",
+    "biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/public/SHA256SUMS": "5822d34d5b4d7971980c79fcbc01e6e8d820341ed9262450cb5419313ca07456",
+    "biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/public/browser-checks.json": "6f26ac02edc23450cc570cecd1cc0f01e120b7686cf975f093e46ad2e0b18749",
+    "biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/public/browser-invalid-desktop.png": "e7e991f402fa6de4a29b47e7d830d2a497d8b892df844e294065a419cb5c5576",
+    "biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/public/browser-session-isolation.png": "96c5cbb078a6c020d39a87eca051c1ae229ef49c9c5db27fb36c15388b2bd32e",
+    "biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/public/browser-valid-desktop.png": "d869ba7d0852ddb24800beb40a594a604fd9e3869d4d0fe921f93ef45ac04563",
+    "biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/public/browser-valid-mobile.png": "89000d6b2912f7b47a1c0ce7ff09aa4e61980b611f1707731cd846a6b93d9d20",
+    "biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/public/invalid-fastq.json": "71964f27353f9d5d5a5ee6308793ed0945577024bbca5401083c9f4636c852f1",
+    "biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/public/manifest.json": "66c198e87b1b1699087ab9ab78eb9160fdcf36a19b3141cf64c6cc8b8dd5f0cc",
+    "biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/public/repeat-metrics.json": "b6914601d5da15264c9068463cd435a382c683c6db870cef7f32111cbc1bc06e",
+    "biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/public/valid-1.json": "c8940499a2acc0f29dcf0d81274aff362f9c18015fb189a4a3d8ffa711f03fe3",
+    "biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/public/valid-2.json": "035ae3b961f0323fba46b7246378d3386f93eff5446e17da1e738d4f8e894781",
+    "biozero/docs/evidence/20261014T150823-057533Z-independent-checkout/public/SHA256SUMS.json": "65fc48d2e4204dbe975b709b8031c12a28af3654841321fcbb5d26a8ae306ce5",
+    "biozero/docs/evidence/20261014T150823-057533Z-independent-checkout/public/independent-checkout.json": "3005ef4f8e512bc683ed3a1ec5ac42d923e1075c48d7c9a748a8b530285e28e5",
+    "biozero/docs/evidence/20261014T150823-057533Z-independent-checkout/public/manifest.json": "50d34a009041aff203a4427f4a9cb7025bdb504a2c75bc35cffbe46baf3d1a65",
+    "biozero/docs/evidence/20261014T150823-057533Z-independent-checkout/public/metrics.json": "aa8b3dba7a09c6717e8508295b70156adcf1b2e8b885f6a907798e8cfb82c1cf",
+    "biozero/docs/evidence/20261014T150823-057533Z-independent-checkout/public/run-1-derivation.json": "7eb3c967e29b0a129afeaff13b605970ae8907905fd192442c6849b93b7c410e",
+    "biozero/docs/evidence/20261014T150823-057533Z-independent-checkout/public/run-1.vcf": "e1192e49bb37fd4e0f8b3f745556a3d7434fbc57b030e747035a7597aaa23f95",
+    "biozero/docs/evidence/20261014T150823-057533Z-independent-checkout/public/run-2-derivation.json": "6de09764f71adea8f7cb02d4c278cc3e234c57718d7dc8381f2acb2bf989b11d",
+    "biozero/docs/evidence/20261014T150823-057533Z-independent-checkout/public/run-2.vcf": "e1192e49bb37fd4e0f8b3f745556a3d7434fbc57b030e747035a7597aaa23f95",
+    "biozero/docs/evidence/20261014T150910-330979Z/public/SHA256SUMS.json": "3575ff3d039ffc0a514036045927714713495ae542f5e63bf8a9726c3640227f",
+    "biozero/docs/evidence/20261014T150910-330979Z/public/manifest.json": "77021509b7b24889dd72e41810a79d6590bfbe7590e70c08c91cdafb63893d1f",
+    "biozero/docs/evidence/20261014T150910-330979Z/public/metrics.json": "aa8b3dba7a09c6717e8508295b70156adcf1b2e8b885f6a907798e8cfb82c1cf",
+    "biozero/docs/evidence/20261014T150910-330979Z/public/run-1-derivation.json": "beeae33bb1a89a096b74a4c7e81c28658adc8b3bc8bb6f6283b21bf1114c3212",
+    "biozero/docs/evidence/20261014T150910-330979Z/public/run-1.vcf": "e1192e49bb37fd4e0f8b3f745556a3d7434fbc57b030e747035a7597aaa23f95",
+    "biozero/docs/evidence/20261014T150910-330979Z/public/run-2-derivation.json": "f5324b32e3e0784505652d694500110adbefa3abe8f116073e1cece9c7f9b94d",
+    "biozero/docs/evidence/20261014T150910-330979Z/public/run-2.vcf": "e1192e49bb37fd4e0f8b3f745556a3d7434fbc57b030e747035a7597aaa23f95",
+    "biozero/docs/evidence/20261014T151621-665108Z-hosted-ci/public/SHA256SUMS.json": "d82050b8a70e13c60ede0d38fe178519ab175984f77bc9a9863a5297ae007982",
+    "biozero/docs/evidence/20261014T151621-665108Z-hosted-ci/public/hosted-ci.json": "377480186c391c32cfade510606f0f90cd9492b5c33acc6a5bd31a44b0ad7957",
+    "biozero/docs/evidence/20261014T151621-665108Z-hosted-ci/public/manifest.json": "437623b529c5085b42692b3da0d78fd8b65bc98643ab27b07853ffff13e12b8e",
+    "biozero/docs/evidence/20261014T151621-665108Z-hosted-ci/public/metrics.json": "aa8b3dba7a09c6717e8508295b70156adcf1b2e8b885f6a907798e8cfb82c1cf",
+    "biozero/docs/evidence/20261014T151621-665108Z-hosted-ci/public/native-original-SHA256SUMS.json": "3993b5375510f91fbc463c946e77dd665ded7bd67e46816f6a9cb50a0ea550f9",
+    "biozero/docs/evidence/20261014T151621-665108Z-hosted-ci/public/run-1-derivation.json": "f6611081f5760143afb5c8af325c99bbd679a4a7da8ec98e94841dfe115ce6b5",
+    "biozero/docs/evidence/20261014T151621-665108Z-hosted-ci/public/run-1.vcf": "e1192e49bb37fd4e0f8b3f745556a3d7434fbc57b030e747035a7597aaa23f95",
+    "biozero/docs/evidence/20261014T151621-665108Z-hosted-ci/public/run-2-derivation.json": "58b27352495ad7a8e3a0dcb3751039e49d2e644484d439e4747edc6e691331d5",
+    "biozero/docs/evidence/20261014T151621-665108Z-hosted-ci/public/run-2.vcf": "e1192e49bb37fd4e0f8b3f745556a3d7434fbc57b030e747035a7597aaa23f95",
+    "biozero/docs/evidence/20261014T164413-651516Z-reviewer-compose/public/SHA256SUMS": "79252a89b5dc98a73ee01c75ea24a372ceae31c6f000dac4a0380748cbb5822b",
+    "biozero/docs/evidence/20261014T164413-651516Z-reviewer-compose/public/invalid-fastq.json": "e05f7ef1289c0b96e00e83df1d85d4c41a7a4675ebda3d3d733972b32ade4e3c",
+    "biozero/docs/evidence/20261014T164413-651516Z-reviewer-compose/public/manifest.json": "1200950891426742abb33ac2d4767b5461bac6f6230747c8884133b1e7a34ce5",
+    "biozero/docs/evidence/20261014T164413-651516Z-reviewer-compose/public/repeat-metrics.json": "b6914601d5da15264c9068463cd435a382c683c6db870cef7f32111cbc1bc06e",
+    "biozero/docs/evidence/20261014T164413-651516Z-reviewer-compose/public/valid-1.json": "6e15956701f1d52e1329ee8b20be8714095549045af214a6efda565b86dea836",
+    "biozero/docs/evidence/20261014T164413-651516Z-reviewer-compose/public/valid-2.json": "54886b7d0a2ef8d861a380ba62b303a5cd11bd4cc92942440c3d26144679009d",
+    "biozero/docs/evidence/20261014T164550-385353Z-reviewer-compose/public/SHA256SUMS": "48f3105087502d5f95270a5ded89c29a3ba400c2177ac3d9cdb14206c2adbe79",
+    "biozero/docs/evidence/20261014T164550-385353Z-reviewer-compose/public/invalid-fastq.json": "624f76bf44d92b1c40e23714fbd28189683d9190495aa1fc1ed9f745817da493",
+    "biozero/docs/evidence/20261014T164550-385353Z-reviewer-compose/public/manifest.json": "59b26cb3dce1a01687173cd77b3993f2dd3cef4677edf7d79319abeec08a25b9",
+    "biozero/docs/evidence/20261014T164550-385353Z-reviewer-compose/public/repeat-metrics.json": "b6914601d5da15264c9068463cd435a382c683c6db870cef7f32111cbc1bc06e",
+    "biozero/docs/evidence/20261014T164550-385353Z-reviewer-compose/public/valid-1.json": "3894d9ebda73ee0bd844217b33eaa19f9b41b0e114c973aed694bba885a07446",
+    "biozero/docs/evidence/20261014T164550-385353Z-reviewer-compose/public/valid-2.json": "a53d3621b8410fc4f9977f7383ab895b9362dce5efddda77e31e83a037be164c",
+    "biozero/docs/evidence/20261014T165148-344656Z/public/SHA256SUMS.json": "d268fe2e80fcd5fd52b6ace222cc64cfe7b8acfe5f589d5aff454ba429d8be9d",
+    "biozero/docs/evidence/20261014T165148-344656Z/public/manifest.json": "cf114b4e56f28f57510ec6037df040dd962b5524ab35847cd9b1e8c0bdc9fa4e",
+    "biozero/docs/evidence/20261014T165148-344656Z/public/metrics.json": "aa8b3dba7a09c6717e8508295b70156adcf1b2e8b885f6a907798e8cfb82c1cf",
+    "biozero/docs/evidence/20261014T165148-344656Z/public/run-1-derivation.json": "e45e5f53059193498de72eda4a0528ffe3e86d8633bf5d2fc7e80931513e3bef",
+    "biozero/docs/evidence/20261014T165148-344656Z/public/run-1.vcf": "e1192e49bb37fd4e0f8b3f745556a3d7434fbc57b030e747035a7597aaa23f95",
+    "biozero/docs/evidence/20261014T165148-344656Z/public/run-2-derivation.json": "5dc7eb5c43456159e778498dd058517bdab9b93f546ebdbef90906dd3515a9e7",
+    "biozero/docs/evidence/20261014T165148-344656Z/public/run-2.vcf": "e1192e49bb37fd4e0f8b3f745556a3d7434fbc57b030e747035a7597aaa23f95",
+    "biozero/docs/evidence/20261014T165148-344656Z/public/soc-summary.json": "afb0c9cb81fd161d4e20d2c8400ae876ce2a231ae557daea67ca05bc93a75a7f",
+    "biozero/docs/evidence/20261014T165334-020175Z-soc-container/public/SHA256SUMS": "a76755c9f623c9cbf66e91fcbbac870f77e7b43dd6c7b76091d8ecdb296dd1a5",
+    "biozero/docs/evidence/20261014T165334-020175Z-soc-container/public/manifest.json": "f432cc95719d1dc8ffec7a76d26a429e0e2076f00b09b6b05c36ff217d326170",
+    "biozero/docs/experiments/001-variant-smoke.md": "751ac3770f844e92c60b7cada572c3bb731c98f7360b89efd0d3c7b944b142a3",
+    "biozero/docs/experiments/002-regulatory-biological-baseline.md": "d8f7f9145546953471befb09a1b59a0656fb02ddbf558465914dc42c5a7ff2eb",
+    "biozero/docs/mvp_change_log_updates.md": "a1d091e52956691df7d359340b14e48aa2e3fc7b1642c089740e4293639296c7",
+    "biozero/docs/mvp_evidence_log_updates.md": "23d425a1bb27c9dfd07b49a26189362b839363e5056d84b40c5fb51d2ef65536",
+    "biozero/docs/mvp_test_plan_updates.md": "925b4faeb1b603081bc797fb16e72fe069f8d12e5c4787085fe3b8c009b4291b",
+    "biozero/docs/research/2026-10-14-regulatory-feasibility.md": "617f4561b4fab2ac98834fb39f2b7f9783143db3a1d4b5cc51475d1fbf51718a",
+    "biozero/docs/runbooks/reproduce.md": "0a3e1b4add65ca36b27f418764f6c9c031e09ea1fcdc17006045309e6e551a1b",
+    "biozero/docs/security/event-contract.md": "9e1f26bbbf97240078e4a4c4350c60d20cb8c2b71958452bf57599e4e6bd460a",
+    "biozero/docs/security/metadata-cases.json": "9bf72a4cdf4ef6b5453be10ade1ed264ceb53af2a6a9599c55c0404c0c08f297",
+    "biozero/docs/security/metadata-contract.md": "b1873ec93f301b3423ff1f32c3af478c7087e4a6766055fc8bc8d8ac31972be7",
+    "biozero/docs/security/threat-model.md": "17310aa984934c8c88316c4b7532b537f5191715410298a6709e72c77c9548e3",
+    "biozero/docs/snapshots_pre_hardening_and_ssh_baseline.md": "361acd5890249d1b161e42392c967a316f960e339f3f91bb93b8c8a5d0a15af1",
+    "biozero/docs/team/handoff-2026-10-14.md": "d6ea814ac60791c51ed8baebb2e37e2610b1244f216979176d71b2a1ce6093cd",
+    "biozero/docs/team/requirements-and-gates.md": "466032b9c50c862042b95b48b6172ed6889412df7a8dc0d3abe9a163599cac93",
+    "biozero/docs/team/runbook.md": "f02f09825c41604e5f11108b251b6bc46063f5f7b8b883bc896ef474f82e3bfd",
+    "biozero/docs/vm_baseline_report.md": "ce88d1264577b1f753119f2345b58082509377c638ccf00e61211984296c1ea4",
+    "biozero/infra/PKI/README.md": "35d0499c0176c274bd0e74baf39d9565ef583f682cc15e6ac67b5e0b447024b1",
+    "biozero/infra/PKI/gen-pki.sh": "b07344d28a164964a163ff3d2673097bd6541afd9b0d3f0470cdd2ccb17c646c",
+    "biozero/infra/PKI/prepare-runtime.sh": "c639c2801332fbe5c5a4fe7cc8c9be86fa88a87fbd1d5ae2db1e6db5c3ca94f2",
+    "biozero/infra/PKI/test-pki.sh": "f74431d17a76b83ea9d64d1f88ae051c9bff46b65426da50a294c3d4deb70d00",
+    "biozero/infra/bootstrap/bio-tools.sh": "076e2fffe36f780a7d5f33f353dacca5e9627c7cd2c4ddffd60ceac7a518ef21",
+    "biozero/infra/bootstrap/browser-linux-aarch64-py311.requirements.txt": "ba250c9fa8bf66bfe3598b1c6441e7b95f86a9b58c4f196fe0456b37b5d17761",
+    "biozero/infra/bootstrap/environment-linux-aarch64.lock.txt": "e36568b04747370f6895404f8206da02eb08390757781e3794bae5096d327ad2",
+    "biozero/infra/bootstrap/regulatory-tools.sh": "20905d05f81e6aa0bb09d2ef770127ff7ecab2ffcc1029915c4993b9ac61476c",
+    "biozero/infra/compose/README.md": "0791fe4a48e180721affce52a77825b252151cfd03ee2ebde68da43f7672977f",
+    "biozero/infra/compose/browser_checks.py": "399d879d7514e1d243577b64b415b31eca20de97aa5c65a307b581bbee56f08c",
+    "biozero/infra/compose/docker-compose.yml": "96206de63c7e23bd2809ee9abcab78c977656ddab6e75e99d8253e9c34c09f1d",
+    "biozero/infra/compose/prepare-reviewers.py": "c9c3ed91c6fd277acc32b6622371da2e51650976e91af21bcfe79c1ded58a111",
+    "biozero/infra/compose/run_mvp_tests.sh": "fd1db250cb723dddb0770247c82b84cee90fe29a40076d4bb4e6ab6c1d9a8e64",
+    "biozero/infra/compose/run_reviewer_experiment.py": "8ae8a83dd683aba869e0c287c1cd997ea9da4d3c4e97b85d845527c39f7d3b1e",
+    "biozero/infra/compose/test_browser_checks.py": "0c9b3a5d9f0c79f34654f1e6fcacd6cf7e966d5fc9ae09670151183a38de4c4f",
+    "biozero/infra/native/check_go.py": "287e085678b33d967bc86c41f9edf59f5d960cbc995222c97e3ff872b23b671f",
+    "biozero/infra/native/metadata_checks.py": "6b6f055d303163c0674f7fc279bb4cc14f2c69b0ca130c1c9312baf24a82eab9",
+    "biozero/infra/native/public_vcf.py": "71f1910047faa0b41faa7ec87ec422519779d0d58d81aee8a338f59f7e17d5e4",
+    "biozero/infra/native/run_experiment.py": "77cace6f80656a5aea2646f16426408160e55d9859e8e3ad9dc272d8ae78cce2",
+    "biozero/infra/native/test_public_vcf.py": "d7fe2e8546b1fe6d7e64b373e668397a58a12a7b866e86378903f4971408ad51",
+    "biozero/infra/native/test_run_experiment.py": "a765e19c240f643a51375e57fc30f6b1ad1b601ae99a997b37df1224fbc33917",
+    "biozero/infra/soc/README.md": "815eacb7033eb078da0d34b52cfd1ebf5a20bff1a92d9f476b165bd064d44589",
+    "biozero/infra/soc/relay.py": "fca56cf6d27c5c7f5fb1056033a80a73ad6ceb07935dcbc9b84a1289256e692d",
+    "biozero/infra/soc/run_container_response.py": "b303c6b2d27d85f45ad1e0f13d42f764fcd8e032e118345a424a91e199fbc1ab",
+    "biozero/infra/soc/test_relay.py": "83c7e31cd0db8b544a44731bf65cbc989378ccd7e0a9b5131d4c075ef7faafd9",
+    "biozero/research/regulatory/README.md": "cad786021caeae1947ee2eb61e6b1e1f8672da0d7b071a41a0449dcaad13811d",
+    "biozero/research/regulatory/adapter-control-provenance.json": "ed58a2c699713cceb4aedcfd241a6d8284c1d0676c63d564128bc33065c82efc",
+    "biozero/research/regulatory/adapter-control-runtime.json": "5e2a1fb1009d924aedea416b50e6c578ad78d939c084caf59925bbefa56d0365",
+    "biozero/research/regulatory/baseline-protocol.json": "8c3f80a5b59eb3d165764bb5596e1b0451248bd2b0641d430fa6378b73a9126c",
+    "biozero/research/regulatory/biological_adapter.py": "b8df3e12c45ba1f8afe7d25ba7e0b6f7b34417a2321abb7eeb745260aa289f47",
+    "biozero/research/regulatory/checkpoint-acquisition.json": "08a8e44442d0a7e732e35a291b32dfb650e50ecfdcbb0f127f004c9da70e83ba",
+    "biozero/research/regulatory/checkpoint_fetch.py": "b641ef8ad2a64f93498cb86e799279f6b4844b4c482819f10fee1074f1985ba7",
+    "biozero/research/regulatory/checkpoints.json": "4165d1e7a4b39a2e8cbacacde0291702371b33acfaea427192dc56a89fd52400",
+    "biozero/research/regulatory/control_fixture.py": "ca51e3e8ca4d507ba10bbbef3238f57479041e0108993455dc083f1eed4f4014",
+    "biozero/research/regulatory/fbgemm-forced-feasibility.json": "dd66012185e43a3a544fccbfdf59311829bc89874ebb5f5624c0b7fa007a772e",
+    "biozero/research/regulatory/feasibility.json": "8cd9ed33ab2490bfa15ca6bc9a08413f280176bfb15f1c4f3faba001c09081f5",
+    "biozero/research/regulatory/model_probe.py": "983e57f7f6d7462080ddc3be6d1afdc5cea267fe9e0a564e068b0c1584482336",
+    "biozero/research/regulatory/preflight.py": "86850ddf76e4491f685d1fd79f7887047b047d315c859aad77ab5f02c80d569e",
+    "biozero/research/regulatory/python-linux-aarch64.lock.txt": "67f484a1c8763eb603e13e0c5beff70ca1c783e2eaddb10b438275ba8987cf79",
+    "biozero/research/regulatory/qnnpack-fbgemm-feasibility.json": "ce37dc3b5d7de78636d46a8dde65f6ebd18278ff7625b94260cc26060abb25ec",
+    "biozero/research/regulatory/runtime-feasibility.json": "3497055b3bbdfc8a5ad8bba12e679b00ea07793e72b2473c2c149a1c5b7728f8",
+    "biozero/research/regulatory/test_biological_adapter.py": "3e0993eb7e2d99089f606541ec056df6caaaa964ed575d0c5724573466db658f",
+    "biozero/research/regulatory/test_checkpoint_fetch.py": "7c76a6f4618c741159b1b73db8efde61b394411f0f571244172d835081f2bff2",
+    "biozero/research/regulatory/test_control_fixture.py": "2a060e233675d4ce806205e3362d0fbfc3407e011359287d685f91ebec87f30a",
+    "biozero/research/regulatory/test_model_probe.py": "be24f94b8c6ea7d068008b64e6572cb9da57994f3e454cbe7bea815e009a691a",
+    "biozero/research/regulatory/test_preflight.py": "585619c35d762e5a600e12f3f6e2ea351aa4339940f969addd8caa1e782ba9e8",
+    "biozero/research/regulatory/wheels-linux-aarch64.lock.txt": "9a04e10c9786f3510b41344f2f404e3f5ed5a0424fa5d3694cafaeb020a0740e",
+    "biozero/services/enclave-runner/Dockerfile": "cf5727a8d4e95295979f3f42f0cb8c8f5898a17d7f6048a5df3756c9c07a779c",
+    "biozero/services/enclave-runner/README.md": "c08d969c1d0f473df134a351f24e64fe3d400cd9476d0d923b92a30526dea54d",
+    "biozero/services/enclave-runner/config.example.json": "c5301a46ef35cd968b0fea0aa8552642a7ae52c5378f0312d309cf9143e4bd27",
+    "biozero/services/enclave-runner/go.mod": "c490f8042b79ba9c138463bc4e36a12728402327f6be508a72c21644caea6cc9",
+    "biozero/services/enclave-runner/job_lifecycle.go": "b999b77399021dcde8340833b7700acf2f23e83f76548afdf47115a364691a9c",
+    "biozero/services/enclave-runner/job_lifecycle_test.go": "408d5076d0ffea969482ce1c276d7128aff160ec889cc71daaea2b14d61fbcb0",
+    "biozero/services/enclave-runner/main.go": "c96ee80b0fdb272b348bc132cf2cf7dd6a0f66910b88f9ce638c4ded66e4073b",
+    "biozero/services/enclave-runner/main_test.go": "13d4bcc81789e846c7e334a4ecede2ecaaf0a785ca0b21fc7f84714df93519cd",
+    "biozero/services/enclave-runner/metadata.go": "18a82fa4104cb91090fb8e374be81afc94267eeef7d6b8cbb69a913781b29dd3",
+    "biozero/services/enclave-runner/metadata_test.go": "f6150ae030a57186d186022a1be6a67b6f7fe82f96ea87589d5a226fe590de00",
+    "biozero/services/enclave-runner/security_events.go": "f33b881aa2770fcff580abb9a3a8684e2c200c205ad06e1c18358166311cb0be",
+    "biozero/services/enclave-runner/security_events_test.go": "66697370ef501b56de0cc18254c7f1bd438131468d27c85c96b34239247efc8a",
+    "biozero/services/results-api/Dockerfile": "cad78e552377e0e30151526b04b65a3165b110d43d109cbd17ea9c909393b8d9",
+    "biozero/services/results-api/README.md": "fa37b6b3d7916eed22086efb9a9c2801c7339f236d0df9116abb12fd64c6b126",
+    "biozero/services/results-api/config.example.json": "77dc21bb88ecec737a5e1539a9eebbd4ca185574ce5ab6dfbee44991b4d86671",
+    "biozero/services/results-api/go.mod": "77986266336e5d0707546e24da438dffa12f7f9301efb8821f02d710461b7668",
+    "biozero/services/results-api/main.go": "c02dc167acde59b9d433ceca5609efab8f1c36b5daf0cd421eec89a5ee41f1e3",
+    "biozero/services/results-api/main_test.go": "098bd7825d7989400df854582d4ad9f48862e7a778b84b1d99125c26e411ef48",
+    "biozero/services/results-api/metadata.go": "c5d88cf361137e0ffc046b73d1d6aaf703b821cd8121c95357cd7e595234cb14",
+    "biozero/services/results-api/metadata_contract_test.go": "90f01adf6d7d717c2ea31f4da43983b66ebe20669a5030a2b06cf2c63f3be33d",
+    "biozero/services/results-api/metadata_test.go": "2dbb6d4e1b663ace31d1b871445aaa9e005b0755ec23bc07b3ed29f3c05307e2",
+    "biozero/services/reviewer-gateway/Dockerfile": "27a9df4cc26f348d03edc581b1fdadf841498c9e561c727b8db3fb97aa318ef6",
+    "biozero/services/reviewer-gateway/README.md": "ae690ae6b709d08bc36f1ef7a8e5e347a41af5fc3ec8eb4627d23a6c9ec9292a",
+    "biozero/services/reviewer-gateway/go.mod": "d0f3e2cbb93a5eedb6539ac02d85096af7cc34b8af34161463113b8e5e798ed8",
+    "biozero/services/reviewer-gateway/main.go": "8faabbb24c00ecf3cf7996c7e19de246195f7d3a4a1d8fddf7f09d1558cc56d9",
+    "biozero/services/reviewer-gateway/main_test.go": "4719c2f0115db5428988b409208ebc1ba0bb9e6f36a6a3a2ea8ab450a553414c",
+    "biozero/services/upload-api/Dockerfile": "22e50a83ea8a51e12576f582747e56b6e8752e016a4764294ffc51ee929b3222",
+    "biozero/services/upload-api/README.md": "ee494cc67561f5c95cde22a552dc10006cac53e04a6e858cdd18143dbfc452fa",
+    "biozero/services/upload-api/config.example.json": "a018eab393f940d60e674bafcd1c0d294c29e90023bc93320beea324e02fcf1d",
+    "biozero/services/upload-api/go.mod": "b00ab30bf229c906a5b97cb5bb6b4592fde9c17c72c7bb17586b6b038b602461",
+    "biozero/services/upload-api/main.go": "c4ea9ec7b9ccb75f2d31056be9a85dba379db78d66dd8ab51613ad966a8b3718",
+    "biozero/services/upload-api/main_test.go": "acf7a7cbaf6a3acf04fcdcbfd6a3ec665398ed92b0c26848a010bb2148aee2a4",
+    "biozero/services/upload-api/upload_handler_test.go": "6d576de447e65055a7af7dadf37c518e51563d3374ddc77e8844ccc7fb39199b",
+    "biozero/services/uploader-cli/README.md": "6542319f1c424a2d70bbb6a94044762e67b5470c26964a8f8de50e32f68a0841",
+    "biozero/services/uploader-cli/go.mod": "fbd2b8e05199807fbd1235ed840aed3899a312fa2d0e3fc7155ff4365153e4e5",
+    "biozero/services/uploader-cli/main.go": "bd5825106a5c5116b21007eddc2bdb2a1d62c794d4eaef4369ebd1b6e52db64e",
+    "biozero/services/uploader-cli/main_test.go": "35ac5e17e94fce6cf80175b8f422c3dac63b94b179a3613c6a3fcf5458619cf8",
+    "biozero/services/zeroresponder/Dockerfile": "3cbd76dd35bebf29baa5fb87bf993865b62220be67cfa1fcca2d7f1546b78dbb",
+    "biozero/services/zeroresponder/README.md": "b1562699b85316be0cd613ede7fa3bd54d3ed643f24a582dd75011e14cdda1a5",
+    "biozero/services/zeroresponder/go.mod": "f6b2cf22ac0391f22bb178b3d2f87b26c4573c09cbdcbd98c3625c19f0648b12",
+    "biozero/services/zeroresponder/main.go": "97498515e60ef20e3e9f26ffe606a369ae227094691a9d77e55ff28f356fd834",
+    "biozero/services/zeroresponder/main_test.go": "e21532a69ab0c67eb53eed1e318efa5022e9110afc91186f6f682c42dce55125",
+    "biozero/simulated-adversary/README.md": "4262b2b37ed16d05cd325f1a4b905500759725c02da24d2a02c6f9b34d7605be",
+    "biozero/simulated-adversary/go.mod": "daa7f63f06197278bd35c7217132093f6dbb1eb0d2a2c67c40c5e4e92da84760",
+    "biozero/simulated-adversary/main.go": "b016998fce0f545bad18f98b1c7e3b630012fa4893ac9d47b55351240a49d1ef",
+    "biozero/ui/Dockerfile": "962767c79f663a8c34bd6071a14f3bee3b0f2e6fc1a1f115ae3adba1e48d8546",
+    "biozero/ui/README.md": "3c6f431f405ef246e4f1dfc42344616579a17b6f989748108808f636ed56ecc8",
+    "biozero/ui/app.js": "a3a955e75acdf1f1c02829c263633970279c02adabe4ad19ef00eb84825a6d21",
+    "biozero/ui/index.html": "512238e90acffe7e240be43845458cfb7ad9eaf001fbc0929534bb64dcbb5f2c",
+    "biozero/ui/nginx.conf": "85bea5bf81cc34bc8841c198d14cc35f205a3148fe4113c393a44d4384d44df8",
+    "biozero/ui/styles.css": "afd37c1bbaa5fb535dd54afdea2705e45323bee5195dee89fe4df8d538020963"
+  },
+  "tool_versions": {
+    "go": "go version go1.26.7 (Red Hat 1.26.7-2.el9_8) linux/arm64",
+    "openssl": "OpenSSL 3.6.5 29 Sep 2026 (Library: OpenSSL 3.6.5 29 Sep 2026)",
+    "samtools": "samtools 1.24",
+    "bcftools": "bcftools 1.24",
+    "minimap2": "2.31-r1302",
+    "fastp": "fastp 1.4.0"
+  },
+  "configuration": {
+    "security_mode": "protected",
+    "pipeline_mode": "variants",
+    "single_worker": true,
+    "bound_address": "127.0.0.1",
+    "soc_simulation": true,
+    "metadata_faults": true
+  },
+  "finished_at": "2026-10-14T17:55:09.798259+00:00"
+}

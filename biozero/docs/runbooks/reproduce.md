@@ -127,3 +127,24 @@ controls, and removes its own project. It runs no pipeline or trained model.
 The executed receipt `evidence/20261014T165334-020175Z-soc-container/public/`
 passed13 assertions and cleanup. Share public/ only; secrets and source linkage
 remain private. No live firewall, certificate or quarantine action is implemented.
+
+## Metadata and lifecycle acceptance
+
+`make experiment-soc` now also enables `--metadata-faults`. With existing locked
+tools, run:
+
+```bash
+make experiment-soc BIOZERO_TOOLS_PREFIX=/absolute/path/to/verified-tools
+```
+
+The fresh native runtime tests exact projected metadata admission/terminal
+readability, one byte over/cleanup, nine unsafe spool fixtures, owner-before-result
+denial and continued new worker progress. Faults are created in fresh paths and
+removed only by matching inode/device; originals are retained. Public reports
+contain fixed observations, never sentinels/raw metadata/credentials. Receipt
+`evidence/20261014T175423-175221Z/public/` passed53 checks with8 checksums.
+Separate rebuilt Compose `evidence/20261014T175423-180461Z-reviewer-compose/public/`
+passed30 controls and cleanup; it did not repeat Firefox. Shared54-case vectors
+run in both Go modules under `make test`; foreign UID fixtures skip for non-root
+and have a separate root-only receipt, not a root-service deployment. See the
+[metadata contract](../security/metadata-contract.md) for limits and residual gates.

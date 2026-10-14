@@ -117,3 +117,10 @@ conflicting IDs or failed persistence. It writes no effective action lists and
 changes no firewall, certificate trust or running job. See
 [STATUS](STATUS.md), [event contract](security/event-contract.md) and
 [response decision](decisions/003-security-event-handoff.md) for scope and evidence.
+
+Job/result metadata now has a [bounded reader/lifecycle contract](security/metadata-contract.md).
+Unsafe or ambiguous records fail explicitly without bypassing ownership or
+scientific release. Upload admission reserves the entire current state growth;
+worker diagnostics are bounded separately from full results. Native53 and rebuilt
+Compose30 acceptance are recorded in STATUS; those checks do not establish global
+quotas, immutable owner provenance or general filesystem IO deadlines.

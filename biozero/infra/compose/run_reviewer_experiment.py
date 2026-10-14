@@ -298,6 +298,8 @@ def main():
                         ROOT / "biozero/bio/pipeline/pipeline.py", ROOT / "biozero/bio/benchmarks/evaluate_variants.py"]
         source_paths += [ROOT / "biozero/services" / service / filename for service in SERVICES for filename in ("main.go", "Dockerfile", "go.mod")]
         source_paths.append(ROOT / "biozero/services/enclave-runner/security_events.go")
+        source_paths.append(ROOT / "biozero/services/enclave-runner/job_lifecycle.go")
+        source_paths += [ROOT / "biozero/services" / service / "metadata.go" for service in ("enclave-runner", "results-api")]
         source_paths += [FIXTURE / name for name in ("reference.fa", "reads.fastq", "expected.vcf", "invalid.fastq")]
         source_paths += [ROOT / "biozero/ui" / name for name in ("app.js", "index.html", "styles.css")]
         if args.browser:

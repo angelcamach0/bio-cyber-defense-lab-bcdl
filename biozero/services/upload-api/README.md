@@ -27,3 +27,32 @@ use the same key to decrypt.
 ```bash
 go run ./main.go
 ```
+
+## Persisted metadata size contract
+
+Upload admission checks the exact indented projection of the complete current job
+lifecycle, including JSON escaping and wrapped-key growth. It reserves status
+`incomplete` (ten bytes), UTC `started_at` (20 bytes), error code (64 decoded bytes)
+and error message (512 decoded bytes); NUL bytes account for six-byte JSON escapes.
+That worst representation must fit the worker/results-reader 65,536-byte cap.
+The actual submitted job is serialized once and persisted without truncation.
+Larger projected metadata returns `413 metadata_too_large` before job publication and
+removes only that request's uncommitted payload. Key-wrap failures also clean up
+that pre-publication payload. A persistence error after publication may be
+ambiguous, so it deliberately retains the payload rather than erase input for a
+possibly visible job. This does not implement global quotas or retention.
+
+The invariants are: admitted jobs remain readable after running and terminal state
+updates under the current fields/statuses; unsafe/corrupt inputs and oversized
+lifecycle writes are not overwritten; upload hash, signature and size are never
+truncated. The worker caps only the job's diagnostic copy on UTF-8 boundaries,
+leaving the full private result intact. Historical jobs admitted without reserve
+are not promised to fit every state; an oversized state write fails closed.
+
+Multipart tests cover exact/one-over projected boundaries for ASCII, escaped and
+wrapped fields, cleanup and a subsequent valid request. A live-worker test admits
+the projected boundary, observes running-to-rejected persistence, and checks the
+terminal record remains below the same reader cap with immutable fields intact.
+The native metadata acceptance
+checks actual mTLS admission and absence of new job/payload after rejection. See
+[metadata contract](../../docs/security/metadata-contract.md).

@@ -104,38 +104,26 @@ func uploadIdentity(r *http.Request) (string, error) {
 	return supplied, nil
 }
 
-func main() {
-	addr := envOr("BIOZERO_UPLOAD_ADDR", ":8081")
-	dataDir := envOr("BIOZERO_DATA_DIR", "./data")
-	certPath := os.Getenv("BIOZERO_TLS_CERT")
-	keyPath := os.Getenv("BIOZERO_TLS_KEY")
-	caPath := os.Getenv("BIOZERO_TLS_CA")
-	if err := validateServerSecurity(certPath, keyPath, caPath); err != nil {
-		log.Fatal(err)
-	}
-	maxUploadBytes := envOrInt64("BIOZERO_MAX_UPLOAD_BYTES", 25*1024*1024)
-	rateLimit := envOrInt("BIOZERO_RATE_LIMIT", 60)
-	jobKey := os.Getenv("BIOZERO_JOB_KEY")
+const maxJobMetadataBytes = 64 << 10
+const maxJobErrorCodeBytes = 64
+const maxJobErrorMessageBytes = 512
 
-	uploadDir := filepath.Join(dataDir, "uploads")
-	jobsDir := filepath.Join(dataDir, "jobs")
-	// Ensure state directories exist before accepting requests.
-	mustMkdirAll(uploadDir)
-	mustMkdirAll(jobsDir)
+// Reserve the exact current worker lifecycle fields without truncating any
+// submitted metadata. NUL maximizes JSON expansion: six encoded bytes per byte.
+func projectedJobJSON(job jobRecord) ([]byte, error) {
+	job.Status = "incomplete" // Longest current persisted status: ten bytes.
+	return json.MarshalIndent(struct {
+		jobRecord
+		StartedAt    string `json:"started_at"`
+		ErrorCode    string `json:"error_code"`
+		ErrorMessage string `json:"error_message"`
+	}{job, "2000-01-01T00:00:00Z", strings.Repeat("\x00", maxJobErrorCodeBytes), strings.Repeat("\x00", maxJobErrorMessageBytes)}, "", "  ")
+}
 
-	limiter := newRateLimiter(rateLimit, time.Minute)
-	// Periodically prune rate limiter state to control memory usage.
-	go limiter.PruneStaleEntries(5 * time.Minute)
-
-	// API boundary: health probe for UI and orchestration checks.
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		// Respond quickly to indicate liveness.
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
-	})
-
-	// API boundary: accepts external multipart uploads and writes job records.
-	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
+// newUploadHandler preserves the upload/auth contract while bounding the exact
+// JSON bytes consumed by the worker and results API. No global quotas here.
+func newUploadHandler(uploadDir, jobsDir string, maxUploadBytes int64, jobKey string, limiter *rateLimiter) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Guard against unsupported methods to limit surface area.
 		if r.Method != http.MethodPost {
 			writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed")
@@ -165,6 +153,7 @@ func main() {
 			// Return to avoid accessing invalid multipart fields.
 			return
 		}
+		defer r.MultipartForm.RemoveAll()
 
 		file, header, err := r.FormFile("file")
 		// Reject requests missing the expected file field.
@@ -224,6 +213,7 @@ func main() {
 			// Fail closed if encryption fails to avoid storing sensitive material.
 			if err != nil {
 				log.Printf("enc_key wrap error: %v", err)
+				removeUnpublishedPayload(storedPath)
 				writeJSONError(w, http.StatusInternalServerError, "enc_key_wrap_failed", "failed to secure enc_key")
 				// Return to avoid persisting unprotected secrets.
 				return
@@ -253,8 +243,29 @@ func main() {
 			ClientCertSerial:  certSerial,
 		}
 
-		// Persist the job record for enclave-runner to pick up.
-		if err := writeJSON(filepath.Join(jobsDir, jobID+".json"), job); err != nil {
+		// Include JSON escaping and wrapped-key growth in the exact byte limit.
+		// Rejection here is pre-publication; only this request's payload is removed.
+		jobJSON, err := json.MarshalIndent(job, "", "  ")
+		if err != nil {
+			removeUnpublishedPayload(storedPath)
+			writeJSONError(w, http.StatusInternalServerError, "job_encode_failed", "failed to encode job record")
+			return
+		}
+		projectedJSON, err := projectedJobJSON(job)
+		if err != nil {
+			removeUnpublishedPayload(storedPath)
+			writeJSONError(w, http.StatusInternalServerError, "job_encode_failed", "failed to encode job record")
+			return
+		}
+		if len(projectedJSON) > maxJobMetadataBytes {
+			removeUnpublishedPayload(storedPath)
+			writeJSONError(w, http.StatusRequestEntityTooLarge, "metadata_too_large", "job metadata exceeds supported lifecycle size")
+			return
+		}
+
+		// Persist exactly the checked bytes. A rename may succeed before directory
+		// fsync fails, so preserve the payload on ambiguous persistence errors.
+		if err := writeJSONBytes(filepath.Join(jobsDir, jobID+".json"), jobJSON); err != nil {
 			log.Printf("job record write error: %v", err)
 			writeJSONError(w, http.StatusInternalServerError, "job_write_failed", "failed to write job record")
 			// Return to avoid confirming an unpersisted job.
@@ -265,6 +276,46 @@ func main() {
 		// Return the job ID for clients to poll results-api.
 		writeJSONResponse(w, resp)
 	})
+}
+
+func removeUnpublishedPayload(path string) {
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		log.Print("upload cleanup error: unpublished_payload_remove_failed")
+	}
+}
+
+func main() {
+	addr := envOr("BIOZERO_UPLOAD_ADDR", ":8081")
+	dataDir := envOr("BIOZERO_DATA_DIR", "./data")
+	certPath := os.Getenv("BIOZERO_TLS_CERT")
+	keyPath := os.Getenv("BIOZERO_TLS_KEY")
+	caPath := os.Getenv("BIOZERO_TLS_CA")
+	if err := validateServerSecurity(certPath, keyPath, caPath); err != nil {
+		log.Fatal(err)
+	}
+	maxUploadBytes := envOrInt64("BIOZERO_MAX_UPLOAD_BYTES", 25*1024*1024)
+	rateLimit := envOrInt("BIOZERO_RATE_LIMIT", 60)
+	jobKey := os.Getenv("BIOZERO_JOB_KEY")
+
+	uploadDir := filepath.Join(dataDir, "uploads")
+	jobsDir := filepath.Join(dataDir, "jobs")
+	// Ensure state directories exist before accepting requests.
+	mustMkdirAll(uploadDir)
+	mustMkdirAll(jobsDir)
+
+	limiter := newRateLimiter(rateLimit, time.Minute)
+	// Periodically prune rate limiter state to control memory usage.
+	go limiter.PruneStaleEntries(5 * time.Minute)
+
+	// API boundary: health probe for UI and orchestration checks.
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		// Respond quickly to indicate liveness.
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+
+	// API boundary: accepts external multipart uploads and writes job records.
+	http.Handle("/upload", newUploadHandler(uploadDir, jobsDir, maxUploadBytes, jobKey, limiter))
 
 	// Configure server timeouts to protect against slow clients.
 	server := &http.Server{
@@ -449,6 +500,10 @@ func writeJSON(path string, v any) error {
 	if err != nil {
 		return err
 	}
+	return writeJSONBytes(path, data)
+}
+
+func writeJSONBytes(path string, data []byte) error {
 	file, err := os.CreateTemp(filepath.Dir(path), ".biozero-*.tmp")
 	if err != nil {
 		return err
