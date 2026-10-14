@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "verification": "downloaded GitHub artifact digest, original native checksums, metrics and all10case verdicts checked",
+  "run_id": 38587738514,
+  "job_id": 115934123005,
+  "artifact_id": 11905798377,
+  "artifact_zip_sha256": "1c417ee1fb1e3c2e04b4775add09c39c96804f4cc8c9d3d64aa920dbfbbfa3bc",
+  "run_url": "https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38587738514",
+  "pr_url": "https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21",
+  "head_sha": "a27221c6f2174ea9d116779fcd47c88f9794dddb",
+  "tested_merge_sha": "62cdea2e2bab36a22c6330e7e096bb8f6f3b49e8",
+  "status": "passed",
+  "native_cases": 10,
+  "original_manifest_source_hash_count": 155,
+  "tp": 3,
+  "fp": 0,
+  "fn": 0,
+  "reproducible_callset": true,
+  "scope": "hosted ARM unit/PKI/scientific/native acceptance; Compose and real-browser acceptance executed separately on local host",
+  "archive_native_prefix": "20261014T151621-665108Z/public/",
+  "derivation": "native files copied byte-for-byte; original checksum document renamed native-original-SHA256SUMS.json; package checksums include this receipt"
+}

@@ -95,5 +95,9 @@ forced-engine failure, provenance and remaining trained-model/biological gates.
 
 Local/CI share `make test`, `make science`, and `make experiment`. The prepared
 workflow uses a standard public-repository ARM64 runner, read-only token permissions
-and public synthetic evidence only. Hosted workflow execution is pending.
+and public synthetic evidence only. Hosted run38587738514 passed these commands
+for implementation commit a27221c6f2174ea9d116779fcd47c88f9794dddb via the PR merge
+revision. Its downloaded artifact/checksums and fresh native metrics were checked;
+see evidence/20261014T151621-665108Z-hosted-ci/public/hosted-ci.json.
+The workflow does not run the separately recorded local Compose/Firefox suite.
 Runner policy: [GitHub documentation](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).

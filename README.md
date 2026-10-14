@@ -55,11 +55,16 @@ are reported as incomplete until validated.
 
 The HTTPS reviewer gateway now executes prepared experiments with per-user sessions,
 CSRF protection, distinct mTLS transports and persistent job ownership. The real
-four-service container verification passed 30 assertions, including two scientific
+four-service container/browser verification passed 31 assertions, including two scientific
 runs, cross-client denial, restart/relogin and cookie revocation. Use
 python3 -B biozero/infra/compose/run_reviewer_experiment.py to reproduce it;
-see [local reviewer setup](biozero/infra/compose/README.md). Browser rendering and
-the planned Oracle deployment remain pending. ZeroResponder is optional simulation.
+see [local reviewer setup](biozero/infra/compose/README.md). Real Firefox acceptance
+passed23 UI/TLS/session-race checks with zero JavaScript errors. The planned Oracle
+deployment remains pending. ZeroResponder is optional simulation.
+
+The implementation and curated evidence are published in [draft PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
+[Hosted ARM CI](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38587738514)
+passed unit/PKI checks, the scientific repeat and the protected native experiment.
 
 Reports separate execution status from scientific release: evaluated_passed,
 withheld or unassessed. A completed process alone does not approve scientific results.

@@ -1,7 +1,10 @@
 # BioZero implementation status
 
 Updated 2026-10-14. Local branch: biozero/reproducible-milestone.
-Base: b8731934fbe7c7dc00bf51fa978ce370361b3f74. Changes remain uncommitted and unpushed.
+Base: b8731934fbe7c7dc00bf51fa978ce370361b3f74. Implementation commit:
+a27221c6f2174ea9d116779fcd47c88f9794dddb, published in
+[draft PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
+No merge or deployment occurred. See the live PR for subsequent documentation commits.
 
 ## Verified synthetic milestone
 
@@ -82,7 +85,13 @@ See [SCI01 report](research/2026-10-14-regulatory-feasibility.md).
   its concurrent failure test passed with the race detector, and the current
   gateway image passed the integration again. The final browser run added
   actual UI/TLS and delayed-response session acceptance for local Firefox.
-- Hosted CI and publishing the reviewed change; workflow is local only.
+- Hosted ARM CI passed for the implementation commit: run38587738514,
+  job115934123005. The downloaded artifact ZIP SHA256 matched GitHub metadata;
+  its new native run passed10/10 and TP3/FP0/FN0 with equal repeated callsets.
+  Evidence: evidence/20261014T151621-665108Z-hosted-ci/public/.
+  The runner tested merge commit62cdea2e2bab36a22c6330e7e096bb8f6f3b49e8.
+  Hosted CI covers unit/PKI/scientific/native checks; local Compose/browser
+  acceptance is recorded separately. PR remains a draft for review.
 - Freeze appropriate biological context/head track, score, data and split; run
   ten FP32 loci for adapter validation before a 100-pair biological benchmark.
   Candidate Synapse syn60756043 version 2 metadata is readable, but anonymous
