@@ -10,6 +10,7 @@ test:
 	python3 -m unittest discover -s biozero/infra/compose -p 'test_*.py'
 	python3 -m unittest discover -s biozero/infra/soc -p 'test_*.py'
 	python3 -m unittest discover -s biozero/research/regulatory -p 'test_*.py'
+	python3 -B -m unittest discover -s biozero/services/artifact-executor/capsule -p 'test_*.py'
 	python3 -B biozero/infra/native/check_go.py
 
 bio-tools:

@@ -6,6 +6,57 @@ a27221c6f2174ea9d116779fcd47c88f9794dddb, published in
 [draft PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
 No merge or deployment occurred. See the live PR for subsequent documentation commits.
 
+Earlier local checkpoint, 2026-10-14 21:54:51 UTC: published head remains
+`57013e76831184bcd6a1153b33ebb5acb40f1ec5`; the source/reference, pipeline-resource
+and artifact-executor changes are uncommitted. The reviewed biological input pool
+is frozen into10adapter/100evaluation cases. Actual offline adapter inference
+completed10/10 with finite, repeat-identical outputs; this is runtime/input PASS,
+not an accuracy approval. The receipt binder then passed Vale's independent
+12-mutation review. Evaluation100 started offline at21:50UTC on the unchanged
+cases; its completed result remains pending. Do not infer liveness from this
+saved status: the private handoff records the actual execution handle for polling.
+Fresh local checks passed197Python tests and eight Go module test/vet checks.
+See [current biological evidence](experiments/004-kumasaka-prepool-evidence.md)
+and [artifact implementation scope](security/artifact-workspace-contract.md).
+Historical sections below retain earlier zero-case and pending-source snapshots;
+they do not supersede this new checkpoint or approve unpublished source with old CI.
+
+Subsequent authored checkpoint, 2026-10-14 22:15 UTC: the actual evaluation handle
+was polled live, with65/100 inferred and the same source/ledger pins. The result
+remains pending. New Unix listener/client, scoped-input registry and coordinator
+files have independent static review; their Go tests/vet/race have not run while
+the model measures on this one-CPU host. Vale found and Chiquis corrected three
+FD/publication/ACK races before testing. Native/container providers and worker
+integration still need implementation and acceptance. Nora also authored a public
+biological receipt exporter with13 synthetic tests; Vale reviewed its privacy by
+reading/AST, with no concrete escape found. Those tests and actual exports remain
+pending. See [composition scope](../services/artifact-executor/README-coordinator.md)
+and [biological export boundary](experiments/005-biological-evaluation.md).
+The earlier197-Python/eight-Go execution scope does not cover these new additions.
+
+Latest executed checkpoint, 2026-10-14 22:49 UTC: the same evaluation handle
+terminated successfully with100/100 actual biological cases, no rejected/pending
+slots and identical repeats. Sign agreement61/100 and Spearman0.1840864086408641
+are descriptive GBR-LCL-to-GM12878 transfer results, not an accuracy approval.
+Controller2280.947s, worker peak939,098,112bytes; scientific feasibility remains
+pending and the prior comparable economic no-go is unchanged. Nora independently
+recomputed metrics, checked parents/privacy and reviewed both public receipts,
+now integrated locally in [the regulatory directory](../research/regulatory).
+No raw DNA/rows/vectors/weights were exported. Publication/new hosted CI is pending.
+
+Fresh make test passed231Python test cases (229PASS, two kernel opt-ins skipped)
+and eight Go module test/vet checks. The separate capsule opt-in run passed21/21
+including both actual namespace cases, with zero skips. Unix/core/coordinator
+race acceptance subsequently passed with the native opt-in enabled:64 top-level
+functions with subcases,4.847s. Vet passed on the same source. Actual native
+provider/store execution passed the synthetic three-SNP evaluation with four
+retained exports and exact observed=evaluated=retained VCF. A first interpreter
+failure and the failed FD-remapping harness are retained separately. See
+[native scope and evidence](../services/artifact-executor/README-native.md).
+Native/provider crash ordering, container provider, worker integration and fresh
+protected native/Compose acceptance are still required. No production/artifact
+quota, deployment or completed-project claim follows from these module tests.
+
 This local acceptance record was written before publication, from a dirty
 working tree above parent `2ad6b91c35e324cde7af882e4011fdffa9435805`. CI for that
 committed parent does not validate this new source. See the live PR for subsequent

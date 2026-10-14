@@ -61,6 +61,19 @@ def integer(value):
     return isinstance(value, int) and not isinstance(value, bool)
 
 
+def exact_json_equal(actual, expected):
+    """Preserve JSON types; bool/int/float equality cannot approve a receipt."""
+    if type(actual) is not type(expected):
+        return False
+    if isinstance(expected, dict):
+        return actual.keys() == expected.keys() and all(
+            exact_json_equal(actual[key], value) for key, value in expected.items())
+    if isinstance(expected, list):
+        return len(actual) == len(expected) and all(
+            exact_json_equal(first, second) for first, second in zip(actual, expected))
+    return actual == expected
+
+
 def decode_json(raw):
     # Reject duplicate keys, NaN/Infinity and oversized documents.
     def pairs(items):
@@ -343,7 +356,7 @@ def verify_receipt(dataset, prefix, normalization_sha):
                 "dataset_sha256": dataset.get("sha256"), "review_status": "approved", "permission_scope": "internal_research",
                 "schema_verified": True, "effect_orientation_verified": True, "license_verified": True,
                 "normalization_sha256": normalization_sha}
-    if not isinstance(receipt, dict) or any(receipt.get(key) != value for key, value in required.items()):
+    if not isinstance(receipt, dict) or any(not exact_json_equal(receipt.get(key), value) for key, value in required.items()):
         raise AdapterError("dataset_review_receipt_mismatch")
     if not text(receipt.get("reviewed_by")) or not all(text(receipt.get(key)) and receipt[key].startswith("https://")
                                                      for key in ("license_source_url", "effect_source_url")):
@@ -361,7 +374,7 @@ def verify_selection(ledger, protocol, prefix):
                           split.get("frozen_selection_sha256"), json_document=True)
     identity = {"schema_version": 1, "dataset_sha256": ledger["dataset"]["sha256"], "protocol_sha256": PROTOCOL_SHA256}
     if not isinstance(normalization, dict) or not isinstance(frozen, dict) or any(
-            document.get(key) != value for document in (normalization, frozen) for key, value in identity.items()):
+            not exact_json_equal(document.get(key), value) for document in (normalization, frozen) for key, value in identity.items()):
         raise AdapterError("selection_source_identity_mismatch")
     rule = normalization.get("normalization", {})
     if not isinstance(rule, dict) or rule.get("reviewed_before_predictions") is not True or not all(
@@ -374,9 +387,9 @@ def verify_selection(ledger, protocol, prefix):
     selected, pool_records = deterministic_selection(normalization["cases"], protocol["selection"]["seed"])
     if len(selected) != 110:
         raise AdapterError("selection_requires_110_disjoint_windows")
-    if frozen.get("selected") != selected:
+    if not exact_json_equal(frozen.get("selected"), selected):
         raise AdapterError("selection_rank_or_slots_mismatch")
-    if split.get("adapter_loci") != selected[:10] or split.get("evaluation_loci") != selected[10:]:
+    if not exact_json_equal(split.get("adapter_loci"), selected[:10]) or not exact_json_equal(split.get("evaluation_loci"), selected[10:]):
         raise AdapterError("selection_split_mismatch")
     selected_ids = {row["case_id"] for row in selected}
     originals = {row["case_id"]: row for row in normalization["cases"]
@@ -392,7 +405,7 @@ def verify_adapter_receipt(ledger, prefix, selection_sha):
                 "dataset_sha256": ledger["dataset"]["sha256"], "protocol_sha256": PROTOCOL_SHA256,
                 "weights_sha256": weights_pins(), "selection_sha256": selection_sha,
                 "counts": {"submitted": 10, "validated": 10, "rejected": 0, "pending": 0, "inferred": 10}}
-    if not isinstance(receipt, dict) or any(receipt.get(key) != value for key, value in expected.items()):
+    if not isinstance(receipt, dict) or any(not exact_json_equal(receipt.get(key), value) for key, value in expected.items()):
         raise AdapterError("prior_biological_adapter_receipt_mismatch")
     return receipt
 
@@ -411,7 +424,7 @@ def validate_ledger(ledger, prefix, protocol=None):
         errors.append({"status": status, "code": code})
         block(records, status, code)
     phase = ledger.get("phase")
-    if ledger.get("schema_version") != 1 or ledger.get("protocol_id") != PROTOCOL_ID:
+    if not exact_json_equal(ledger.get("schema_version"), 1) or ledger.get("protocol_id") != PROTOCOL_ID:
         gate("rejected", "ledger_protocol_mismatch")
     if phase not in ("control", "adapter", "evaluation"):
         gate("rejected", "phase_invalid")
@@ -448,13 +461,13 @@ def validate_ledger(ledger, prefix, protocol=None):
                         gate("rejected", "frozen_slot_count_mismatch")
                     else:
                         for case, record, descriptor in zip(cases, records, expected):
-                            if not isinstance(case, dict) or canonical(case) != {key: descriptor[key] for key in CASE_FIELDS}:
+                            if not isinstance(case, dict) or not exact_json_equal(canonical(case), {key: descriptor[key] for key in CASE_FIELDS}):
                                 record["status"] = "rejected"
                                 record["reasons"].append("frozen_case_slot_mismatch")
                             elif record.get("window_sha256") and record["window_sha256"] != descriptor["window_sha256"]:
                                 record["status"] = "rejected"
                                 record["reasons"].append("frozen_window_sha_mismatch")
-                            elif case != originals[descriptor["case_id"]]:
+                            elif not exact_json_equal(case, originals[descriptor["case_id"]]):
                                 record["status"] = "rejected"
                                 record["reasons"].append("frozen_case_payload_mismatch")
             except (AdapterError, OSError) as exc:

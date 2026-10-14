@@ -1,0 +1,143 @@
+{
+  "biological_accuracy_approved": false,
+  "biological_association": "pending",
+  "checks": {
+    "all_head_probabilities_finite_and_in_unit_interval": true,
+    "batch_one": true,
+    "exact_nine_tracks": true,
+    "full_head_shape_1x21907": true,
+    "projection_disabled": true,
+    "repeat_identical_all_head_outputs": true
+  },
+  "counts": {
+    "inferred": 10,
+    "pending": 0,
+    "rejected": 0,
+    "submitted": 10,
+    "validated": 10
+  },
+  "dataset_kind": "biological",
+  "experiment": "SCI02-biological-runtime",
+  "export_validation_source_sha256": {
+    "biological_adapter": "e7a3d9865aa88b8b18f767210d1ee1f3f0f461ed72b72b16b333b3341288af91",
+    "biological_runtime_export": "5e42b3451e0ae085ae503be0626a0ee9e7453a7083c38df690a0e1ae04b95386"
+  },
+  "independence_limit": "Disjoint 4096-base windows do not establish linkage-disequilibrium independence.",
+  "metrics": {
+    "confidence_intervals_containing_zero": 0,
+    "exact_zero_effects": 0,
+    "exact_zero_predictions": 0,
+    "primary_sign_agreement": {
+      "agreed": 5,
+      "denominator": 10,
+      "fraction": 0.5
+    },
+    "provided_confidence_intervals": 0,
+    "provided_standard_errors": 10,
+    "raw_mae_against_beta": null,
+    "scored_effect_pairs": 10,
+    "secondary_nonzero_effect_sign_agreement": {
+      "agreed": 5,
+      "denominator": 10,
+      "fraction": 0.5
+    },
+    "spearman": {
+      "correlation": 0.6,
+      "denominator": 10,
+      "ties": "average_ranks",
+      "undefined_reason": null
+    }
+  },
+  "normalization_pool_counts": {
+    "pending": 0,
+    "rejected": 1,
+    "validated": 255
+  },
+  "parents": {
+    "dataset_sha256": "b7a1e169153eff1fbf700270260bc7225f0c4585b1066ab2e2a65583c33a5d2e",
+    "input_verification_receipt_sha256": "7cbd3589602f5549355294352ebb1cd55d33b215500f403695b1d9b592bc70e3",
+    "ledger_sha256": "db834741dd57f9107301d2081434329e5400c346fc4605d6dab45ee8a4a1bab5",
+    "normalization_sha256": "ceb8f334fff48d00a97d7af54b7269b5b77a922aa7597d0cbb0798829e5057c5",
+    "prior_adapter_ledger_sha256": null,
+    "prior_adapter_report_sha256": null,
+    "private_report_sha256": "83452f1450ce12f46e9c2d5d8adbd6cf18835531de156569c1149dac89e70987",
+    "selection_sha256": "c664d2139de4b2111675cb483009ad7eed1163a9a47c4e907284e4326a2a4a56"
+  },
+  "phase": "adapter",
+  "protocol_id": "SCI02-GM12878-ATAC-FP32-v1",
+  "protocol_sha256": "8c3f80a5b59eb3d165764bb5596e1b0451248bd2b0641d430fa6378b73a9126c",
+  "rank64_verified_heldout": false,
+  "raw_mae_method": "not_calculated_scales_not_established_as_comparable",
+  "runtime": {
+    "controller_seconds": 247.4254925599962,
+    "cpu_time_total_limit_seconds": 2641,
+    "load_seconds": 0.7118979700026102,
+    "measurement_seconds": {
+      "count": 10,
+      "maximum": 11.632697086010012,
+      "mean": 11.378771627703099,
+      "minimum": 11.294127582994406,
+      "sum": 113.787716277031
+    },
+    "memory_enforcement": "50 ms RSS watchdog plus self-reported peak; not RLIMIT_AS or a kernel allocation cap",
+    "repeat_seconds": {
+      "count": 10,
+      "maximum": 11.876913674001116,
+      "mean": 11.467902864898496,
+      "minimum": 11.292025023998576,
+      "sum": 114.67902864898497
+    },
+    "rss_ceiling_bytes": 3221225472,
+    "seconds_per_model_event": 120,
+    "warmup_seconds": 11.297915302988258,
+    "watchdog_peak_rss_bytes": 933007360,
+    "worker_peak_rss_bytes": 932831232
+  },
+  "schema_version": 1,
+  "scientific_feasibility": "pending",
+  "scope": "Complete frozen biological cases and coherent trusted-writer runtime reports; no accuracy, causal, clinical, economic or external-attestation approval.",
+  "status": "passed",
+  "technique": {
+    "annotation_sha256": "3a2cece0a7877dadb2c23e8fcaf57b25ef57523258437201785fde9e537376a9",
+    "architecture": "aarch64",
+    "batch": 1,
+    "channel_order": "ACGT",
+    "head_outputs": 21907,
+    "projection": false,
+    "python": "3.11.17",
+    "rank": 64,
+    "source_commit": "217469410410e07b6663372da847426ffd172855",
+    "strand_handling": "pinned upstream forward: mean forward and reverse-complement head probabilities",
+    "strict_state_dict": true,
+    "threads": 1,
+    "torch": "2.14.1+cpu",
+    "track_ids": [
+      59676,
+      59678,
+      61819,
+      61820,
+      61821,
+      61822,
+      65259,
+      65260,
+      65262
+    ],
+    "track_indices_zero_based": [
+      10233,
+      10234,
+      10387,
+      10388,
+      10389,
+      10390,
+      12556,
+      12557,
+      12558
+    ],
+    "variant": "fp32",
+    "weights_only": true,
+    "weights_sha256": {
+      "head64_fp32": "7fd1f2ee86a83e8a985dff13a1164c9f32a0fcb60f8309d38019e1ad17797d35",
+      "trunk_fp32": "346677580a9bfcdab1bc83735e12c17c8f5d2ec76eb91a45b4e3b2a91f59bf40"
+    }
+  }
+}

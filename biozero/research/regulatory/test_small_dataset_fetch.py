@@ -3,11 +3,13 @@ import email.message
 import hashlib
 import importlib.util
 import io
+import json
 from pathlib import Path
 import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -45,6 +47,115 @@ class Opener:
 
 
 class SmallSourceTests(unittest.TestCase):
+    def test_missing_ledger_with_mapping_reference_or_baseline_history_refuses_reset(self):
+        for name in ('peaks.bed.gz','hg19ToHg38.over.chain.gz',source.BASELINE_RECEIPT,
+                     'reference-'+'a'*64+'.json'):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                folder=Path(directory)/'datasets';folder.mkdir(mode=0o700)
+                retained=folder/name;retained.write_bytes(b'KEEP');retained.chmod(0o600)
+                with self.assertRaisesRegex(source.common.FetchError,'existing_data_requires_ledger'):
+                    source.acquire(directory,fetch=True)
+                self.assertEqual(retained.read_bytes(),b'KEEP')
+                self.assertFalse((folder/'transfer-ledger.json').exists())
+                self.assertFalse((folder/'transfer-ledger.lock').exists())
+
+    def test_source_entrypoint_rejects_lowered_pinned_charge_before_any_write(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder=Path(directory)/'datasets';folder.mkdir(mode=0o700)
+            source.publish_control_baseline(folder,None,'initial_empty')
+            source.publish_private(folder,'zenodo-1405945-metadata.json',b'{}')
+            data={'schema_version':1,'limit_bytes':source.LIMIT,'charged_bytes':2,
+                  'body_bytes_observed':2,'http_exchanges':2,
+                  'baseline_control_imported':True,'baseline_control_bytes':0,
+                  'attempts':[{'status':'verified','size_bytes':10,'sha256':'a'*64}]}
+            path=folder/'transfer-ledger.json'
+            source.publish_private(folder,path.name,json.dumps(data).encode())
+            before=path.read_bytes()
+            with self.assertRaisesRegex(source.common.FetchError,'charge_would_decrease'):
+                source.acquire(directory)
+            self.assertEqual(path.read_bytes(),before)
+            self.assertFalse((folder/'transfer-ledger.lock').exists())
+            path.write_bytes(b' ' * ((1<<20)+1))
+            with self.assertRaisesRegex(source.common.FetchError,'cache_unsafe'):
+                source.acquire(directory)
+            self.assertFalse((folder/'transfer-ledger.lock').exists())
+
+    def test_baseline_receipt_is_private_immutable_and_required_after_import(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with source.common.TransferLedger(directory, source.LIMIT) as ledger:
+                source.seed_control_charge(ledger)
+                proof=Path(directory)/source.BASELINE_RECEIPT
+                before=proof.read_bytes()
+                self.assertEqual(proof.stat().st_mode & 0o777,0o600)
+                self.assertEqual(source.control_baseline_receipt(Path(directory))['baseline_control_bytes'],0)
+                source.seed_control_charge(ledger)
+                self.assertEqual(proof.read_bytes(),before)
+                proof.unlink()
+                with self.assertRaisesRegex(source.common.FetchError,'receipt_required'):
+                    source.seed_control_charge(ledger)
+                self.assertFalse(proof.exists())
+
+    def test_baseline_crash_recovery_keeps_charge_without_cached_control(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder=Path(directory)
+            receipt={'schema_version':1,'initialization':'initial_control','baseline_control_bytes':4251,
+                     'source_response_sha256':source.CONTROL_SHA,'source_url':source.control_fixture.URL,
+                     'reference_dna_sha256':source.control_fixture.DNA_SHA}
+            source.publish_private(folder,source.BASELINE_RECEIPT,json.dumps(receipt).encode())
+            with source.common.TransferLedger(folder,source.LIMIT) as ledger:
+                source.seed_control_charge(ledger)
+                self.assertEqual(ledger.data['charged_bytes'],4251)
+                self.assertEqual(ledger.data['body_bytes_observed'],4251)
+                ledger.data.update(baseline_control_bytes=0,charged_bytes=0,body_bytes_observed=0)
+                with self.assertRaisesRegex(source.common.FetchError,'history_mismatch'):
+                    source.seed_control_charge(ledger)
+
+    def test_control_response_timestamps_vary_but_reference_pin_and_response_bind(self):
+        dna='A'*4096  # Synthetic reference used only by this offline test.
+        with mock.patch.object(source.control_fixture,'DNA_SHA',hashlib.sha256(dna.encode()).hexdigest()):
+            for timestamp in ('first','second'):
+                with self.subTest(timestamp=timestamp), tempfile.TemporaryDirectory() as directory:
+                    folder=Path(directory)
+                    value={'genome':'hg38','chrom':'chr1','start':1000000,'end':1004096,
+                           'dna':dna,'downloadTime':timestamp}
+                    raw=json.dumps(value).encode()
+                    source.publish_private(folder,'control-ucsc-hg38-chr1.json',raw)
+                    with source.common.TransferLedger(folder,source.LIMIT) as ledger:
+                        source.seed_control_charge(ledger)
+                        receipt=source.control_baseline_receipt(folder)
+                        self.assertEqual(receipt['source_response_sha256'],hashlib.sha256(raw).hexdigest())
+                        self.assertEqual(ledger.data['charged_bytes'],len(raw))
+                        path=folder/'control-ucsc-hg38-chr1.json'
+                        path.write_bytes(raw+b' ')
+                        with self.assertRaisesRegex(source.common.FetchError,'cache_mismatch'):
+                            source.seed_control_charge(ledger)
+
+    def test_baseline_strict_types_duplicates_and_unknown_legacy_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder=Path(directory)
+            with source.common.TransferLedger(folder,source.LIMIT) as ledger:
+                source.seed_control_charge(ledger)
+                proof=folder/source.BASELINE_RECEIPT
+                original=json.loads(proof.read_bytes())
+                for key,alias in (('schema_version',True),('schema_version',1.0),
+                                  ('baseline_control_bytes',False),('baseline_control_bytes',0.0)):
+                    with self.subTest(key=key,alias=alias):
+                        proof.write_text(json.dumps(dict(original,**{key:alias})))
+                        with self.assertRaisesRegex(source.common.FetchError,'receipt_invalid'):
+                            source.seed_control_charge(ledger)
+                proof.write_text('{"schema_version":1,"schema_version":1}')
+                with self.assertRaisesRegex(source.common.FetchError,'duplicate_json_key'):
+                    source.seed_control_charge(ledger)
+                proof.write_text('{"schema_version":NaN}')
+                with self.assertRaisesRegex(source.common.FetchError,'nonfinite_json'):
+                    source.seed_control_charge(ledger)
+                proof.unlink()
+                with self.assertRaisesRegex(source.common.FetchError,'legacy_baseline_requires_review'):
+                    source.adopt_legacy_control_baseline(ledger)
+                ledger.data.update(baseline_control_imported=0)
+                with self.assertRaisesRegex(source.common.FetchError,'missing_baseline_refusing_reset'):
+                    source.seed_control_charge(ledger)
+
     def fixture(self, directory, body=b'source'):
         entry = dict(source.CATALOG[0], size_bytes=len(body), md5=hashlib.md5(body).hexdigest())
         ledger = source.common.TransferLedger(directory, source.LIMIT)

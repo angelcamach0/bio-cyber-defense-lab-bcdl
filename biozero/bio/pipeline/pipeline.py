@@ -7,7 +7,9 @@ or invalid input. Statistics are not variant analysis. Each run uses a fresh
 artifact directory, preventing previous outputs from satisfying new checks.
 """
 import argparse
+import errno
 import gzip
+import zlib
 import hashlib
 import json
 import os
@@ -15,6 +17,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+from resource_budget import Budget, BudgetError, apply_kernel_file_limit, own_job_group, bounded_command
 from datetime import datetime, timezone
 
 
@@ -27,34 +30,33 @@ def sha256_file(path):
 
 
 def max_bytes_limit():
-    try:
-        return max(1, int(os.environ.get("BIOZERO_PIPELINE_MAX_BYTES", "26214400")))
-    except ValueError:
-        return 26214400
+    return Budget.from_env().input_bytes
 
 
 def parse_timeout_seconds():
-    try:
-        return max(1, int(os.environ.get("BIOZERO_PIPELINE_TIMEOUT_SECONDS", "600")))
-    except ValueError:
-        return 600
+    return Budget.from_env().timeout_seconds
 
 
-def fastq_stats(path):
+def fastq_stats(path, budget=None):
     """Validate unwrapped four-line FASTQ, including decompressed size limits."""
+    budget = budget or Budget.from_env()
     opener = gzip.open if str(path).endswith(".gz") else open
     count = total = expanded = 0
     with opener(path, "rt", encoding="ascii", errors="strict", newline="") as stream:
         while True:
-            header = stream.readline()
-            if not header:
+            raw = []
+            for index in range(4):
+                line = stream.readline(budget.input_bytes - expanded + 1)
+                if index == 0 and not line:
+                    break
+                if not line:
+                    raise ValueError(f"truncated FASTQ record {count + 1}")
+                expanded += len(line)
+                if expanded > budget.input_bytes:
+                    raise ValueError("expanded FASTQ exceeds configured size limit")
+                raw.append(line)
+            if not raw:
                 break
-            raw = [header, stream.readline(), stream.readline(), stream.readline()]
-            if any(not line for line in raw):
-                raise ValueError(f"truncated FASTQ record {count + 1}")
-            expanded += sum(len(line) for line in raw)
-            if expanded > max_bytes_limit():
-                raise ValueError("expanded FASTQ exceeds configured size limit")
             header, sequence, plus, quality = [line.rstrip("\r\n") for line in raw]
             if not header.startswith("@") or not header[1:].strip():
                 raise ValueError(f"invalid FASTQ header at record {count + 1}")
@@ -74,25 +76,40 @@ def fastq_stats(path):
 
 
 def run_cmd(cmd, stdout_path=None, timeout_seconds=600):
-    """subprocess.run kills and reaps timed-out children; no shell is involved."""
-    try:
-        if stdout_path:
-            with open(stdout_path, "wb") as out:
-                return subprocess.run(cmd, stdout=out, stderr=subprocess.PIPE,
-                                      text=True, timeout=timeout_seconds)
-        return subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              text=True, timeout=timeout_seconds)
-    except subprocess.TimeoutExpired:
-        return subprocess.CompletedProcess(cmd, 124, "", f"timeout after {timeout_seconds}s")
-    except OSError as exc:
-        return subprocess.CompletedProcess(cmd, 127, "", str(exc))
+    # Files and samtools spill files share the dedicated job cwd/TMPDIR.
+    directory = str(Path(stdout_path).parent) if stdout_path else None
+    if directory is None:
+        for item in cmd[1:]:
+            candidate = Path(str(item))
+            if candidate.is_absolute() and candidate.parent.name.startswith("biozero-run-"):
+                directory = str(candidate.parent)
+                break
+    return bounded_command(cmd, stdout_path, timeout_seconds, cwd=directory)
+
+
+def copy_reference(source, destination, maximum):
+    digest = hashlib.sha256()
+    copied = 0
+    with open(source, "rb") as stream, open(destination, "xb") as out:
+        while True:
+            chunk = stream.read(min(1024 * 1024, maximum - copied + 1))
+            if not chunk:
+                break
+            if copied + len(chunk) > maximum:
+                raise BudgetError("reference_size_limit")
+            out.write(chunk)
+            digest.update(chunk)
+            copied += len(chunk)
+        out.flush()
+        os.fsync(out.fileno())
+    return digest.hexdigest()
 
 
 class StageFailure(Exception):
     pass
 
 
-def execute(args):
+def execute(args, budget=None, limits_applied=False):
     payload = {
         "schema_version": 1, "pipeline": "python-wrapper", "mode": args.mode,
         "pipeline_status": "failed", "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -106,12 +123,27 @@ def execute(args):
         payload["warnings"].append(message)
         payload["error"] = message
 
+    try:
+        budget = budget or Budget.from_env()
+    except BudgetError as exc:
+        error("resource_budget", exc.code, "resource budget configuration invalid")
+        payload["stages"].append({"name": "resource_budget", "status": "failed", "error_code": exc.code})
+        return payload, 1
+
+    payload["resource_budget"] = {
+        "file_bytes": budget.file_bytes, "reference_bytes": budget.reference_bytes,
+        "expanded_input_bytes": budget.input_bytes,
+        "tool_stdout_bytes": budget.stdout_bytes, "tool_stderr_bytes": budget.stderr_bytes,
+        "file_enforcement": "kernel_rlimit_fsize" if limits_applied else "not_applied_library_call",
+        "workspace_aggregate_enforcement": "pending", "group_mode": os.environ.get("BIOZERO_PIPELINE_GROUP_MODE", "owned"),
+    }
+
     def command(name, cmd, artifacts=(), stdout_path=None):
         result = run_cmd(cmd, stdout_path, parse_timeout_seconds())
         record = {"name": name, "status": "succeeded", "returncode": result.returncode}
         payload["stages"].append(record)
         if result.returncode:
-            code = "timeout" if result.returncode == 124 else "tool_failed"
+            code = getattr(result, "error_code", "") or ("timeout" if result.returncode == 124 else "tool_failed")
             record.update(status="failed", error_code=code)
             error(name, code, f"{name}: {(result.stderr or '').strip()[:4096]}")
             raise StageFailure()
@@ -125,13 +157,14 @@ def execute(args):
     try:
         if not Path(args.input).is_file():
             raise ValueError("input FASTQ not found")
-        if Path(args.input).stat().st_size > max_bytes_limit():
+        if Path(args.input).stat().st_size > budget.input_bytes:
             raise ValueError("input exceeds configured size limit")
-        count, length, lines = fastq_stats(args.input)
+        input_path = str(Path(args.input).resolve())
+        count, length, lines = fastq_stats(input_path, budget)
         payload.update(read_count=count, avg_read_length=length, line_count=lines,
                        byte_count=Path(args.input).stat().st_size, sha256=sha256_file(args.input))
         payload["stages"].append({"name": "validate_fastq", "status": "succeeded"})
-    except (OSError, ValueError, EOFError) as exc:
+    except (OSError, ValueError, EOFError, zlib.error) as exc:
         error("validate_fastq", "invalid_input", str(exc))
         payload["stages"].append({"name": "validate_fastq", "status": "failed", "error_code": "invalid_input"})
         return payload, 1
@@ -157,16 +190,19 @@ def execute(args):
         parent = args.out_dir or os.environ.get("BIOZERO_PIPELINE_OUT_DIR")
         if parent:
             Path(parent).mkdir(parents=True, exist_ok=True)
-        directory = Path(tempfile.mkdtemp(prefix="biozero-run-", dir=parent))
+        directory = Path(tempfile.mkdtemp(prefix="biozero-run-", dir=parent)).resolve()
         payload["output_dir"] = str(directory.resolve())
         reference = directory / "reference.fa"
-        shutil.copyfile(args.reference, reference)
-        payload["reference_sha256"] = sha256_file(reference)
+        if Path(args.reference).stat().st_size > budget.reference_bytes:
+            error("reference_copy", "reference_size_limit", "reference exceeds configured copy limit")
+            payload["stages"].append({"name": "reference_copy", "status": "failed", "error_code": "reference_size_limit"})
+            return payload, 1
+        payload["reference_sha256"] = copy_reference(args.reference, reference, budget.reference_bytes)
         command("reference_index", [tools["samtools"], "faidx", str(reference)], [str(reference) + ".fai"])
         sam = directory / "alignment.sam"
         bam = directory / "alignment.sorted.bam"
-        command("align", [tools["minimap2"], "-a", "-x", "sr", "-t", "1", str(reference), args.input], [sam], sam)
-        command("sort", [tools["samtools"], "sort", "-@", "1", "-o", str(bam), str(sam)], [bam])
+        command("align", [tools["minimap2"], "-a", "-x", "sr", "-t", "1", str(reference), input_path], [sam], sam)
+        command("sort", [tools["samtools"], "sort", "-@", "1", "-T", str(directory / "sort-tmp"), "-o", str(bam), str(sam)], [bam])
         command("bam_check", [tools["samtools"], "quickcheck", "-v", str(bam)])
         command("bam_index", [tools["samtools"], "index", str(bam)], [str(bam) + ".bai"])
         # Materialize upstream output instead of a live pipe: each child
@@ -198,22 +234,42 @@ def execute(args):
         return payload, 0
     except StageFailure:
         return payload, 1
+    except BudgetError as exc:
+        error("pipeline", exc.code, "resource budget exceeded or invalid")
+        payload["stages"].append({"name": "pipeline", "status": "failed", "error_code": exc.code})
+        return payload, 1
     except Exception as exc:
-        error("pipeline", "execution_error", str(exc))
+        code = "artifact_file_limit" if isinstance(exc, OSError) and exc.errno == errno.EFBIG else "execution_error"
+        error("pipeline", code, str(exc))
         return payload, 1
 
 
-def main(argv=None):
+def main(argv=None, enforce_limits=False):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", help="four-line FASTQ input, optionally .gz")
     parser.add_argument("--reference", help="FASTA required in variants mode")
     parser.add_argument("--out-dir", help="parent for a fresh run artifact directory")
     parser.add_argument("--mode", choices=("stats", "variants"), default="stats")
     args = parser.parse_args(argv)
-    payload, code = execute(args)
+    try:
+        budget = Budget.from_env()
+        if enforce_limits:
+            os.umask(0o077)
+            own_job_group()
+            apply_kernel_file_limit(budget)
+        payload, code = execute(args, budget, limits_applied=enforce_limits)
+    except BudgetError as exc:
+        payload = {"schema_version": 1, "pipeline": "python-wrapper", "mode": args.mode,
+                   "pipeline_status": "failed", "timestamp": datetime.now(timezone.utc).isoformat(),
+                   "input": os.path.abspath(args.input), "output_dir": None,
+                   "stages": [{"name": "resource_budget", "status": "failed", "error_code": exc.code}],
+                   "outputs": {}, "errors": [{"stage": "resource_budget", "code": exc.code,
+                                               "message": "resource budget unavailable or invalid"}],
+                   "warnings": [], "tools": {}}
+        code = 1
     print(json.dumps(payload, indent=2))
     return code
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(enforce_limits=True))

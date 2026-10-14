@@ -18,10 +18,12 @@ import time
 import urllib.request
 
 import checkpoint_fetch as common
+import control_fixture
 
 LIMIT = 50 << 20
 METADATA_URL = 'https://zenodo.org/api/records/1405945'
 CONTROL_SHA = 'b76938b9aabdf417c1b7377f941c7a2e930f83acc4cb0747e85bd4a65fb9c1d8'
+BASELINE_RECEIPT = 'control-baseline-receipt.json'
 CATALOG = [
     {'filename': 'lead_caQTL_variants.tsv.gz', 'size_bytes': 10497915,
      'md5': '4b05a81465935729056828712e3e2fcf'},
@@ -70,18 +72,188 @@ def publish_private(directory, filename, raw):
             os.unlink(temporary)
 
 
+def strict_json(raw):
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            if key in result:
+                raise common.FetchError('dataset_duplicate_json_key')
+            result[key] = value
+        return result
+    def nonfinite(unused):
+        raise common.FetchError('dataset_nonfinite_json')
+    return json.loads(raw, object_pairs_hook=pairs, parse_constant=nonfinite)
+
+
+def control_baseline_receipt(directory):
+    """Read immutable history independently of the mutable transfer totals.
+
+    This protects against accidental history loss, not a host actor rewriting
+    both the ledger and every trusted receipt. Callers hold the ledger lock.
+    """
+    path = directory / BASELINE_RECEIPT
+    if not path.exists() and not path.is_symlink():
+        raise common.FetchError('dataset_control_baseline_receipt_required')
+    receipt = strict_json(private_read(path, 4096))
+    if (type(receipt) is not dict or type(receipt.get('schema_version')) is not int
+            or receipt['schema_version'] != 1
+            or type(receipt.get('baseline_control_bytes')) is not int
+            or not 0 <= receipt['baseline_control_bytes'] <= 16384
+            or receipt.get('initialization') not in ('initial_empty', 'initial_control', 'reviewed_legacy_control')):
+        raise common.FetchError('dataset_control_baseline_receipt_invalid')
+    size = receipt['baseline_control_bytes']
+    sha = receipt.get('source_response_sha256')
+    if size:
+        if (type(sha) is not str or len(sha) != 64 or any(c not in '0123456789abcdef' for c in sha)
+                or receipt.get('source_url') != control_fixture.URL
+                or receipt.get('reference_dna_sha256') != control_fixture.DNA_SHA
+                or receipt['initialization'] == 'initial_empty'):
+            raise common.FetchError('dataset_control_baseline_receipt_invalid')
+    elif (receipt['initialization'] != 'initial_empty' or any(receipt.get(k) is not None
+            for k in ('source_response_sha256', 'source_url', 'reference_dna_sha256'))):
+        raise common.FetchError('dataset_control_baseline_receipt_invalid')
+    control = directory / 'control-ucsc-hg38-chr1.json'
+    if control.exists() or control.is_symlink():
+        raw = private_read(control, 16384)
+        if not size or len(raw) != size or hashlib.sha256(raw).hexdigest() != sha:
+            raise common.FetchError('dataset_control_baseline_cache_mismatch')
+    return receipt
+
+
+def publish_control_baseline(directory, raw, initialization):
+    if raw is not None:
+        # API timestamps can change; the fixed assembly/coordinates/DNA pin
+        # prove the control, while each response's own SHA is retained.
+        value = strict_json(raw)
+        if (type(value) is not dict or type(value.get('start')) is not int
+                or type(value.get('end')) is not int):
+            raise common.FetchError('dataset_control_baseline_coordinates_invalid')
+        try:
+            control_fixture.checked_reference(raw)
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise common.FetchError('dataset_control_baseline_reference_invalid') from exc
+    receipt = {'schema_version': 1, 'initialization': initialization,
+               'baseline_control_bytes': len(raw) if raw is not None else 0,
+               'source_response_sha256': hashlib.sha256(raw).hexdigest() if raw is not None else None,
+               'reference_dna_sha256': control_fixture.DNA_SHA if raw is not None else None,
+               'source_url': control_fixture.URL if raw is not None else None}
+    publish_private(directory, BASELINE_RECEIPT,
+                    (json.dumps(receipt, sort_keys=True) + '\n').encode())
+    return control_baseline_receipt(directory)
+
+
+def adopt_legacy_control_baseline(ledger):
+    """Explicit migration of the one previously reviewed pinned control.
+
+    Missing control/empty legacy history never establishes a zero baseline.
+    Existing totals and attempts are preserved byte for byte by this helper.
+    """
+    data = ledger.data
+    if (data.get('baseline_control_imported') is not True
+            or type(data.get('baseline_control_bytes')) is not int
+            or data['baseline_control_bytes'] <= 0
+            or any(type(data.get(k)) is not int or data[k] < data['baseline_control_bytes']
+                   for k in ('charged_bytes', 'body_bytes_observed'))):
+        raise common.FetchError('dataset_legacy_baseline_requires_review')
+    raw = private_read(ledger.prefix / 'control-ucsc-hg38-chr1.json', 16384)
+    if len(raw) != data['baseline_control_bytes'] or hashlib.sha256(raw).hexdigest() != CONTROL_SHA:
+        raise common.FetchError('dataset_legacy_control_pin_mismatch')
+    return publish_control_baseline(ledger.prefix, raw, 'reviewed_legacy_control')
+
+
+def dataset_history_guard(directory):
+    """Reject a reset/ambiguous existing history before the shared writer runs.
+
+    Pins/history belong to the trusted research operator. This does not claim
+    tamper resistance against a host actor rewriting every pin and receipt.
+    Unresolved interrupted histories require review; they are never reset here.
+    """
+    def pairs(items):
+        value = {}
+        for key, item in items:
+            if key in value:
+                raise common.FetchError('dataset_ledger_duplicate_key')
+            value[key] = item
+        return value
+    raw = private_read(directory / 'transfer-ledger.json', 1 << 20)
+    data = json.loads(raw, object_pairs_hook=pairs,
+        parse_constant=lambda unused: (_ for _ in ()).throw(common.FetchError('dataset_ledger_nonfinite')))
+    numbers = ('schema_version', 'limit_bytes', 'charged_bytes', 'body_bytes_observed',
+               'http_exchanges', 'baseline_control_bytes')
+    if (not isinstance(data, dict) or any(type(data.get(k)) is not int or data[k] < 0 for k in numbers)
+            or data['schema_version'] != 1 or data['limit_bytes'] != LIMIT
+            or data.get('baseline_control_imported') is not True or data['baseline_control_bytes'] > 16384
+            or not isinstance(data.get('attempts'), list)
+            or not 0 <= data['body_bytes_observed'] <= data['charged_bytes'] <= LIMIT):
+        raise common.FetchError('dataset_ledger_strict_schema_invalid')
+    baseline = control_baseline_receipt(directory)
+    if data['baseline_control_bytes'] != baseline['baseline_control_bytes']:
+        raise common.FetchError('dataset_control_history_mismatch')
+    metadata = directory / 'zenodo-1405945-metadata.json'
+    if metadata.exists() or metadata.is_symlink():
+        metadata_bytes = len(private_read(metadata, 131072))
+    elif data['attempts'] or data['http_exchanges']:
+        raise common.FetchError('dataset_metadata_history_missing_requires_review')
+    else:
+        metadata_bytes = 0
+    floor = data['baseline_control_bytes'] + metadata_bytes
+    charged_floor = body_floor = floor
+    for attempt in data['attempts']:
+        if not isinstance(attempt, dict):
+            raise common.FetchError('dataset_attempt_invalid')
+        if attempt.get('status') in ('verified', 'verified_bytes') and attempt.get('sha256') is None:
+            raise common.FetchError('dataset_attempt_pin_missing')
+        if attempt.get('sha256') is not None:
+            if (type(attempt.get('size_bytes')) is not int or attempt['size_bytes'] < 0
+                    or not isinstance(attempt['sha256'], str) or len(attempt['sha256']) != 64
+                    or any(c not in '0123456789abcdef' for c in attempt['sha256'])):
+                raise common.FetchError('dataset_attempt_pin_invalid')
+            floor += attempt['size_bytes']
+        if attempt.get('status') not in ('verified', 'verified_bytes', 'failed_or_interrupted'):
+            raise common.FetchError('dataset_interrupted_history_requires_review')
+        if attempt['status'] == 'failed_or_interrupted' and not all(
+                k in attempt for k in ('charged_at_end', 'body_at_end')):
+            raise common.FetchError('dataset_failed_history_requires_review')
+        for key, target in (('charged_at_end', 'charged'), ('body_at_end', 'body')):
+            if key in attempt:
+                if type(attempt[key]) is not int or attempt[key] < 0:
+                    raise common.FetchError('dataset_attempt_accounting_invalid')
+                if target == 'charged':
+                    charged_floor = max(charged_floor, attempt[key])
+                else:
+                    body_floor = max(body_floor, attempt[key])
+    if data['charged_bytes'] < max(floor, charged_floor) or data['body_bytes_observed'] < max(floor, body_floor):
+        raise common.FetchError('dataset_history_charge_would_decrease')
+    return data
+
+
 def seed_control_charge(ledger):
     if ledger.data.get('baseline_control_imported') is True:
+        receipt = control_baseline_receipt(ledger.prefix)
+        size = receipt['baseline_control_bytes']
+        if (type(ledger.data.get('baseline_control_bytes')) is not int
+                or ledger.data['baseline_control_bytes'] != size
+                or any(type(ledger.data.get(k)) is not int or ledger.data[k] < size
+                       for k in ('charged_bytes', 'body_bytes_observed'))):
+            raise common.FetchError('dataset_control_baseline_history_mismatch')
         return
-    if ledger.data['charged_bytes'] or ledger.data['attempts']:
+    if ((ledger.data.get('baseline_control_imported') is not None
+            and ledger.data.get('baseline_control_imported') is not False)
+            or any(type(ledger.data.get(k)) is not int or ledger.data[k] != 0
+                   for k in ('charged_bytes', 'body_bytes_observed', 'http_exchanges'))
+            or ledger.data['attempts'] != []):
         raise common.FetchError('dataset_ledger_missing_baseline_refusing_reset')
-    path = ledger.prefix / 'control-ucsc-hg38-chr1.json'
-    size = 0
-    if path.exists():
-        data = private_read(path, 16384)
-        if hashlib.sha256(data).hexdigest() != CONTROL_SHA:
-            raise common.FetchError('dataset_control_baseline_digest_mismatch')
-        size = len(data)
+    proof = ledger.prefix / BASELINE_RECEIPT
+    if proof.exists() or proof.is_symlink():
+        # Receipt publication precedes ledger mutation; preserve that charge
+        # even if the cached response disappeared between those two writes.
+        receipt = control_baseline_receipt(ledger.prefix)
+    else:
+        path = ledger.prefix / 'control-ucsc-hg38-chr1.json'
+        raw = private_read(path, 16384) if path.exists() or path.is_symlink() else None
+        receipt = publish_control_baseline(ledger.prefix, raw,
+                    'initial_control' if raw is not None else 'initial_empty')
+    size = receipt['baseline_control_bytes']
     ledger.data.update(baseline_control_imported=True, charged_bytes=size,
                        body_bytes_observed=size, baseline_control_bytes=size)
     ledger.save()
@@ -174,12 +346,32 @@ def acquire(prefix, fetch=False):
     for name in ('transfer-ledger.json', 'transfer-ledger.lock'):
         if (directory / name).is_symlink():
             raise common.FetchError('dataset_ledger_symlink')
+    if (directory / 'transfer-ledger.json').exists():
+        existing = strict_json(private_read(directory / 'transfer-ledger.json', 1 << 20))
+        if type(existing) is not dict:
+            raise common.FetchError('dataset_ledger_strict_schema_invalid')
+        if existing.get('baseline_control_imported') is True:
+            dataset_history_guard(directory)
+        elif (type(existing.get('schema_version')) is not int or existing['schema_version'] != 1
+                or type(existing.get('limit_bytes')) is not int or existing['limit_bytes'] != LIMIT
+                or any(type(existing.get(k)) is not int or existing[k] != 0
+                       for k in ('charged_bytes', 'body_bytes_observed', 'http_exchanges'))
+                or existing.get('attempts') != []
+                or (existing.get('baseline_control_imported') is not None
+                    and existing.get('baseline_control_imported') is not False)):
+            raise common.FetchError('dataset_ledger_uninitialized_history_requires_review')
     if not (directory / 'transfer-ledger.json').exists() and any(
             (directory / name).exists() or (directory / name).is_symlink()
-            for name in ['zenodo-1405945-metadata.json', *(e['filename'] for e in CATALOG)]):
+            for name in [BASELINE_RECEIPT, 'zenodo-1405945-metadata.json',
+                         'peaks.bed.gz', 'hg19ToHg38.over.chain.gz',
+                         *(e['filename'] for e in CATALOG),
+                         *(p.name for p in directory.glob('reference-*.json'))]):
         raise common.FetchError('dataset_existing_data_requires_ledger')
     with common.TransferLedger(directory, LIMIT) as ledger:
         seed_control_charge(ledger)
+        guarded = dataset_history_guard(directory)
+        if json.dumps(ledger.data, sort_keys=True) != json.dumps(guarded, sort_keys=True):
+            raise common.FetchError('dataset_ledger_changed_before_lock')
         opener = urllib.request.build_opener(NoRedirect(), urllib.request.HTTPSHandler(context=ssl.create_default_context()))
         reader = common.DownloadClient(ledger, time.monotonic() + 180, opener=opener)
         metadata_path = directory / 'zenodo-1405945-metadata.json'

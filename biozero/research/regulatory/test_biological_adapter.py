@@ -215,6 +215,58 @@ class AdapterTests(unittest.TestCase):
         ledger["split_metadata"]["adapter_loci"].reverse()
         self.assertIn("selection_split_mismatch", self.validate(ledger)["records"][0]["reasons"])
 
+    def test_review_receipt_requires_exact_scalar_types(self):
+        changes = [("schema_version", True), ("schema_version", 1.0)]
+        changes += [(name, alias) for name in
+                    ("schema_verified", "effect_orientation_verified", "license_verified")
+                    for alias in (1, 1.0)]
+        for name, alias in changes:
+            with self.subTest(field=name, alias=alias):
+                ledger = self.ledger("adapter")
+                dataset = ledger["dataset"]
+                receipt, _ = adapter.read_json(dataset["verification_receipt_path"])
+                receipt[name] = alias
+                dataset["verification_receipt_path"], dataset["verification_receipt_sha256"] = self.write(self.prefix / "review.json", receipt)
+                report = self.validate(ledger)
+                self.assertFalse(report["ready_for_inference"])
+                self.assertIn("dataset_review_receipt_mismatch", report["records"][0]["reasons"])
+
+    def test_ledgers_and_selection_require_integer_versions(self):
+        for alias in (True, 1.0):
+            ledger = self.ledger()
+            ledger["schema_version"] = alias
+            self.assertIn("ledger_protocol_mismatch", self.validate(ledger)["records"][0]["reasons"])
+        for document_name in ("normalization", "selection"):
+            for alias in (True, 1.0):
+                with self.subTest(document=document_name, alias=alias):
+                    ledger = self.ledger("adapter")
+                    split = ledger["split_metadata"]
+                    normalized, _ = adapter.read_json(split["source_normalization_ledger_path"])
+                    frozen, _ = adapter.read_json(split["frozen_selection_path"])
+                    (normalized if document_name == "normalization" else frozen)["schema_version"] = alias
+                    split["source_normalization_ledger_path"], split["source_normalization_ledger_sha256"] = self.write(self.datasets / "normalized.json", normalized)
+                    frozen["normalization_sha256"] = split["source_normalization_ledger_sha256"]
+                    split["frozen_selection_path"], split["frozen_selection_sha256"] = self.write(self.datasets / "selected.json", frozen)
+                    with self.assertRaisesRegex(adapter.AdapterError, "selection_source_identity_mismatch"):
+                        adapter.verify_selection(ledger, self.protocol, self.prefix)
+
+    def test_prior_receipt_counts_and_frozen_payload_types_preserved(self):
+        for name, alias in (("schema_version", True), ("schema_version", 1.0), ("validated", 10.0), ("rejected", False)):
+            with self.subTest(field=name, alias=alias):
+                ledger = self.ledger("evaluation")
+                receipt = {"schema_version": 1, "phase": "adapter", "dataset_kind": "biological", "status": "passed",
+                           "dataset_sha256": ledger["dataset"]["sha256"], "protocol_sha256": adapter.PROTOCOL_SHA256,
+                           "weights_sha256": adapter.weights_pins(), "selection_sha256": ledger["split_metadata"]["frozen_selection_sha256"],
+                           "counts": {"submitted": 10, "validated": 10, "rejected": 0, "pending": 0, "inferred": 10}}
+                (receipt if name == "schema_version" else receipt["counts"])[name] = alias
+                split = ledger["split_metadata"]
+                split["adapter_receipt_path"], split["adapter_receipt_sha256"] = self.write(self.prefix / "prior.json", receipt)
+                with self.assertRaisesRegex(adapter.AdapterError, "prior_biological_adapter_receipt_mismatch"):
+                    adapter.verify_adapter_receipt(ledger, self.prefix, split["frozen_selection_sha256"])
+        ledger = self.ledger("adapter")
+        ledger["cases"][0]["window"]["provenance"]["fixture_only"] = 1
+        self.assertIn("frozen_case_payload_mismatch", self.validate(ledger)["records"][0]["reasons"])
+
     def test_frozen_pool_binds_effect_and_provenance_not_only_id(self):
         for mutation in (lambda row: row["effect"].update(value=-123),
                          lambda row: row["effect"].update(effect_allele="C", other_allele="G"),
