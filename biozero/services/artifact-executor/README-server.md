@@ -6,8 +6,10 @@ after the coordinator confirmed its separate biological evaluation had finished.
 functions including subcases, of which 16 exercise the Unix listener/client.
 The existing core/contract documentation retains its prior source and scope.
 Native provider/capsule acceptance now has separate synthetic module evidence in
-[the native addon](README-native.md). Container execution, real-provider crash/
-restart ordering and installed-worker acceptance remain pending. The listener
+[the native addon](README-native.md). Subsequent standalone
+[lifecycle/restart acceptance](README-native-recovery.md) and
+[actual Unix composition](README-native-unix.md) have their own local receipts;
+container execution and installed-worker acceptance remain pending. The listener
 checkpoint above does not establish those later provider results.
 
 `UnixHandler.Handle(context.Context, Request) ([]byte, error)` is trusted keeper

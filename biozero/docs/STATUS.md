@@ -6,6 +6,30 @@ a27221c6f2174ea9d116779fcd47c88f9794dddb, published in
 [draft PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
 No merge or deployment occurred. See the live PR for subsequent documentation commits.
 
+Checkpoint, 2026-10-14 23:12 UTC: the reviewed 59-file source/aggregate snapshot is
+published as [28918a9](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/commit/28918a96484dcb2a015c71540f853d29e34a9836).
+[Its hosted ARM CI](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38651583022)
+passed (job116151397770):231Python cases,229passed/two kernel skips, eight Go
+test/vet modules, PKI, scientific repeat and78protected native assertions. Checkout
+used merge ref e56751a6e481d29fc4f09546212567bcd802a01b into unchanged main. Hosted
+CI did not execute the biological model, native capsule opt-ins, Compose or Firefox.
+
+Subsequent local recovery/wire additions are separate from that CI snapshot. Four
+actual native lifecycle cases/68assertions passed, also with the race detector:
+cancel, timeout, PID1 death and keeper death. Immediate restart before observing
+cleanup was denied by flock or unhealthy durable pending history; keeper loss
+preserved executing/full charge without inventing proof/ACK. Actual Unix client
+composition passed three-SNP science, storage/proof before reply, complete status
+continuity and replay rejection. Independent reviews checked the receipts and
+strengthened status/evaluator/custody assertions. Runtime files were unchanged.
+The complete artifact-module race run with all three real opt-ins enabled passed
+66top-level functions with subcases,8.928s; only the internal keeper subprocess
+entry was skipped in the parent (it ran in its spawned keeper). Vet passed.
+These new tests/docs await their own publication/CI at this recording; no model
+was repeated and previous private failed/weaker receipts remain preserved.
+See [native recovery](../services/artifact-executor/README-native-recovery.md)
+and [Unix composition](../services/artifact-executor/README-native-unix.md).
+
 Earlier local checkpoint, 2026-10-14 21:54:51 UTC: published head remains
 `57013e76831184bcd6a1153b33ebb5acb40f1ec5`; the source/reference, pipeline-resource
 and artifact-executor changes are uncommitted. The reviewed biological input pool
@@ -34,7 +58,7 @@ pending. See [composition scope](../services/artifact-executor/README-coordinato
 and [biological export boundary](experiments/005-biological-evaluation.md).
 The earlier197-Python/eight-Go execution scope does not cover these new additions.
 
-Latest executed checkpoint, 2026-10-14 22:49 UTC: the same evaluation handle
+Earlier executed checkpoint, 2026-10-14 22:49 UTC: the same evaluation handle
 terminated successfully with100/100 actual biological cases, no rejected/pending
 slots and identical repeats. Sign agreement61/100 and Spearman0.1840864086408641
 are descriptive GBR-LCL-to-GM12878 transfer results, not an accuracy approval.
@@ -315,7 +339,7 @@ contains only allowlisted metadata/metrics, not DNA or prediction vectors.
 It has zero experimental truth cases and leaves biological feasibility pending.
 This different input does not revise the earlier FP32/QNNPACK cost comparison.
 
-## Small biological-source acquisition
+## Earlier small biological-source acquisition
 
 Nora identified an individual public Zenodo file rather than the incompatible
 35.6 GB archive. Chiquis subsequently acquired `lead_caQTL_variants.tsv.gz`
@@ -336,7 +360,7 @@ ties, normalization, selection/splits and training-overlap review remain pending
 See [Nora's source investigation](research/2026-10-14-small-caqtl-sources.md).
 This file is not established as the exact inaccessible Synapse/DART v2 table.
 
-## Next gates
+## Earlier gates (historical)
 
 - The unhealthy-registry latch was tightened for already-in-flight requests;
   its concurrent failure test passed with the race detector, and the current
@@ -377,3 +401,20 @@ Chiquis reread the existing worker/controller registry during this checkpoint:
 both are active/enabled and the worker remains daily 09:00 America/New_York.
 No schedule was changed/duplicated and this reread does not establish an
 additional research report.
+
+## Current next gates
+
+- Implement the explicitly configured host container provider with physical
+  workspace bounds and authoritative capsule wait, without weakening worker
+  capabilities or exposing a Docker socket to the worker.
+- Integrate artifact custody into the protected worker after verified crypto,
+  then repeat native/Compose science, authorization, cancellation and recovery
+  against the integrated source. Standalone fixture acceptance cannot substitute.
+- Close TM02 authenticated immutable ownership before per-principal artifact
+  quotas; complete result/event/cache/registry quotas, retention, queues/leases,
+  effective SOC/adversary scenarios and cloud/final delivery as defined by evidence.
+- Keep the completed biological baseline descriptive: training holdout/LD and
+  biological feasibility remain uncertain. Reopen selective recomputation only
+  with a representative cheaper pass under a prospective measured protocol.
+- Publish/review each new source snapshot with its own CI. Preserve free-only
+  operation and the existing09:00America/New_York research schedule.

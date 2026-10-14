@@ -6,7 +6,9 @@ enabled (64 top-level test functions with subcases, 4.847 seconds). Registry and
 coordinator unit providers are synthetic; the separate native test executed a
 real three-SNP pipeline, evaluation and storage commitment. See
 [native acceptance and limits](README-native.md). Worker integration and complete
-provider lifecycle acceptance remain pending.
+installed-worker lifecycle acceptance remain pending. Subsequent standalone
+[recovery](README-native-recovery.md) and [Unix composition](README-native-unix.md)
+tests extend this earlier checkpoint without changing runtime.
 
 `NewInputRegistry(store)` and `NewCoordinator(store, registry, provider)` configure
 the host-side objects. A nil provider fails visibly. An RPC client cannot choose a
@@ -99,8 +101,9 @@ and panic, cancel-before-wait, late export fencing and status-after-latch. Their
 providers are explicitly synthetic local test implementations. Native acceptance
 is a separate test; it does not repeat the protected TLS/signature/decryption entry.
 
-Next gates are native provider death/restart ordering, container execution with
-physical tmpfs and authoritative wait, worker integration, and fresh protected
+Native provider death/restart ordering has separate lifecycle-fixture acceptance.
+Next gates are container execution with physical tmpfs and authoritative wait,
+worker integration, and fresh protected
 native/Compose success/failure acceptance. Native source/tool/evaluator bindings
 and private verdict custody have module acceptance, not installed-worker approval.
 Per-principal artifacts still depend on TM02 immutable ownership. Other result,

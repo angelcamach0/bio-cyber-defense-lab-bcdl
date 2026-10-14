@@ -3,7 +3,9 @@
 Observed locally on2026-10-14, host UID/GID1000 and Linux ARM64. NativeProvider is
 implemented in this standalone module and has one actual synthetic pipeline/store
 acceptance. It is not installed in enclave-runner or the container worker. The
-container provider, integration and provider crash/restart acceptance remain pending.
+container provider and installed-worker integration remain pending. The subsequent
+[actual native recovery tests](README-native-recovery.md) and
+[Unix composition acceptance](README-native-unix.md) have their own source/evidence scope.
 
 Trusted configuration fixes helper/pipeline/resource_budget/reference/evaluator/
 truth SHA256, Python/tool paths, stats/variants mode and a1–600-second deadline.
@@ -105,9 +107,12 @@ PASS. Real worker integration must choose this provider explicitly and fail if
 its required primitives are unavailable. Container execution must use the planned
 separate host capsule provider; it cannot silently substitute native FSIZE.
 
-Immediate worker/keeper death, lost response and restart fencing on this real
-provider, inode exhaustion on the integrated provider, export/cleanup fault
-acceptance and full protected native/Compose replay remain required. Existing
+Actual native cancellation, timeout, PID1/keeper death and restart fencing now have
+separate lifecycle-fixture acceptance in README-native-recovery.md. Actual Unix
+commit-before-reply/status/replay has synthetic pipeline acceptance in
+README-native-unix.md. Installed-worker death/disconnection, inode exhaustion on
+the integrated provider, export/cleanup fault acceptance and full protected
+native/Compose replay remain required. Existing
 prototype receipts retain their earlier code/scope. Biological accuracy, genotype,
 indel/WGS accuracy, production cloud deployment and complete retention/event/cache
 budgets are not established by this synthetic module acceptance.

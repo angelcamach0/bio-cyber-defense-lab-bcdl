@@ -3,12 +3,33 @@
 Prepared 2026-10-14 by Nora; coordinator/writer of execution receipts: Chiquis.
 This document distinguishes retained execution evidence, descriptive metrics and
 reviewed aggregate exports. The exporter tests and both real exports have
-completed, and both reviewed JSONs are integrated locally. External publication
-and fresh hosted CI remain pending.
+completed, and both reviewed JSONs were published in the snapshot documented
+below. Earlier publication-pending notes retain their checkpoint scope.
 The source/reference stages and frozen selection are recorded in
 [checkpoint004](004-kumasaka-prepool-evidence.md) and
 [contract003](003-kumasaka-source-normalization.md). No protocol, cases, slots,
 weights, measurements or metric definitions were changed for this export work.
+
+## Verified publication checkpoint, 2026-10-14
+
+The reviewed59-file source/aggregate snapshot is published as
+[commit28918a9](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/commit/28918a96484dcb2a015c71540f853d29e34a9836)
+on [draft PR21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
+Nora verified the published head, open/draft status and absence of a merge through
+GitHub. [Hosted ARM CI run38651583022](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38651583022),
+[job116151397770](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38651583022/job/116151397770),
+completed successfully. It checked merge ref
+`e56751a6e481d29fc4f09546212567bcd802a01b` against unchanged main.
+
+Logs confirm231 Python cases (229passed, two helper kernel opt-ins skipped),
+eight Go module test/vet checks, PKI, the synthetic scientific repeat and78
+protected native assertions. CI did not execute the actual biological100 model,
+the new native-provider/helper kernel opt-ins, Compose or Firefox. The100-case
+metrics below come from the separately retained local terminal report; CI success
+does not approve biological accuracy. Later native Unix/lifecycle additions are
+separate local evidence, absent from this commit/CI snapshot. No main merge or
+deployment occurred. This checkpoint supersedes the earlier publication-pending
+state; these subsequent documentation edits await their own commit.
 
 ## Source, prospective split and scientific scope
 
@@ -92,7 +113,7 @@ accuracy threshold, justify a track change or reverse SCI01's economic no-go.
 The association is reported descriptively; scientific feasibility remains pending
 and `biological_accuracy_approved` and `rank64_verified_heldout` remain false.
 
-## Public runtime exporter: tested boundary and local integration
+## Public runtime exporter: tested boundary and published aggregate snapshot
 
 [biological_runtime_export.py](../../research/regulatory/biological_runtime_export.py)
 accepts a private prefix, ledger/report paths and their exact SHA256s. It uses
@@ -135,9 +156,9 @@ its terminal receipt (3.020s). Chiquis also executed both real exports. Nora's
 independent review checked their counts, metrics, parents, technique and timing
 against the retained private receipts and the unchanged bound/original cases.
 
-Reviewed aggregate JSONs now integrated locally with identical candidate bytes:
+Reviewed aggregate JSONs published in commit28918a9 with identical candidate bytes:
 
-| Local aggregate receipt | Bytes | SHA256 |
+| Aggregate receipt | Bytes | SHA256 |
 | --- | ---: | --- |
 | [adapter10](../../research/regulatory/adapter-biological-runtime.json) | 4723 | f45e781380d5d296cf72937168d0789a3a6fc58f32a342b91ecbe93a7f44ca83 |
 | [evaluation100](../../research/regulatory/evaluation-biological-runtime.json) | 4897 | a562223e4c3c8ec811da9fc9a7cc267e12602fc1bcac849a077191bf304decf3 |
@@ -149,6 +170,8 @@ no DNA, loci, alleles, case/origin IDs, individual vectors or private paths. The
 scientific approval flags remain false. Raw source/reference data, original
 ledgers, per-case inference records, complete private reports and model weights
 remain outside these aggregate exports. Local integration has completed;
-external publication and new hosted CI have not occurred at this checkpoint.
+the earlier local checkpoint recorded publication/CI pending. The dated
+publication checkpoint above verifies their subsequent delivery to the draft PR
+and scoped CI success; the private data and scientific approval limits remain.
 This receipt/export acceptance does not assert native-provider, Go keeper,
 namespace-lifecycle or kernel-quota acceptance.

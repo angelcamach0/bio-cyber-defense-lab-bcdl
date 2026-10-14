@@ -9,8 +9,11 @@ test/vet/race acceptance. See the
 [coordinator addon](../../services/artifact-executor/README-coordinator.md).
 The native provider now has actual standalone synthetic/store acceptance and
 helper quota acceptance; see [native module evidence](../../services/artifact-executor/README-native.md).
-Container provider, real-provider crash/restart tests and worker integration
-remain pending: no phase B
+Subsequent native provider cancellation/timeout/PID1 and keeper-death tests passed,
+including immediate pending restart fencing; see
+[recovery scope](../../services/artifact-executor/README-native-recovery.md) and
+[real Unix composition](../../services/artifact-executor/README-native-unix.md).
+Container provider and worker integration remain pending: no phase B
 artifact ledger, server or retained-export quota is installed in the worker.
 Atlas authored the base contract; Chiquis integrates these additions with independent review.
 
@@ -188,8 +191,8 @@ before producing a recovery proof. If the keeper dies, pending admission fails
 closed until explicit safe reconciliation. A restart must be denied immediately
 by flock or pending journal, including the interval before kernel cleanup ends.
 The tested Unix listener/coordinator are not production-accepted or installed;
-native module export/proof has actual acceptance, while container/provider crash
-acceptance and installed worker integration remain pending, and
+native module export/proof and configured native lifecycle have actual acceptance,
+while container lifecycle and installed worker integration remain pending, and
 capability preflight does not approve it. The
 private host-keeper prototype uses existing sudo Docker authority. It does not
 claim a sandboxed/no-privilege host keeper; caps-zero/no_new_privs observations

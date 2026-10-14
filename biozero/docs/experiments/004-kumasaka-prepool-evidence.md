@@ -2,9 +2,10 @@
 
 Observed 2026-10-14 in the managed ARM64 workspace. Sections preserve successive
 checkpoints, including the completed biological adapter, the evaluation launch
-with results pending, and the later verified terminal100 result below. This is an uncommitted local
-checkpoint above published head `57013e76831184bcd6a1153b33ebb5acb40f1ec5`.
-The earlier hosted CI does not validate these new files. The source-normalization
+with results pending, and the later verified terminal100 result below. The
+preparation sections were originally recorded as an uncommitted local checkpoint
+above published head `57013e76831184bcd6a1153b33ebb5acb40f1ec5`. The dated
+publication/CI checkpoint below supersedes that earlier state. The source-normalization
 policy is [contract003](003-kumasaka-source-normalization.md); the model/head,
 tracks, seed and score remain in the unchanged frozen baseline protocol.
 
@@ -280,3 +281,25 @@ and weights are excluded from these aggregate exports. The preceding pending
 sections preserve their historical checkpoint scope. See
 [completed evaluation and export evidence005](005-biological-evaluation.md)
 for frozen parent/report hashes, public aggregate links, privacy checks and limits.
+
+## Subsequent verified publication and hosted CI, 2026-10-14
+
+The reviewed59-file source/aggregate snapshot was published as
+[28918a9](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/commit/28918a96484dcb2a015c71540f853d29e34a9836)
+to [draft PR21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
+Nora independently verified its head and open/draft/unmerged state, and
+[hosted ARM CI run38651583022](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38651583022)
+with [job116151397770](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38651583022/job/116151397770)
+completed successfully. Checkout used merge ref
+`e56751a6e481d29fc4f09546212567bcd802a01b` into unchanged main.
+
+CI logs confirm231 Python cases (229passed/two kernel skips), eight Go module
+test/vet checks, PKI, synthetic scientific repeat and78 protected native
+assertions. CI did not execute the biological100 model, the new native-provider/
+helper kernel opt-ins, Compose or Firefox. Local100 measurements and subsequent
+standalone native Unix/lifecycle acceptance keep their separate evidence and
+source scopes. The new Unix/recovery tests were not part of this published
+snapshot. Publication is to the draft branch, with no main merge or deployment.
+The earlier pending-publication notes remain historical; these documentation
+updates await their own commit. See [evidence005](005-biological-evaluation.md)
+for aggregate privacy, descriptive metrics and unchanged scientific limits.
