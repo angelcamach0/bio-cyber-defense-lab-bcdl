@@ -1,10 +1,11 @@
 # Artifact executor core (TM01 phase B, standalone)
 
 This standalone module implements durable storage/framing, a Unix listener/client,
-a scoped-input registry/coordinator and a native namespace provider. It is not
-installed in the worker or deployed as a service. Native module acceptance ran the
-synthetic three-SNP pipeline and evaluator; model and Docker calls were not part
-of that acceptance. See [native evidence](README-native.md),
+a scoped-input registry/coordinator, a native namespace provider and an explicitly
+configured host Docker provider. It is not installed in the worker or deployed as
+a service. Separate native and Docker module acceptance ran the synthetic
+three-SNP pipeline and evaluator, without running a trained model. See
+[native evidence](README-native.md), [Docker evidence](README-container.md),
 [coordinator ordering](README-coordinator.md), [Unix channel](README-server.md)
 and [the contract](../../docs/security/artifact-workspace-contract.md).
 
@@ -64,4 +65,9 @@ Validation: `go test ./...`, `go vet ./...`, `go test -race ./...` from this mod
 Default tests use new private fixtures and inject durable publication/ack failures;
 they do not edit previous evidence or run a trained model. The native kernel opt-in
 separately executes the synthetic variant pipeline; its prerequisites and scope
-are documented in README-native.md.
+are documented in README-native.md. Docker opt-ins separately cover the real Unix
+composition, aggregate byte/inode exhaustion and cancel/timeout/keeper death; see
+[quota scope](README-container-quota.md) and
+[recovery scope](README-container-recovery.md). They require the exact cached image
+and compatible local kernel/daemon. Image build reproducibility and protected
+worker integration remain pending; default/hosted tests skip kernel opt-ins.

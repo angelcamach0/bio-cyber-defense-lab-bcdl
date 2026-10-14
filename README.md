@@ -62,7 +62,11 @@ see [local reviewer setup](biozero/infra/compose/README.md). Real Firefox accept
 passed23 UI/TLS/session-race checks with zero JavaScript errors. The planned Oracle
 deployment remains pending. ZeroResponder is optional simulation.
 
-The implementation and curated evidence are published in [draft PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
+The initial implementation and curated evidence were merged through [PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21) on2026-10-14.
+The standalone [container capsule provider](biozero/services/artifact-executor/README-container.md)
+has separate synthetic, quota and recovery acceptance; protected worker integration
+and a reproducible image build remain pending. See the current status for the
+source and publication scope of this subsequent delivery.
 [Hosted ARM CI](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38587738514)
 passed unit/PKI checks, the scientific repeat and the protected native experiment.
 

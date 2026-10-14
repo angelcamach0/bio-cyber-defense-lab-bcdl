@@ -1,10 +1,76 @@
 # BioZero implementation status
 
-Updated 2026-10-14. Local branch: biozero/reproducible-milestone.
-Base: b8731934fbe7c7dc00bf51fa978ce370361b3f74. First-milestone implementation commit:
+Updated 2026-10-14. Local branch: biozero/container-capsule-provider.
+Historical first-milestone base: b8731934fbe7c7dc00bf51fa978ce370361b3f74. Implementation commit:
 a27221c6f2174ea9d116779fcd47c88f9794dddb, published in
-[draft PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
-No merge or deployment occurred. See the live PR for subsequent documentation commits.
+[PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21),
+merged on2026-10-14. See the current checkpoint below for the merge observation
+and subsequent candidate scope. No production deployment is established.
+
+## Current checkpoint: standalone Docker provider accepted locally
+
+Observed 2026-10-14 23:55 UTC. GitHub PR21 was merged at23:29UTC as
+[af3fb3c](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/commit/af3fb3cffb67379bc5e3b9dc7a8aeb0c76ec7e07).
+Fetch verified main's tree equals the previously published55550ac tree. The
+container delivery is on a new branch above that main; no additional merge or
+production deployment was performed by this checkpoint. Earlier draft/no-merge
+statements below retain their historical recording scope.
+
+Chiquis implemented the explicitly configured trusted-host ContainerProvider;
+Nora implemented its pinned Python helper; Vale independently reviewed runtime
+custody and positive/quota receipts. The container has no network, capabilities
+zero, no_new_privs, read-only root and individual source mounts, and a128MiB/4096
+inode-unit workspace. Actual private cgroup-v2 observations confirm512MiB/no extra
+swap,128pids and one CPU. Input travels as a verified read-only FD, with no host
+plaintext spool. Exact-ID Docker wait plus final inspection precede exports and
+commit; CLI completion or removal is not quiescence proof.
+
+Actual synthetic Unix/coordinator/container/Store acceptance passed TP3/FP0/FN0,
+four retained artifacts, matching observed/evaluated/retained VCF and commit before
+socket ACK. The first attempt failed before start on nil optional Docker metadata;
+its Created object, intent and full pending reservation remain preserved. The
+corrected serialization still rejects nonempty capabilities/devices/ports/volumes.
+No model, dataset download or image build/pull was performed.
+
+Nora's two actual quota cases passed with race (Go2.933s): independent aggregate
+byte and inode ENOSPC, below per-file FSIZE where relevant, failed/withheld receipt,
+positive retained charge and genuine post-Wait proof. Vale's three lifecycle cases
+passed59 assertions, ordinary10.777s and race11.912s: cancel, timeout and keeper
+SIGKILL. Immediate restart is denied by flock/pending history; keeper loss never
+invents proof/ACK or refunds charge, even after independent Docker wait confirms
+termination. Stopped owned crash objects and journals remain private history.
+Chiquis read recovery source/receipts; Vale read quota source/receipts independently.
+Readback is distinct from independently rerunning those author tests.
+
+Fresh make test passed252Python cases:250passed and two optional native kernel
+cases skipped. All eight Go modules passed test/vet; simulated-adversary has no
+Go tests. The complete artifact module with all six native/container opt-ins
+enabled passed race:73top-level functions plus subcases,22.976s, no failures.
+Two internal keeper entry functions skip only in the parent and run in their
+spawned subprocesses. Separate helper21/21 tests and earlier kernel receipts
+retain their own source scopes. Private test logs and source inventories remain
+under ignored.biozero; raw receipts, DNA, rows, IDs, vectors and weights are not
+public artifacts.
+
+This reviewed candidate still awaits publication and its own hosted CI at this
+recording. The cached image ID establishes local module inputs, not a reproducible
+image build/distribution. Provider installation into the protected worker,
+TLS/signature/decryption composition and fresh native/Compose integrated acceptance
+remain pending. Also pending: injected attach/removal/storage uncertainty,
+operator reconciliation, TM02 immutable ownership, full quotas/retention,
+queues/leases, effective SOC/cloud and final delivery. The completed100-case
+biological result remains descriptive61/100 sign and Spearman0.1840864086408641;
+no biological/clinical approval or revision of the prior economic no-go follows.
+
+See [container scope](../services/artifact-executor/README-container.md),
+[quota scope](../services/artifact-executor/README-container-quota.md),
+[recovery scope](../services/artifact-executor/README-container-recovery.md) and
+[security review](../services/artifact-executor/README-container-security-review.md).
+Thanks to Nora for independent quota failures and preserved custody, Vale for
+immediate-restart recovery and cross-review, and the named team's prior research,
+engineering and support contributions. Full objective remains active and free.
+
+## Earlier checkpoints
 
 Checkpoint, 2026-10-14 23:12 UTC: the reviewed 59-file source/aggregate snapshot is
 published as [28918a9](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/commit/28918a96484dcb2a015c71540f853d29e34a9836).
@@ -404,9 +470,9 @@ additional research report.
 
 ## Current next gates
 
-- Implement the explicitly configured host container provider with physical
-  workspace bounds and authoritative capsule wait, without weakening worker
-  capabilities or exposing a Docker socket to the worker.
+- Publish the reviewed standalone container provider with its own CI, then pin
+  a reproducible image build/distribution and inject attach/removal/storage faults.
+  The worker must retain its restrictions and receive no Docker socket.
 - Integrate artifact custody into the protected worker after verified crypto,
   then repeat native/Compose science, authorization, cancellation and recovery
   against the integrated source. Standalone fixture acceptance cannot substitute.
