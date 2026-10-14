@@ -127,3 +127,30 @@ actual FP32 head/repeat checks with zero experimental labels. See
 [control runtime](../../research/regulatory/adapter-control-runtime.json).
 This advances the real-window adapter row; ten/hundred biological loci, the exact
 source schema/effect dictionary and broader platform gates remain pending.
+
+## Post-audit security event round
+
+The original matrix remains the 2994d055 audit. Subsequent work implements the
+event contract, protected rejection outbox, independent HTTPS relay and a durable
+authenticated ZeroResponder simulation. Native receipt
+`docs/evidence/20261014T165148-344656Z/public/` passed22 assertions, including12
+SOC cases. The current four-service container receipt
+`docs/evidence/20261014T164550-385353Z-reviewer-compose/public/` passed30 checks
+with the outbox mount and worker network none. The preceding mount-verifier
+failure is preserved, with its cause and correction in STATUS. Tests now include
+81 Python cases and new worker/responder concurrency and persistence checks.
+
+The optional responder container receipt
+`docs/evidence/20261014T165334-020175Z-soc-container/public/` subsequently passed
+13 assertions and cleanup, with17 unchanged source hashes and parent native/result
+binding. It verifies the real simulation profile, not live containment or a
+production SOC. No pipeline or model was executed in that container experiment.
+
+Lía produced the current [threat model](../security/threat-model.md), advancing the
+documentation row. It identifies actual residual admission/disk limits, mutable
+job authorization metadata, unsafe legacy metadata reads and trusted host/UID
+boundaries. [Decision003](../decisions/003-security-event-handoff.md) preserves
+effective response as a separate adopted gate: simulation is a prerequisite and
+does not complete the SOC requirement. SIEM integration, actual containment,
+per-source identity, quotas/retention, queue/leases, adversary scenarios, Oracle
+deployment and biological ten/100-locus evaluation remain pending.

@@ -140,7 +140,7 @@ type alignmentStats struct {
 ///
 /// Throws [FatalIOError] when required directories cannot be created.
 ///
-/// Example: `go run ./main.go`
+/// Example: `go run .`
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
@@ -216,6 +216,7 @@ func processJobs(jobsDir, uploadDir, resultsDir, decryptedDir string, rules dete
 	processJobsContext(context.Background(), jobsDir, uploadDir, resultsDir, decryptedDir, rules, privateKeyPath, signerCertPath, pipelinePath, referencePath, jobKey, pipelineTimeout)
 }
 func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, decryptedDir string, rules detectionRules, privateKeyPath, signerCertPath, pipelinePath, referencePath, jobKey string, pipelineTimeout time.Duration) {
+	reconcileSecurityEvents(ctx, resultsDir)
 	entries, err := os.ReadDir(jobsDir)
 	if err != nil {
 		log.Printf("read jobs dir error: %v", err)
@@ -294,6 +295,9 @@ func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, dec
 		if err := writeJSON(resultPath, result); err != nil {
 			log.Printf("result write error: %v", err)
 			continue
+		}
+		if err := emitPersistedSecurityEvent(result); err != nil {
+			log.Printf("security outbox error: %s", err)
 		}
 		job.Status = result.Status
 		job.ErrorCode = result.ErrorCode

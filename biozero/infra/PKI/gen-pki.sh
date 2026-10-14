@@ -14,7 +14,7 @@ fi
 OUT_DIR="$(cd -- "$OUT_DIR" && pwd)"
 mkdir -p -- "$OUT_DIR/authorities" "$OUT_DIR/clients" \
   "$OUT_DIR/runtime/upload" "$OUT_DIR/runtime/results" "$OUT_DIR/runtime/worker" \
-  "$OUT_DIR/runtime/gateway"
+  "$OUT_DIR/runtime/gateway" "$OUT_DIR/runtime/responder"
 WORK_DIR="$OUT_DIR/.generation"
 mkdir -- "$WORK_DIR"
 trap 'rm -f -- "$WORK_DIR"/*.csr "$WORK_DIR"/*.ext; rmdir -- "$WORK_DIR"' EXIT
@@ -50,6 +50,11 @@ issue_cert reviewer-gateway "$OUT_DIR/runtime/gateway/server.key" \
   'subjectAltName=DNS:localhost,IP:127.0.0.1,DNS:reviewer-gateway
 extendedKeyUsage=serverAuth
 keyUsage=critical,digitalSignature,keyEncipherment'
+issue_cert zeroresponder "$OUT_DIR/runtime/responder/server.key" \
+  "$OUT_DIR/runtime/responder/server.crt" \
+  'subjectAltName=DNS:localhost,IP:127.0.0.1,DNS:zeroresponder
+extendedKeyUsage=serverAuth
+keyUsage=critical,digitalSignature,keyEncipherment'
 for principal in researcher-a researcher-b; do
   issue_cert "$principal" "$OUT_DIR/clients/$principal.key" \
     "$OUT_DIR/clients/$principal.crt" \
@@ -72,5 +77,6 @@ cp -- "$OUT_DIR/clients/ca.crt" "$OUT_DIR/clients/decrypt.crt" \
   "$OUT_DIR/clients/researcher-b.key" "$OUT_DIR/runtime/gateway/"
 chmod 644 -- "$OUT_DIR/authorities/ca.crt" "$OUT_DIR/clients"/*.crt \
   "$OUT_DIR/runtime/upload"/*.crt "$OUT_DIR/runtime/results"/*.crt \
-  "$OUT_DIR/runtime/worker/signer.crt" "$OUT_DIR/runtime/gateway"/*.crt
+  "$OUT_DIR/runtime/worker/signer.crt" "$OUT_DIR/runtime/gateway"/*.crt \
+  "$OUT_DIR/runtime/responder/server.crt"
 printf 'Demo PKI generated at %s; existing keys are never overwritten.\n' "$OUT_DIR"

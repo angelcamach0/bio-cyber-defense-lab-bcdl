@@ -18,7 +18,10 @@ flowchart LR
   Results -->|Own result through mTLS| Gateway
   Results --> CLI
   Gateway -->|Allowlisted report| Browser
-  FutureSOC[SOC integration: pending] -.-> Responder[Optional response simulation]
+  Reports -->|Protected security rejection only| Outbox[Private durable event outbox]
+  Outbox --> Relay[Separate verified HTTPS relay]
+  Relay --> Responder[Authenticated durable simulation receipt]
+  FutureSOC[Production SIEM and live containment: pending] -.-> Responder
 ```
 
 ## Input and identity
@@ -104,3 +107,13 @@ evolving adversary scenarios, production identity, HSM/KMS, encrypted results,
 queue/claim/lease, hardware attestation and external deployment each require
 explicit designs and demonstrated acceptance. Component names do not establish
 those features.
+
+The new native security handoff passed22 assertions (ten synthetic milestone plus
+twelve SOC cases). The worker emits only allowlisted protected rejection codes;
+its outbox has no network or responder secret. A separate relay verifies TLS,
+request digest, target and explicit simulation flags. ZeroResponder requires
+authentication, deduplicates identical requests across restart and refuses
+conflicting IDs or failed persistence. It writes no effective action lists and
+changes no firewall, certificate trust or running job. See
+[STATUS](STATUS.md), [event contract](security/event-contract.md) and
+[response decision](decisions/003-security-event-handoff.md) for scope and evidence.

@@ -74,7 +74,8 @@ Public evidence: biozero/docs/evidence/20261014T150658-139518Z-reviewer-compose/
 The opt-in browser setup is in [Compose README](../../infra/compose/README.md).
 Real Firefox157 passed23 UI/TLS/session-race checks with four screenshots and
 zero JavaScript errors. These results cover this local Firefox profile only.
-Optional nginx/responder and Oracle deployment remain unverified.
+Optional nginx and Oracle deployment remain unverified. The later responder
+simulation receipt is described below; it does not establish effective response.
 Native success alone does not prove the container profile.
 
 Lía independently reproduced the native milestone from another temporary Git
@@ -93,7 +94,7 @@ forced-engine failure, provenance and remaining trained-model/biological gates.
 
 ## CI
 
-Local/CI share `make test`, `make science`, and `make experiment`. The prepared
+Local/CI share `make test`, `make science`, and `make experiment-soc`. The prepared
 workflow uses a standard public-repository ARM64 runner, read-only token permissions
 and public synthetic evidence only. Hosted run38587738514 passed these commands
 for implementation commit a27221c6f2174ea9d116779fcd47c88f9794dddb via the PR merge
@@ -101,3 +102,28 @@ revision. Its downloaded artifact/checksums and fresh native metrics were checke
 see evidence/20261014T151621-665108Z-hosted-ci/public/hosted-ci.json.
 The workflow does not run the separately recorded local Compose/Firefox suite.
 Runner policy: [GitHub documentation](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+
+## Security event acceptance
+
+`make experiment-soc` includes the original synthetic milestone and real protected
+worker rejection/outbox/HTTPS-relay/responder acceptance. Native receipt
+`evidence/20261014T165148-344656Z/public/` passed22 assertions. The new four-service
+container receipt `evidence/20261014T164550-385353Z-reviewer-compose/public/`
+passed30 controls with a private outbox mount and worker network none.
+
+To verify the optional responder container using that retained native event:
+
+```bash
+python3 -B biozero/infra/soc/run_container_response.py \
+  --source-manifest /absolute/path/to/native-run/manifest.json \
+  --event /absolute/path/to/native-run/private/data/security-events/evt-ID.json
+```
+
+Pass `--docker-command 'sudo -n docker --host=unix:///var/run/docker.sock'` only if
+the local daemon requires that authorized prefix. The harness builds and runs
+only ZeroResponder in a unique project, verifies the passed native parent/result
+and event hashes, TLS/authentication/restart receipts, scoped keys and container
+controls, and removes its own project. It runs no pipeline or trained model.
+The executed receipt `evidence/20261014T165334-020175Z-soc-container/public/`
+passed13 assertions and cleanup. Share public/ only; secrets and source linkage
+remain private. No live firewall, certificate or quarantine action is implemented.

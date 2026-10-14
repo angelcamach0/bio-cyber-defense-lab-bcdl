@@ -41,12 +41,59 @@ allele-presence fixture, not genotype, indel, human-genome or clinical accuracy.
 Execution status and scientific release are separate. An unassessed successful
 execution does not approve science. Failed/missing/inconsistent evaluation is withheld.
 
-The Python suites passed 71 tests across pipeline, benchmark, native/browser
+The Python suites passed 81 tests across pipeline, benchmark, native/browser/SOC
 contracts, supervisors, operator preflight, bounded download/control acquisition
-and biological-adapter validation; test/vet passed in all seven Go modules. Vale also ran gateway tests with
+and biological-adapter validation; test/vet passed in all seven Go modules. Vale also ran gateway and responder tests with
 the race detector. PKI acceptance passed including gateway key scope. Current
 container tools: Python 3.12.3, minimap2 2.26-r1175, samtools 1.19.2, bcftools 1.19.
 Native tools remain fixed in the 39-package Linux ARM64 lock.
+
+## Security event and simulation round
+
+Atlas implemented a private no-network worker outbox for eight protected rejection
+codes, with deterministic IDs, retained result timestamps, no-clobber publication
+and terminal-result reconciliation without reexecuting analysis. Vale replaced
+ZeroResponder's optional-auth/best-effort stub with mandatory authentication,
+TLS off loopback, strict bounded JSON and complete durable simulation receipts.
+Retries are idempotent across restart; changed content is a conflict. Storage
+ambiguity latches health/admission unavailable. Twelve worker and eight responder
+Go test functions plus subcases passed, including race checks.
+
+Chiquis added the separate verified-HTTPS relay and native SOC acceptance. Luci
+found and verified fixes for a numeric-zero false flag, missing parent-directory
+fsync and a TLS test that could accept generic connection failures. All ten relay
+tests passed. Native evidence `evidence/20261014T165148-344656Z/public/` passed
+22 assertions: original ten synthetic checks plus twelve SOC checks for a real
+unsigned-input rejection, outbox recovery, authentication/TLS, simulation receipt,
+restart/replay, conflict, strict inputs and absence of effective action files.
+This native receipt does not demonstrate container network isolation.
+
+New four-service Compose evidence
+`evidence/20261014T164550-385353Z-reviewer-compose/public/` passed 30 assertions,
+including exact outbox mount scope and worker `network_mode: none`. Luci checked
+27 source hashes and five checksums. It uses HTTP-session acceptance, without a
+new browser run; the earlier Firefox receipt retains its own source scope. The
+prior run `20261014T164413-651516Z-reviewer-compose` failed only the worker mount
+verifier because the new mount was absent from its exact allowlist. That failure
+is retained; the corrected verifier names the mount and its source explicitly.
+
+Lía's optional responder container run
+`evidence/20261014T165334-020175Z-soc-container/public/` passed13 assertions and
+scoped cleanup. It built only ZeroResponder, bound the retained event to the
+passed native parent/result, verified HTTPS/authentication, durable receipts and
+exact replay across restart, minimal TLS keys, non-root/read-only/capability and
+resource limits, and loopback publishing. It executed no pipeline/model. Seventeen
+source hashes remained unchanged. This extends simulation acceptance to the real
+optional profile; it still demonstrates no effective containment.
+
+[Event contract](security/event-contract.md), [decision003](decisions/003-security-event-handoff.md)
+and [SOC commands](../infra/soc/README.md) define the implemented boundary.
+There is no effective quarantine, firewall action, certificate revocation,
+production SIEM, long-running relay, exactly-once transaction or storage quota.
+The secret authenticates possession, not an attested per-source identity. Shared
+host/UID and storage remain trusted. Lía's [threat model](security/threat-model.md)
+records admission/storage, mutable ownership metadata and unsafe legacy metadata
+reads as next gates. Biological data access remains pending and unchanged.
 
 ## Actual runtime and limits
 

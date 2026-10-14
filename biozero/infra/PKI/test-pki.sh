@@ -13,6 +13,8 @@ for principal in researcher-a researcher-b; do
 done
 openssl verify -purpose sslserver -verify_hostname reviewer-gateway \
   -CAfile "$PKI/clients/ca.crt" "$PKI/runtime/gateway/server.crt" >/dev/null
+openssl verify -purpose sslserver -verify_hostname zeroresponder \
+  -CAfile "$PKI/clients/ca.crt" "$PKI/runtime/responder/server.crt" >/dev/null
 serial_a="$(openssl x509 -in "$PKI/clients/researcher-a.crt" -noout -serial)"
 serial_b="$(openssl x509 -in "$PKI/clients/researcher-b.crt" -noout -serial)"
 [[ "$serial_a" != "$serial_b" ]]
@@ -42,6 +44,7 @@ expected = {
     'upload': {'server.crt', 'server.key', 'ca.crt'},
     'results': {'server.crt', 'server.key', 'ca.crt'},
     'worker': {'decrypt.key', 'signer.crt'},
+    'responder': {'server.crt', 'server.key'},
     'gateway': {'server.crt', 'server.key', 'ca.crt', 'decrypt.crt', 'signer.key',
                 'researcher-a.crt', 'researcher-a.key', 'researcher-b.crt', 'researcher-b.key'},
 }

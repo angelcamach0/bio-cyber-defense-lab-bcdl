@@ -2,8 +2,8 @@
 FROM golang:1.26-alpine AS build
 WORKDIR /src
 COPY go.mod ./
-COPY main.go ./
-RUN CGO_ENABLED=0 go build -o /out/enclave-runner ./main.go
+COPY main.go security_events.go ./
+RUN CGO_ENABLED=0 go build -o /out/enclave-runner .
 
 FROM ubuntu:24.04
 RUN apt-get update \

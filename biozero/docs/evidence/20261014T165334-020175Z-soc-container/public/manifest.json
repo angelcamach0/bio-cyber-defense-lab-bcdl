@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-14T16:53:34.020483+00:00",
+  "project": "bz-soc-20261014-165334-020175",
+  "status": "passed",
+  "cases": [
+    {
+      "case": "retained_event_contract",
+      "verdict": "PASS",
+      "observed": {
+        "canonical_sha256": "4316249a8a71256b26516453ad030844047007f5ec491f682172c8725b7577bc"
+      }
+    },
+    {
+      "case": "passed_native_parent_bound_to_real_worker_result",
+      "verdict": "PASS",
+      "observed": {
+        "parent_status": "passed",
+        "result_status": "rejected",
+        "event_canonical_sha256": "4316249a8a71256b26516453ad030844047007f5ec491f682172c8725b7577bc"
+      }
+    },
+    {
+      "case": "verified_ca_https_health",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 200,
+        "enforced": false
+      }
+    },
+    {
+      "case": "untrusted_certificate_rejected",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "missing_secret_denied",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "wrong_secret_denied",
+      "verdict": "PASS",
+      "observed": {
+        "http_status": 403
+      }
+    },
+    {
+      "case": "durable_simulation_acknowledgment",
+      "verdict": "PASS",
+      "observed": {
+        "mode": "simulation",
+        "enforced": false,
+        "replay": false
+      }
+    },
+    {
+      "case": "single_private_mode0600_receipts",
+      "verdict": "PASS",
+      "observed": {
+        "server_receipt_count": 1,
+        "relay_receipt_count": 1,
+        "mode": "0600"
+      }
+    },
+    {
+      "case": "restart_replay_preserves_exact_receipts",
+      "verdict": "PASS",
+      "observed": {
+        "replay": true,
+        "server_receipt_count": 1,
+        "relay_receipt_count": 1,
+        "bytes_preserved": true
+      }
+    },
+    {
+      "case": "no_effective_action_artifacts",
+      "verdict": "PASS",
+      "observed": {
+        "effective_action_files": 0,
+        "enforced": false
+      }
+    },
+    {
+      "case": "container_scope_limits_and_loopback",
+      "verdict": "PASS",
+      "observed": {
+        "id": "2a87c1ef6526d078813d7525c29d118b45c0cc29c84965f32fb774dad5ba0294",
+        "image": "sha256:65c70793f0e4f3683924d9e998af55bc3568fbb61d7c23487ed59c090e259d56",
+        "user": "1000:1000",
+        "readonly": true,
+        "privileged": false,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges:true"
+        ],
+        "pids": 64,
+        "memory": 134217728,
+        "cpu": 250000000,
+        "mounts": [
+          {
+            "target": "/pki",
+            "readonly": true
+          },
+          {
+            "target": "/data/actions",
+            "readonly": false
+          }
+        ],
+        "loopback_only": true
+      }
+    },
+    {
+      "case": "source_snapshot_unchanged",
+      "verdict": "PASS",
+      "observed": {}
+    },
+    {
+      "case": "input_event_bytes_unchanged",
+      "verdict": "PASS",
+      "observed": {}
+    }
+  ],
+  "cleanup": "passed",
+  "scope": "real optional Compose responder using a retained worker event; simulation only",
+  "enforced": false,
+  "pipeline_or_model_executed": false,
+  "identity_limit": "shared secret possession; no independent attestation of event origin",
+  "image_provenance": "Compose build from the recorded source snapshot",
+  "event_canonical_sha256": "4316249a8a71256b26516453ad030844047007f5ec491f682172c8725b7577bc",
+  "event_original_byte_sha256": "c3c5931a43aafe4847c34b92408981dd468bca27aa2abede74e57904cfbb0e1e",
+  "source_run_manifest_sha256": "cf114b4e56f28f57510ec6037df040dd962b5524ab35847cd9b1e8c0bdc9fa4e",
+  "source_summary_sha256": "afb0c9cb81fd161d4e20d2c8400ae876ce2a231ae557daea67ca05bc93a75a7f",
+  "source_worker_result_sha256": "59051bf9e5fdcf0a01a4e7b2c747a652b16e27714ade4a9479dd74091aa79654",
+  "parent_run_code_hashes": {
+    "biozero/services/enclave-runner/main.go": "b46fb5e800a13ffb9cb8ab65cf6ebd956eed0ed5cbad8dff9ec995649c4fc87f",
+    "biozero/services/enclave-runner/security_events.go": "289020b9341e5f80b34e17016a62a4ba02cd8f8fd83791bea42660401a042dba",
+    "biozero/services/zeroresponder/main.go": "97498515e60ef20e3e9f26ffe606a369ae227094691a9d77e55ff28f356fd834",
+    "biozero/infra/soc/relay.py": "fca56cf6d27c5c7f5fb1056033a80a73ad6ceb07935dcbc9b84a1289256e692d",
+    "biozero/infra/native/run_experiment.py": "b2ac9f871f72b1fd9a08dbc4ed547172f260cec9c0a756700a98ccb5c667490f"
+  },
+  "commit": "afbb354b8406ce6095be402f9e31194896b2c284",
+  "dirty": true,
+  "source_hashes": {
+    "biozero/infra/soc/run_container_response.py": "b303c6b2d27d85f45ad1e0f13d42f764fcd8e032e118345a424a91e199fbc1ab",
+    "biozero/infra/compose/docker-compose.yml": "96206de63c7e23bd2809ee9abcab78c977656ddab6e75e99d8253e9c34c09f1d",
+    "biozero/infra/PKI/gen-pki.sh": "b07344d28a164964a163ff3d2673097bd6541afd9b0d3f0470cdd2ccb17c646c",
+    "biozero/infra/PKI/prepare-runtime.sh": "c639c2801332fbe5c5a4fe7cc8c9be86fa88a87fbd1d5ae2db1e6db5c3ca94f2",
+    "biozero/infra/soc/relay.py": "fca56cf6d27c5c7f5fb1056033a80a73ad6ceb07935dcbc9b84a1289256e692d",
+    "biozero/infra/native/run_experiment.py": "b2ac9f871f72b1fd9a08dbc4ed547172f260cec9c0a756700a98ccb5c667490f",
+    "biozero/docs/security/event-contract.md": "9e1f26bbbf97240078e4a4c4350c60d20cb8c2b71958452bf57599e4e6bd460a",
+    "biozero/services/enclave-runner/go.mod": "c490f8042b79ba9c138463bc4e36a12728402327f6be508a72c21644caea6cc9",
+    "biozero/services/enclave-runner/Dockerfile": "c321345a55fde6f9a7b1f00c17b566982cf66523a0f5ca8af191a9ac63c0aba5",
+    "biozero/services/enclave-runner/main.go": "b46fb5e800a13ffb9cb8ab65cf6ebd956eed0ed5cbad8dff9ec995649c4fc87f",
+    "biozero/services/enclave-runner/main_test.go": "13d4bcc81789e846c7e334a4ecede2ecaaf0a785ca0b21fc7f84714df93519cd",
+    "biozero/services/enclave-runner/security_events.go": "289020b9341e5f80b34e17016a62a4ba02cd8f8fd83791bea42660401a042dba",
+    "biozero/services/enclave-runner/security_events_test.go": "66697370ef501b56de0cc18254c7f1bd438131468d27c85c96b34239247efc8a",
+    "biozero/services/zeroresponder/go.mod": "f6b2cf22ac0391f22bb178b3d2f87b26c4573c09cbdcbd98c3625c19f0648b12",
+    "biozero/services/zeroresponder/Dockerfile": "3cbd76dd35bebf29baa5fb87bf993865b62220be67cfa1fcca2d7f1546b78dbb",
+    "biozero/services/zeroresponder/main.go": "97498515e60ef20e3e9f26ffe606a369ae227094691a9d77e55ff28f356fd834",
+    "biozero/services/zeroresponder/main_test.go": "e21532a69ab0c67eb53eed1e318efa5022e9110afc91186f6f682c42dce55125"
+  },
+  "compose_version": "5.6.0",
+  "container": {
+    "id": "2a87c1ef6526d078813d7525c29d118b45c0cc29c84965f32fb774dad5ba0294",
+    "image": "sha256:65c70793f0e4f3683924d9e998af55bc3568fbb61d7c23487ed59c090e259d56",
+    "user": "1000:1000",
+    "readonly": true,
+    "privileged": false,
+    "cap_drop": [
+      "ALL"
+    ],
+    "security_opt": [
+      "no-new-privileges:true"
+    ],
+    "pids": 64,
+    "memory": 134217728,
+    "cpu": 250000000,
+    "mounts": [
+      {
+        "target": "/pki",
+        "readonly": true
+      },
+      {
+        "target": "/data/actions",
+        "readonly": false
+      }
+    ],
+    "loopback_only": true
+  },
+  "source_hashes_unchanged_at_completion": true,
+  "finished_at": "2026-10-14T16:54:20.462910+00:00"
+}

@@ -1,6 +1,6 @@
 # Local milestone PKI and runtime preparation
 
-This PKI is a fresh, short-lived fixture for reproducible experiments with synthetic data. It creates separate researcher A/B identities, independent upload/results/gateway TLS keys, and a separate payload decryption key. It never overwrites an existing destination, including an empty directory. If generation fails, inspect the partial output and select a new destination; do not overwrite keys associated with existing jobs.
+This PKI is a fresh, short-lived fixture for reproducible experiments with synthetic data. It creates separate researcher A/B identities, independent upload/results/gateway/responder TLS keys, and a separate payload decryption key. It never overwrites an existing destination, including an empty directory. If generation fails, inspect the partial output and select a new destination; do not overwrite keys associated with existing jobs.
 
 ## Prepare from the repository root
 
@@ -24,6 +24,7 @@ For custom destinations, set `BIOZERO_PKI_PATH` and `BIOZERO_DATA_PATH` to absol
 | `clients/` | `researcher-a.crt/key`, `researcher-b.crt/key`, `ca.crt`, `decrypt.crt`, `signer.key` | Individual CLI test clients; never mounted in a service |
 | `runtime/upload/` | Upload TLS certificate/key and CA certificate | Upload API only |
 | `runtime/results/` | Results TLS certificate/key and CA certificate | Results API only |
+| `runtime/responder/` | Responder TLS certificate/key only | Optional simulated response service |
 | `runtime/worker/` | Payload `decrypt.key` and public `signer.crt` | Worker only |
 | `runtime/gateway/` | Gateway TLS key, A/B client identities, fixture signer key, CA/encryption public certificates | Reviewer gateway only |
 

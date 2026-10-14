@@ -139,6 +139,7 @@ services:
       BIOZERO_PIPELINE_TIMEOUT: ${BIOZERO_PIPELINE_TIMEOUT:-10m}
       BIOZERO_PIPELINE_MODE: ${BIOZERO_PIPELINE_MODE:-variants}
       BIOZERO_SECURITY_MODE: protected
+      BIOZERO_SECURITY_EVENTS_DIR: /data/security-events
     volumes:
     - type: bind
       source: ${BIOZERO_DATA_PATH:-./data}/uploads
@@ -168,6 +169,12 @@ services:
       source: ${BIOZERO_PKI_PATH:-../PKI/pki}/runtime/worker
       target: /pki
       read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ${BIOZERO_DATA_PATH:-./data}/security-events
+      target: /data/security-events
+      read_only: false
       bind:
         create_host_path: false
     - type: bind
@@ -277,11 +284,19 @@ services:
       BIOZERO_DATA_DIR: /data
       BIOZERO_RESPONDER_ADDR: :8090
       BIOZERO_WEBHOOK_SECRET: ${BIOZERO_WEBHOOK_SECRET:-}
+      BIOZERO_TLS_CERT: /pki/server.crt
+      BIOZERO_TLS_KEY: /pki/server.key
     ports:
-    - 127.0.0.1:8090:8090
+    - 127.0.0.1:${BIOZERO_RESPONDER_PORT:-8090}:8090
     networks:
     - responder
     volumes:
+    - type: bind
+      source: ${BIOZERO_PKI_PATH:-../PKI/pki}/runtime/responder
+      target: /pki
+      read_only: true
+      bind:
+        create_host_path: false
     - type: bind
       source: ${BIOZERO_DATA_PATH:-./data}/actions
       target: /data/actions

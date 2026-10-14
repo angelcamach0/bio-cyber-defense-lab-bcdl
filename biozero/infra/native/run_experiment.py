@@ -10,6 +10,7 @@ import platform
 import re
 import shutil
 import signal
+import secrets
 import socket
 import ssl
 import subprocess
@@ -93,6 +94,7 @@ def main():
     parser.add_argument("--run-dir", type=pathlib.Path)
     parser.add_argument("--tools-prefix", type=pathlib.Path)
     parser.add_argument("--mode", choices=["stats", "variants"], default="variants")
+    parser.add_argument("--soc", action="store_true", help="Verify worker outbox and authenticated simulated response")
     args = parser.parse_args()
     env = dict(os.environ)
     if args.tools_prefix:
@@ -123,7 +125,12 @@ def main():
             raise RuntimeError(f"Acceptance failed: {name}")
 
     def start(name, settings):
-        log = (run_dir / f"{name}.log").open("wb")
+        number = 1
+        log_path = run_dir / f"{name}.log"
+        while log_path.exists():
+            number += 1
+            log_path = run_dir / f"{name}-{number}.log"
+        log = log_path.open("xb")
         logs.append(log)
         proc = subprocess.Popen([str(binaries / name)], env={**env, **settings}, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         processes.append(proc)
@@ -142,13 +149,14 @@ def main():
                 manifest["tool_versions"][name] = (proc.stdout + proc.stderr).splitlines()[0]
         command(["bash", str(ROOT / "biozero/infra/PKI/gen-pki.sh"), str(pki)], env)
         command(["bash", str(ROOT / "biozero/infra/PKI/prepare-runtime.sh"), str(data)], env)
-        for name in ["upload-api", "results-api", "enclave-runner", "uploader-cli"]:
+        for name in ["upload-api", "results-api", "enclave-runner", "uploader-cli"] + (["zeroresponder"] if args.soc else []):
             command(["go", "build", "-o", str(binaries / name), "./..."], env, ROOT / "biozero/services" / name)
         upload_port, results_port = free_port(), free_port()
         upload_url, results_url = f"https://127.0.0.1:{upload_port}", f"https://127.0.0.1:{results_port}"
         shared = {"BIOZERO_DATA_DIR": str(data), "BIOZERO_SECURITY_MODE": "protected"}
         manifest["configuration"] = {"security_mode": "protected", "pipeline_mode": args.mode,
-                                     "single_worker": True, "bound_address": "127.0.0.1"}
+                                     "single_worker": True, "bound_address": "127.0.0.1",
+                                     "soc_simulation": args.soc}
         for name, short, addr_var, port in [("upload-api", "upload", "BIOZERO_UPLOAD_ADDR", upload_port),
                                            ("results-api", "results", "BIOZERO_RESULTS_ADDR", results_port)]:
             start(name, {**shared, addr_var: f"127.0.0.1:{port}",
@@ -168,12 +176,15 @@ def main():
                 if time.monotonic() > deadline:
                     raise RuntimeError("Service readiness deadline expired")
                 time.sleep(0.2)
-        start("enclave-runner", {**shared, "BIOZERO_RULES_PATH": str(ROOT / "biozero/bio/reference-db/rules.json"),
+        worker_settings = {**shared, "BIOZERO_RULES_PATH": str(ROOT / "biozero/bio/reference-db/rules.json"),
               "BIOZERO_PRIVATE_KEY": str(pki / "runtime/worker/decrypt.key"),
               "BIOZERO_SIGNER_CERT": str(pki / "runtime/worker/signer.crt"),
               "BIOZERO_PIPELINE_PATH": str(ROOT / "biozero/bio/pipeline/pipeline.py"),
               "BIOZERO_REFERENCE_PATH": str(FIXTURE / "reference.fa"), "BIOZERO_PIPELINE_MODE": args.mode,
-              "BIOZERO_PIPELINE_TIMEOUT": "60s"})
+              "BIOZERO_PIPELINE_TIMEOUT": "60s"}
+        if args.soc:
+            worker_settings['BIOZERO_SECURITY_EVENTS_DIR'] = str(data / 'security-events')
+        worker_process = start("enclave-runner", worker_settings)
 
         def submit(path, label):
             argv = [str(binaries / "uploader-cli"), "--file", str(path), "--client-id", "researcher-a",
@@ -245,6 +256,113 @@ def main():
                 raise RuntimeError("Unsigned rejection deadline expired")
             time.sleep(0.2)
         record("unsigned-input-rejected-before-analysis", unsigned_result["status"] == "rejected" and not (data / "artifacts" / unsigned_id).exists(), {"status": unsigned_result["status"]})
+        if args.soc:
+            sys_path = str(ROOT / 'biozero/infra/soc')
+            import sys
+            sys.path.insert(0, sys_path)
+            import relay
+            event_id = 'evt-' + hashlib.sha256(f'enclave-runner/{unsigned_id}/signature_required'.encode()).hexdigest()
+            event_path = data / 'security-events' / (event_id + '.json')
+
+            def await_event():
+                deadline = time.monotonic() + 15
+                while not event_path.is_file():
+                    if time.monotonic() > deadline:
+                        raise RuntimeError('SOC outbox deadline expired')
+                    time.sleep(0.1)
+                return relay.decode(relay.private_read(event_path))
+
+            event = await_event()
+            wire = relay.canonical_event(event)
+            event_digest = hashlib.sha256(wire).hexdigest()
+            record('soc-real-security-rejection-event', event['event_code'] == 'signature_required'
+                   and event['timestamp'] == unsigned_result['data']['processed_at']
+                   and event['indicators'] == {'job_id': unsigned_id}, {'event_code': event['event_code']})
+            # A persisted terminal result must recover a lost outbox event without execution.
+            stop_processes([worker_process])
+            processes.remove(worker_process)
+            event_path.unlink()
+            worker_process = start('enclave-runner', worker_settings)
+            recovered = await_event()
+            record('soc-terminal-result-recovers-outbox', recovered == event
+                   and not (data / 'artifacts' / unsigned_id).exists(), {})
+
+            responder_port = free_port()
+            responder_base = f'https://127.0.0.1:{responder_port}'
+            secret = secrets.token_hex(32)
+            responder_settings = {'BIOZERO_DATA_DIR': str(data),
+                'BIOZERO_RESPONDER_ADDR': f'127.0.0.1:{responder_port}',
+                'BIOZERO_WEBHOOK_SECRET': secret,
+                'BIOZERO_TLS_CERT': str(pki / 'runtime/responder/server.crt'),
+                'BIOZERO_TLS_KEY': str(pki / 'runtime/responder/server.key')}
+
+            def start_responder():
+                proc = start('zeroresponder', responder_settings)
+                deadline = time.monotonic() + 15
+                while True:
+                    try:
+                        code, raw = request(responder_base + '/health', context(pki))
+                        health = json.loads(raw)
+                        if code == 200 and health.get('healthy') is True:
+                            return proc
+                    except (OSError, ValueError, urllib.error.URLError):
+                        pass
+                    if proc.poll() is not None or time.monotonic() > deadline:
+                        raise RuntimeError('SOC responder readiness failed')
+                    time.sleep(0.1)
+
+            responder_process = start_responder()
+            untrusted = False
+            try:
+                request(responder_base + '/health', ssl.create_default_context())
+            except ssl.SSLCertVerificationError:
+                untrusted = True
+            except urllib.error.URLError as exc:
+                untrusted = isinstance(exc.reason, ssl.SSLCertVerificationError)
+            trusted_code, _ = request(responder_base + '/health', context(pki))
+            record('soc-untrusted-tls-rejected', untrusted and trusted_code == 200, {})
+            for label, supplied in [('missing', None), ('wrong', 'x' * 64)]:
+                headers = {'Content-Type': 'application/json'}
+                if supplied is not None:
+                    headers['X-Webhook-Secret'] = supplied
+                code, _ = request(responder_base + '/alert', context(pki), wire, headers)
+                record('soc-' + label + '-secret-rejected', code == 403, {'http_status': code})
+            first = relay.deliver(event_path, responder_base + '/alert', pki / 'clients/ca.crt',
+                                  secret, data / 'security-deliveries')
+            record('soc-durable-simulation-ack', first['replay'] is False
+                   and first['enforced'] is False, {'mode': first['mode'], 'enforced': False})
+            server_receipts = list((data / 'actions').glob('*.json'))
+            record('soc-single-private-receipt', len(server_receipts) == 1
+                   and (server_receipts[0].stat().st_mode & 0o777) == 0o600, {})
+            receipt_bytes = server_receipts[0].read_bytes()
+            stop_processes([responder_process])
+            processes.remove(responder_process)
+            responder_process = start_responder()
+            replay = relay.deliver(event_path, responder_base + '/alert', pki / 'clients/ca.crt',
+                                   secret, data / 'security-deliveries')
+            record('soc-restart-idempotent-redelivery', replay['replay'] is True
+                   and server_receipts[0].read_bytes() == receipt_bytes
+                   and len(list((data / 'actions').glob('*.json'))) == 1, {})
+            changed = dict(event)
+            changed['timestamp'] = '2026-01-01T00:00:00Z'
+            headers = {'Content-Type': 'application/json', 'X-Webhook-Secret': secret}
+            code, _ = request(responder_base + '/alert', context(pki), relay.canonical_event(changed), headers)
+            record('soc-changed-payload-conflict', code == 409
+                   and server_receipts[0].read_bytes() == receipt_bytes, {'http_status': code})
+            code, _ = request(responder_base + '/alert', context(pki), wire + b'{}', headers)
+            record('soc-trailing-json-rejected', code == 400, {'http_status': code})
+            code, _ = request(responder_base + '/alert', context(pki), b' ' * 65537, headers)
+            record('soc-oversized-body-rejected', code == 413, {'http_status': code})
+            record('soc-no-effective-action-artifacts',
+                   not any((data / 'actions' / name).exists() for name in
+                           ['blocklist.txt', 'revocations.txt', 'quarantine.txt', 'actions.log']), {})
+            (public / 'soc-summary.json').write_text(json.dumps({'schema_version': 1,
+                'scope': 'native local protected worker -> private outbox -> verified HTTPS relay -> simulated response',
+                'source': event['source'], 'event_code': event['event_code'],
+                'payload_sha256': event_digest, 'mode': 'simulation', 'enforced': False,
+                'delivery': 'at least once with durable idempotent response',
+                'worker_network_isolation_verified_here': False,
+                'real_containment_verified': False}, indent=2) + '\n')
         manifest["status"] = "passed"
     except Exception as exc:
         manifest["error"] = str(exc)

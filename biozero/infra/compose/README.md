@@ -109,3 +109,24 @@ and blocks upload/results/alerts. ZeroResponder is optional --profile simulation
 and writes simulation records only. Neither optional profile was part of the
 30-assertion reviewer run. External publishing, Oracle deployment, production
 identity/key management, queues and measured concurrency remain separate gates.
+
+## Security event simulation profile
+
+The worker now mounts a private `security-events/` outbox, while retaining network
+none and no responder secret. Prepare the new directory with the current runtime
+script. Updated PKI generation creates `runtime/responder/` containing only its
+server certificate/key. The optional simulation profile requires a private
+`BIOZERO_WEBHOOK_SECRET` (32 to512 bytes) and uses HTTPS. The host port is
+`BIOZERO_RESPONDER_PORT`, default8090, bound only to127.0.0.1. Do not print an expanded
+Compose configuration containing that secret.
+
+The separate [SOC harness](../soc/README.md) validates a retained real native
+worker event and builds only this responder. Run
+`python3 -B biozero/infra/soc/run_container_response.py --help` for private parent/event
+arguments. Receipt `20261014T165334-020175Z-soc-container/public/` passed13 controls
+and cleanup, with verified TLS, authentication, private durable idempotent receipts,
+minimal mounts, limits and loopback publishing. It executes no pipeline/model.
+The current four-service run separately passed30 controls in
+`20261014T164550-385353Z-reviewer-compose/public/`, including the exact outbox mount.
+Both receipts are independently reviewed; the earlier mount-verifier failure is
+preserved in STATUS. There is no automatic relay service or effective containment.

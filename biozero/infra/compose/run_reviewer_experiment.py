@@ -233,7 +233,7 @@ def main():
         allowed_targets = {
             "upload-api": {"/data/uploads", "/data/jobs", "/pki"},
             "results-api": {"/data/jobs", "/data/results", "/pki"},
-            "enclave-runner": {"/data/uploads", "/data/jobs", "/data/results", "/data/artifacts", "/pki", "/rules", "/pipeline", "/reference", "/benchmarks"},
+            "enclave-runner": {"/data/uploads", "/data/jobs", "/data/results", "/data/artifacts", "/data/security-events", "/pki", "/rules", "/pipeline", "/reference", "/benchmarks"},
             "reviewer-gateway": {"/pki", "/config", "/state", "/fixtures", "/ui"}}
         scoped_pki_files = {"upload-api": {"server.key", "server.crt", "ca.crt"},
                             "results-api": {"server.key", "server.crt", "ca.crt"},
@@ -247,7 +247,7 @@ def main():
         expected_sources = {
             "upload-api": {"/data/uploads": data / "uploads", "/data/jobs": data / "jobs"},
             "results-api": {"/data/jobs": data / "jobs", "/data/results": data / "results"},
-            "enclave-runner": {"/data/" + name: data / name for name in ("uploads", "jobs", "results", "artifacts")},
+            "enclave-runner": {"/data/" + name: data / name for name in ("uploads", "jobs", "results", "artifacts", "security-events")},
             "reviewer-gateway": {"/config": config, "/state": data / "reviewer", "/fixtures": FIXTURE, "/ui": ROOT / "biozero/ui"}}
         expected_sources["enclave-runner"].update({"/rules": ROOT / "biozero/bio/reference-db", "/pipeline": ROOT / "biozero/bio/pipeline",
                                                    "/reference": FIXTURE, "/benchmarks": ROOT / "biozero/bio/benchmarks"})
@@ -297,6 +297,7 @@ def main():
                         ROOT / "biozero/infra/PKI/prepare-runtime.sh", ROOT / "biozero/infra/compose/prepare-reviewers.py",
                         ROOT / "biozero/bio/pipeline/pipeline.py", ROOT / "biozero/bio/benchmarks/evaluate_variants.py"]
         source_paths += [ROOT / "biozero/services" / service / filename for service in SERVICES for filename in ("main.go", "Dockerfile", "go.mod")]
+        source_paths.append(ROOT / "biozero/services/enclave-runner/security_events.go")
         source_paths += [FIXTURE / name for name in ("reference.fa", "reads.fastq", "expected.vcf", "invalid.fastq")]
         source_paths += [ROOT / "biozero/ui" / name for name in ("app.js", "index.html", "styles.css")]
         if args.browser:

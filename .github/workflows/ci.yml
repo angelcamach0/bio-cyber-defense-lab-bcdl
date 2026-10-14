@@ -25,7 +25,7 @@ jobs:
       - name: Scientific repeat and protected end-to-end experiment
         run: |
           make science
-          make experiment
+          make experiment-soc
       - name: Preserve reviewable synthetic evidence
         if: always()
         uses: actions/upload-artifact@v4
