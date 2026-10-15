@@ -1,6 +1,7 @@
 # BioZero implementation status
 
-Updated2026-10-15 UTC. Branch: `biozero/container-capsule-provider`.
+Updated2026-10-15 UTC. Working branch: `biozero/authenticated-ownership`, based on
+the `biozero/container-capsule-provider` milestone at 77a4e03.
 [PR22](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/22) is a draft
 above [merged PR21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
 No production deployment is established.
@@ -265,6 +266,37 @@ passed for bba2637. It does not approve later source. Hosted CI skips provider
 kernel opt-ins, biological models, Compose and Firefox. Each new published source
 requires its own CI and exact-scope acceptance. Failed/weaker receipts and pending
 charges remain preserved; no model or dataset was rerun to repair the build.
+
+## Authenticated ownership protocol component
+
+A new independent [ownership protocol library](../services/ownership-authority/README.md)
+implements the cryptographic foundation in [ADR 004](decisions/004-authenticated-ownership.md).
+It derives identity from real verified TLS leaf certificates, checks a pinned
+Ed25519 challenge and same-leaf RSA-PSS manifest, derives owner/job/nonce/profile
+AAD and measures actual ciphertext. It does not start a server or change the
+existing upload, worker, broker or Results route. TM02 remains open.
+
+Two private synthetic real-mTLS probes reproduced current Results weaknesses:
+mutable owner reassignment and copied result relabeling. No existing-service fix
+is inferred. The new library passed 10 top-level/72 subcases with race detection;
+an independent exported-API caller passed one top-level/12 subcases, including
+actual GCM rejection after another valid client re-signed copied ciphertext.
+Finalize measures those signed bytes; only mandatory worker AAD enforcement can
+reject their decryption in the real route. RSA-OAEP envelope measurement remains
+an integration gate. See the [exact evidence and source pins](evidence/20261015-ownership-protocol/public/README.md).
+
+Final make passed 294 Python cases (292 passed, two kernel opt-ins skipped) and
+uncached test/vet in nine Go modules on an unchanged 420-file snapshot. After the
+successful child/log/source-after/summary, the wrapper failed while recording a
+handle; its exception is preserved without rerunning successful checks. Documents
+and aggregates added after acceptance are distinguished. No service/image build,
+Docker acceptance or biological model run establishes integration here.
+
+Next: durable authority Reserve before body, single-use verified Finalize and
+immutable accepted records with retained accounting; then direct/gateway clients,
+worker/broker verification and protected receipt-based result projection. Full
+same-job reassignment, cross-job ciphertext replay and result relabel negatives
+must pass on the integrated protected route before closing TM02.
 
 ## Regulatory feasibility
 

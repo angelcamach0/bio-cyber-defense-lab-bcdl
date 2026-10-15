@@ -1,0 +1,72 @@
+{
+  "base_commit": "77a4e03cf3dc07c6f640d665fe05ddceec71ff0a",
+  "current_service_baseline": {
+    "cases": [
+      "mutable_owner_rewrite_releases_unchanged_result",
+      "relabelled_result_releases_other_owner_data"
+    ],
+    "log_sha256": "9e0657b4c6a5ec059c2a20b808f8e3beff9d7fbed9a11d8308a1589c0220e1b8",
+    "observed_weaknesses": 2,
+    "private_summary_sha256": "cc7b7b6de84f5e1fdfd447b85fa27ea9ab325f0057fd06a5c8e51e1906152387",
+    "real_mtls": true,
+    "repairs_demonstrated": 0,
+    "scope": "Exact source copy of current Results handler, synthetic private marker over actual HTTPS/mTLS; no remote attack, worker replay, genomic inference or deployment",
+    "source_unchanged": true
+  },
+  "independent_external_caller": {
+    "actual_rsa_oaep_envelope_checked": false,
+    "full_log_sha256": "a8c7ceac71d9a5984f0823bace01f93c4c1be13753ce6000dc276356cfab84b3",
+    "private_probe_source_sha256": "d307d90cb25966207e2d64509db03f6e3f27d310183c087820ac9f722982bf9a",
+    "private_summary_sha256": "2491e83885d272e202cfda0dd67c7b8dd71558616d5cc588a545ddfe29a07877",
+    "real_mtls": true,
+    "resigned_ciphertext_measured_before_actual_gcm_rebind_rejection": true,
+    "returncode": 0,
+    "source_unchanged": true,
+    "subcases_passed": 12,
+    "top_level_passed": 1
+  },
+  "limits": [
+    "Library only: no authority service or persistent reserve/finalize/ownership registry.",
+    "No single-use, durable charge, restart, nonce-generation, key custody isolation or legacy migration guarantee yet.",
+    "No CLI/gateway/worker/broker/Results integration or existing TM02 repair claim.",
+    "Finalize authenticates client envelope hash declaration but does not receive/measure RSA-OAEP envelope or decrypt ciphertext.",
+    "Actual GCM AAD rejection is a component test; existing worker still uses legacy nil AAD.",
+    "Binding and signed DTOs are not authenticated durable ownership records; external pins and real verified TLS are required.",
+    "No image/service build, Docker deployment, dataset/model acquisition or biological/scientific approval from this component."
+  ],
+  "make": {
+    "child_returncode": 0,
+    "go_modules_uncached_test_and_vet": 9,
+    "helper_optins_skipped": 2,
+    "log_sha256": "0ae4859006734489f9ea8005c2e8b0cd95e7030be6a5be375c542ef1caed87d0",
+    "private_summary_sha256": "1c6e53b67bee28a0fcf29b79a1fefb5dc9667d587ae63c025fc9e11b242d1e9b",
+    "python_discovered": 294,
+    "python_passed": 292,
+    "test_umask": "022"
+  },
+  "module_race": {
+    "full_json_log_sha256": "5815aefb1d35bb6a556b281d17b50e0c70a5e4752836fcb802462a2738c451c5",
+    "private_summary_sha256": "636ea24edcc77a6786e6d6777466d1ea594bb581b53967fca299d861271e433f",
+    "returncode": 0,
+    "source_files": 7,
+    "source_unchanged": true,
+    "subcases_passed": 72,
+    "top_level_passed": 10
+  },
+  "preserved_observation_limits": {
+    "later_race_receipt_has_complete_original_json_events": true,
+    "make_tests_not_rerun_to_hide_wrapper_failure": true,
+    "postcheck_wrapper_error": "Path variable .pid access while saving handle after successful make and source-after/summary writes",
+    "postcheck_wrapper_receipt_sha256": "ed215c8b7151491fc85b08ac96e1fb25d094d4b399c00fb4ea563e53f58770a4",
+    "postcheck_wrapper_returncode": 1,
+    "writer_prior_module_receipt_has_observations_without_original_stdout": true
+  },
+  "schema_version": 1,
+  "scope": "Unintegrated cryptographic ownership protocol component; existing TM02 route remains vulnerable and full gate open",
+  "test_snapshot": {
+    "dirty": true,
+    "later_changes": "STATUS, requirements matrix and this four-file public bundle only",
+    "source_files": 420,
+    "source_unchanged": true
+  }
+}
