@@ -1,16 +1,17 @@
-# Authenticated ownership protocol and durable registry
+# Authenticated ownership authority and durable registry
 
 This standard-library Go package (`biozero/ownership-authority`, package
 `ownership`) implements the cryptographic foundation of
 [ADR 004](../../docs/decisions/004-authenticated-ownership.md). Its Linux Store
-persists reservations and signed accepted records. It does not run a server or
-change existing services.
+persists reservations and signed accepted records. The new Linux
+`cmd/ownership-authority` serves a separate HTTPS/mTLS authority. Existing upload,
+gateway, worker, broker and Results services are not integrated with it yet.
 The current upload/results/worker path does not acquire immutable ownership by
 importing or testing this module.
 
 ## Public API and trust boundary
 
-1. A future authority authenticates a real server-side mTLS connection and calls
+1. The authority authenticates a real server-side mTLS connection and calls
    `PrincipalFromTLS`. It requires a completed handshake, a verified chain whose
    leaf DER equals the peer leaf, and an RSA 2048–4096-bit client-auth leaf with
    exponent 65537 and digital-signature usage. The credential is SHA256 of the
@@ -108,8 +109,9 @@ future work.
 Verification accepts `issued_at <= now < expires_at`. Finalize also counts
 elapsed processing/read time and rejects crossing expiry. A generic `io.Reader`
 can block inside `Read`; context checks between reads cannot interrupt that
-call. Future ingress needs its own deadlines and verified regular read-only file
-descriptors/provenance. A reader returning zero bytes without an error is rejected
+call. HTTP ingress now sets actual connection deadlines. A future file transport
+still needs verified regular read-only descriptors/provenance. A reader returning
+zero bytes without an error is rejected
 as nonprogress rather than retried forever.
 
 The five-minute window applies to the original acceptance decision. Store
@@ -189,11 +191,97 @@ but its parent sync failed, a later crash may leave no intent: universal rejecti
 of every such cold restart is not claimed. No antirollback, revocation, secure
 erasure, hostile-host protection or operator repair service is provided.
 
-Pending integration includes an authority mTLS service with separate key custody,
-CLI/gateway ingress, envelope/AAD enforcement in worker/broker, result release
-from protected receipts, revocation/rotation and explicit historical migration.
+The separate authority service below is implemented. Deployment must still prove
+separate key custody and writable-mount isolation. Pending integration includes
+direct client/gateway ingress, envelope/AAD enforcement in worker/broker, result
+release from protected receipts, revocation/rotation and historical migration.
 Repeated stateless Finalize calls remain possible outside Store. Existing
 upload/worker/broker/Results interfaces are unchanged and TM02 stays open.
+
+## HTTPS authority service
+
+The command loads private pinned assets into memory, opens only externally
+enrolled history and listens on a literal loopback IP. It requires TLS 1.3 with
+verified client certificates, disables session tickets and HTTP/2, and accepts
+one HTTP/1.1 request per connection. Identity comes exclusively from `r.TLS`;
+forwarded headers and owner assertions never establish a caller.
+
+| Endpoint | Request | Response |
+| --- | --- | --- |
+| POST /v1/reservations | Exact JSON keys schema_version=1, request_id and original_name; application/json, 1–1024 bytes | Original SignedChallenge after durable Reserve |
+| POST /v1/finalizations | application/octet-stream; BE32 challenge length, exact signed challenge, BE32 manifest length, exact signed manifest, ciphertext | Original SignedAcceptance after durable Finalize |
+| GET /v1/jobs/16-lowercase-hex-job | No body | Owner-only HTTPJobResponse with state/challenge and optional acceptance/failure_code |
+| GET /healthz | No body; mTLS required | Minimal status; 503 if unavailable or ingress busy |
+
+Finalize metadata is at most 4096 bytes per signed object. Content-Length is
+required and bounded to the policy body limit plus 8200 framing bytes and one
+excess byte. Chunked bodies, compression, trailers, Expect, upgrade, queries and
+encoded paths are rejected. The remaining HTTP body goes directly to Store;
+no multipart parser, spool, checksum assertion or artificial EOF substitutes for
+the actual bytes. The client must use the original signed serialization for an
+exact Store retry. An accepted retry can return its original record after only
+metadata, without consuming another ciphertext body.
+
+Eight connections include handshakes/idle clients; four handlers may run at once.
+MaxHeaderBytes is configured to 16 KiB, with a five-second header timeout. Actual body
+read and response write deadlines are 30 and ten seconds. FullDuplex disables
+the implicit drain before an early response; kernel/TLS buffers and net/http's
+final cleanup can still read or drain bytes. Claims about authorization before
+ciphertext Read apply to the application reader, not zero socket reception.
+
+Responses are completely serialized and bounded before delivery. For protected
+records, a second Store preflight/context check and the complete Write/FlushError
+run under its mutex with a real write deadline. A delivery failure latches the
+live Store without modifying accepted bytes or charges. The handler aborts the
+connection rather than issuing an implicit 200 or a second response after failure.
+Successful Write/Flush does not demonstrate client receipt. Public errors use an
+explicit code allowlist; private paths, reader errors and certificates are not
+returned. A blocked/canceled request never grants ownership or quota credit.
+
+Shutdown stops admission, cancels request contexts and waits for active handlers.
+Its five-second wait budget includes contention on the shutdown gate, with the
+last fifth reserved for closing its own connections and draining readers. Store
+is never closed while handlers remain. A terminal close/drain error is retained;
+later calls cannot release its Store authority. Actual process death releases
+that raw lock. These are local service controls, not deployed sandbox/hostile-host
+isolation or a complete storage-failure reconciliation service.
+
+## Private configuration and explicit genesis
+
+`AuthorityServiceConfig` is a closed schema; every wire field is required. It
+contains schema_version=1, listen_address, store_root, namespace, authority_id,
+public_key_hex, pipeline_mode, execution_profile_sha256, signing_key,
+tls_certificate, tls_private_key, client_ca, policy and expected_scope. The four
+assets each contain absolute canonical path and lowercase SHA256. See the
+[typed configuration](service_config_linux.go) for exact JSON names and bounds.
+
+Configuration/assets must be current-UID 0600 regular single-link files under
+0700 private directories, with no symlink traversal. Store root cannot overlap
+configuration/assets. Raw Ed25519 signing material is exactly 64 bytes and must
+match the external public pin. TLS material is bounded strict PEM; the server
+RSA leaf must have serverAuth/signing usage and a matching key. Client CA files
+contain valid CA certificates, never a CA private key. Loaded material is cached
+privately: changed public configuration is rejected, and Serve never rereads an
+unchecked asset path. Upload/worker must not receive authority key/config mounts;
+separate deployed mounts/users remain to be demonstrated.
+
+Build the executable from this module into a new private destination:
+
+```sh
+go build -trimpath -buildvcs=false -o /absolute/private/ownership-authority ./cmd/ownership-authority
+```
+
+Prepare a trusted private config with empty store_id/policy_sha256 fields inside
+expected_scope for genesis only. Run `ownership-authority --config /absolute/private/init.json
+--init-store` and capture its scope stdout in a new private file. The command
+creates only an exclusive fresh Store, emits its external scope and exits; it
+never starts ingress or adopts an existing destination. A failed scope write
+does not authorize rerunning genesis or deriving enrollment from mutable files.
+Prepare a separate private serve config containing that trusted scope, then run
+`ownership-authority --config /absolute/private/serve.json`. Serving never
+initializes missing state. SIGTERM stops/drains the service; uncertainty produces
+a nonzero exit with history retained. No key generator, client integration,
+automatic enrollment, migration or operator repair is hidden in startup.
 
 ## Checks
 
@@ -210,6 +298,29 @@ before authentication, exact and excess ciphertext boundaries, cancellation,
 time windows, strict JSON, private-key mismatch, signature-algorithm negatives
 and AES-GCM AAD rebinding rejection. They do not exercise the deployed service
 path or demonstrate scientific approval.
+
+The service acceptance has a separate Linux opt-in. From repository root:
+
+```sh
+install -d -m 700 .biozero
+evidence_root=$(mktemp -d "$PWD/.biozero/authority-http-XXXXXXXX")
+(
+  cd biozero/services/ownership-authority
+  BIOZERO_AUTHORITY_HTTP_ACCEPTANCE_ROOT="$evidence_root" \
+    go test -race -count=1 -v \
+    -run '^(TestAuthorityHTTPProcessAcceptance|TestAuthorityHTTPProcessHelper)$' ./...
+)
+```
+
+It uses the real service API in owned test processes with transport instrumentation:
+verify signed commit before a delegated TCP Write, apply an actual client RST,
+observe actual write failure/latch, reject another live writer, SIGKILL/Wait the
+original, then recover identical history in a new process. Owner GET and
+metadata-only Finalize succeed, the other leaf is denied, and SIGTERM exits
+cleanly. It retains keys, trusted scope and pending/accepted evidence privately;
+it never cleans or retries that history. This synthetic fixture reuses a dual-EKU
+server/client leaf; it does not prove separate deployed client/server key custody.
+The standalone compiled CLI has a separately scoped build/start/restart receipt.
 
 The exported-API process fixture is an explicit Linux opt-in. From repository
 root, create a new private destination for each run:

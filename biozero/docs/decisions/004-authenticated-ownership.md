@@ -120,8 +120,12 @@ adopted. Full charges and slots survive rejection, acceptance and process death.
 A sticky live writer retains a raw CLOEXEC flock descriptor until actual process
 exit, including when Go handles are lost. See the
 [Store contract](../../services/ownership-authority/README.md) for budgets and
-the intent-unlink/parent-sync crash boundary. It is still a library: a separate
-authority service, isolation and end-to-end consumers remain to be constructed.
+the intent-unlink/parent-sync crash boundary. A separate Linux HTTPS/mTLS service
+now exposes Reserve/Finalize/readback with pinned private configuration, bounded
+ingress and delivery-failure fencing. Actual TCP RST, writer exclusion, confirmed
+process death and cold replay are verified locally; the separately compiled CLI
+passes explicit genesis and two clean serving restarts. Deployed key/mount
+isolation and end-to-end consumers remain to be constructed.
 
 Acceptance time records the verified decision, after elapsed preparation and
 reading, within the challenge and leaf validity windows. Signing/commit follow
@@ -144,8 +148,8 @@ or claim their old results demonstrate the new protocol.
 
 | Deliverable | Required evidence | Status |
 | --- | --- | --- |
-| Cryptographic protocol component | Real TLS identities; strict parser boundaries; same-leaf signatures; ciphertext exact/+1 checks; invalid authorization rejected before Reader.Read; altered AAD fails actual GCM Open | Verified component; no service integration |
-| Durable authority Reserve/Finalize/readback | Actual restart and injected transaction failures; retained charges; immutable owner; concurrent final-slot/duplicate-finalize behavior; no implicit legacy adoption | Linux Store component implemented; process interruption/readback verified separately; authority service and deployment boundary pending |
+| Cryptographic protocol component | Real TLS identities; strict parser boundaries; same-leaf signatures; ciphertext exact/+1 checks; invalid authorization rejected before Reader.Read; altered AAD fails actual GCM Open | Verified protocol and authority component; no upload/worker/broker/Results integration |
+| Durable authority Reserve/Finalize/readback | Actual restart and injected transaction failures; retained charges; immutable owner; concurrent final-slot/duplicate-finalize behavior; no implicit legacy adoption | Linux Store and HTTPS/mTLS authority implemented; local RST/death/replay and separately compiled CLI verified; deployed isolation and consumers pending |
 | Client and gateway integration | Both use direct authenticated authority sessions, per-client signing and exact context-bound encryption; shared admission and cross-client replay denied | Pending |
 | Worker and broker integration | Accepted owner/context checked before crypto/execution; actual ciphertext rebinding rejected; recovery keeps original registry/lease/charges | Pending |
 | Result delivery and release | Direct and gateway owner reassignment denied; relabeled private result cannot be released; trusted receipt projection and nonowner denial before private read | Pending |

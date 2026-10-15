@@ -22,9 +22,8 @@ recursive build failed after adding analysis/CLI subpackages. The failed
 [CI38660550112](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38660550112)
 at commit0dd7384 remains preserved: unit/PKI and scientific repeat passed, but
 protected-service startup was never reached. After the selector correction, fresh
-local protected native acceptance passed all78assertions. Its private receipt is
-`.biozero/bridge-buildfix-native-20261015T003540.421150Z/`; source pins and cleanup
-remain scoped to that run. The correction's own
+local protected native acceptance passed all78assertions. Its original receipt
+remains retained privately; source pins and cleanup remain scoped to that run. The correction's own
 [CI38661813114](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38661813114)
 passed at98f2f89. Subsequent source needs its own CI; that result is not reused.
 
@@ -258,7 +257,7 @@ The following earlier component receipts retain their original source scope:
 Earlier standalone host binary:5,128,722 bytes, SHA256
 `c6cea629b14cafc4abc4cda69a4d8db60f5de569cf89036e4460e2f156f57194`.
 That source inventory was unchanged throughout its build/make/race acceptance.
-Private receipts: `.biozero/broker-service-final-checks-20261015T011527.352455Z/`.
+Original build/make/race receipts remain retained privately.
 No actual acceptance service remains running after its authoritative process Wait.
 
 The earlier [CI38657120252](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38657120252)
@@ -343,13 +342,63 @@ after marker unlink but failed parent sync need not preserve the marker, so
 universal cold rejection at that boundary is not claimed. No automatic refund,
 retry, repair, migration, hostile-host protection or antirollback is implemented.
 
-This remains an unintegrated library. No retained service/image artifacts were
-rebuilt, and no Docker acceptance or model execution ran. Go checks do compile
-test binaries and temporary service fixtures. Authority ingress/key isolation, actual envelope
-measurement/AAD enforcement, worker/broker binding and receipt-based release
-remain the next dependency chain. Existing services still have the reproduced
+At that registry snapshot, this was an unintegrated library: no retained
+service/image artifacts were rebuilt and no Docker/model acceptance ran. Go checks
+compiled temporary test/service fixtures. The next component adds authority ingress;
+deployed isolation, envelope/AAD enforcement, worker/broker binding and
+receipt-based release remain dependencies. Existing services still have the reproduced
 TM02 weaknesses. See the [contract](../services/ownership-authority/README.md) and
 [ADR 004](decisions/004-authenticated-ownership.md); the full gate remains open.
+
+## Ownership authority ingress component
+
+The Linux authority now serves HTTPS/mTLS Reserve, streaming Finalize and owner-only
+readback. A closed private configuration pins the signing key, TLS assets, policy
+and external genesis scope. Initialization is exclusive and separate from serving;
+startup never adopts history. Literal loopback, TLS 1.3, eight connections, four
+handlers, bounded metadata and real read/write deadlines limit ingress. Protected
+response delivery runs under the Store preflight/mutex; failed Write/Flush latches
+the live writer. Shutdown stops admission and drains before healthy Store close;
+a retained terminal error cannot be cleared by a second Shutdown.
+
+The corrected HTTP fixture passed eight principal tests/26 subcases. Its initial
+helper used a client absolute URL for a server request, causing three failures and
+shadowing other negatives; that original weaker run is retained. The correction
+uses a relative target and valid control, without changing production for that
+helper error. Full module ordinary/race/vet then passed 50 principal tests/234
+subcases plus four CLI tests, with explicit external/helper skips. Those checks
+pin 19 inputs; a later test-only addition has its own 20-input race acceptance.
+
+That service-process acceptance verifies signed durable commit before an actual
+TCP RST and delegated Write error, full retained charge, sticky live failure and
+repeated Shutdown denial. A second process is denied while that writer lives.
+Only after SIGKILL and confirmed WaitStatus does a fresh process reopen the same
+trusted scope: owner GET and metadata-only Finalize return the original acceptance,
+the other leaf gets 403, and SIGTERM exits cleanly with all history unchanged.
+This uses the actual service API in owned test processes with transport
+instrumentation. It is separate from the standalone CLI acceptance.
+
+One retained ARM64 CLI binary was explicitly built, then tested through independent
+Python TLS 1.3/mTLS clients. Fresh genesis exits zero; reinitialization exits nonzero
+without changing history. Two serving starts over the original accepted history
+return identical owner readback/metadata-only replay and exit zero on SIGTERM.
+The fixture reuses a dual-EKU server/client leaf; deployed client/server key
+separation is not established. The independent public-key-only review passes
+39 controls without rerunning acceptance or opening private keys.
+
+Final make passed 294 Python cases (292 passed/two kernel opt-ins skipped) and
+uncached test/vet in nine Go modules on an unchanged 442-file snapshot. Four
+technical documents and the public aggregate were updated afterward; production
+Go stayed unchanged. No Docker image, capsule acceptance, dataset acquisition or
+biological model ran in this increment. Temporary Go fixture compilation and the
+one retained service build have separate receipts. See the
+[exact scopes and source pins](evidence/20261015-ownership-authority/public/README.md).
+
+This completes a locally verified authority component, not TM02. Upload/gateway,
+worker/broker and Results still use their previous contracts. Deployed key/mount
+isolation, actual OAEP-envelope comparison/GCM AAD enforcement, protected receipt
+projection and integrated substitution negatives remain pending. Scientific and
+economic conclusions below are unchanged.
 
 ## Regulatory feasibility
 
