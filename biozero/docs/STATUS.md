@@ -129,6 +129,40 @@ See [broker](../services/artifact-executor/README-broker.md),
 [complete analysis acceptance](../services/artifact-executor/README-analysis-integration.md)
 and [host service](../services/artifact-executor/README-service.md) for current commands.
 
+## Protected postcommit interruption acceptance
+
+Fresh Docker fixtures now passed26downstream-response-loss checks and32worker
+container SIGKILL/restart checks; independent retained-evidence audits passed41
+and45respectively. Each used one real signed/encrypted upload, one Submit, one
+lease/capsule and query-only recovery. Three-SNP science,1,171mapped reads,
+per-client denial, actual artifacts/proofs and all custody/accounting stayed
+intact. Retained charges including the4,096-byte header were27,731and27,732bytes,
+one slot each. This loses a response after successful upstream delivery and EOF;
+it does not prove a failed broker ACK write.
+
+SIGKILL was applied to the exact worker container while plaintext was staged and
+the real committed response held; Docker Wait137/exited/PID0 preceded restarting
+that same ID. Simultaneously retained kernel references proved distinct old/new
+namespaces and tmpfs filesystems, with the new plaintext stage empty. Four FDs
+closed. The fixture temporarily retains both32MiB generations; it does not prove
+secure erasure or recovery after process-only death retaining the original tmpfs.
+
+The shared harness also passed a fresh default57-case Docker regression and52
+independent checks, retaining65,356bytes across3slots. All three runs and final
+make used the same399-file snapshot based on3296f36 with local fixture changes.
+Six binaries were reused after fresh complete51-input Go/module verification;
+their original build metadata remains333995f dirty. All own processes terminated;
+three application containers per run remain stopped and preserved. Runtime Go,
+images, models and datasets did not change. Documentation/exports came afterward.
+
+Same-snapshot make passed279Python cases (277passed/two helper opt-ins skipped)
+and test/vet in eight Go modules with fixture umask022. The initial private
+wrapper's077 caused two existing unsafe-mode fixtures to become safe0600 and fail
+their assertions; unchanged focused/full suites passed with022. Two earlier
+relay EPIPE failures and an unpinned namespace-ID measurement failure also remain
+preserved. The correction and causal Unix-socket test affect only the fixture.
+See the [public aggregate and exact source pins](evidence/20261015-protected-postcommit-faults/public/README.md).
+
 ## Verification and reproduction scope
 
 The integrated worker snapshot passed `make test`:263Python cases,261passed/two
@@ -203,9 +237,10 @@ hashes, without DNA, rows, case IDs, vectors or weights. See
 
 ## Remaining requirements
 
-1. Extend integrated lifecycle evidence beyond native/Docker protected positive
-   execution and clean-stop/lost-publication recovery to actual worker/
-   broker death, cancellation, lost ACK and durable uncertainty/reconciliation.
+1. Extend integrated lifecycle evidence beyond protected execution, downstream
+   response loss and whole worker-container postcommit death to broker death,
+   active cancellation, actual ACK-write errors, process-only death retaining
+   plaintext and durable uncertainty/reconciliation.
 2. Pin and verify the image dependency closure, build/distribution and licences;
    cached-image acceptance alone does not establish image reproducibility.
 3. Inject attach/removal/storage uncertainty and define explicit operator

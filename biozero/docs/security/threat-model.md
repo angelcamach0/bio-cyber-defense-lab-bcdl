@@ -310,8 +310,15 @@ passed57assertions and52independent readback checks with actual crypto, science,
 authorization and clean-stop/result recovery. Three capsule configurations were
 observed while created; helper kernel records were obtained during execution.
 The observer's die/destroy events are separate from provider/coordinator wait,
-export fencing and proof authority. Integrated crash/cancel/lost-ACK and uncertain
-state reconciliation remain open. No
+export fencing and proof authority. Subsequent
+[postcommit fault acceptance](../evidence/20261015-protected-postcommit-faults/public/README.md)
+adds downstream response loss26/41 and whole worker-container SIGKILL/restart32/45
+actual/independent checks. Each has one Submit/capsule and query-only recovery of
+unchanged artifacts/proofs/custody/charges. Simultaneous namespace/tmpfs references
+prove a new empty plaintext filesystem on container restart; temporarily retaining
+the old mount tree is measurement authority, not secure erasure. Broker death,
+active cancellation, actual upstream ACK-write faults, process-only death retaining
+plaintext and uncertain-state reconciliation remain open. No
 hardware-enclave, independent principal identity or complete filesystem quota
 follows from either provider's resource controls.
 

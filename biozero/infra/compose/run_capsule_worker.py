@@ -24,6 +24,7 @@ import subprocess
 import sys
 import threading
 import time
+from types import SimpleNamespace
 import urllib.error
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -116,6 +117,27 @@ def children(pid):
     for thread in Path(f"/proc/{pid}/task").iterdir():
         found.update(int(value) for value in (thread / "children").read_text().split())
     return found
+
+
+def worker_plaintext_observation(worker_state, expected_sha256):
+    """Observe the service child behind Docker init, including mount identity."""
+    worker_children = children(worker_state["state"]["Pid"])
+    if len(worker_children) != 1:
+        raise Failure("worker_child_identity_ambiguous")
+    pid = next(iter(worker_children))
+    stage = Path(f"/proc/{pid}/root/data/decrypted")
+    filesystem = os.statvfs(stage)
+    status = dict(line.split(":", 1) for line in Path(f"/proc/{pid}/status").read_text().splitlines() if ":" in line)
+    mounts = [line for line in Path(f"/proc/{pid}/mountinfo").read_text().splitlines() if line.split()[4] == "/data/decrypted"]
+    valid = (len(mounts) == 1 and " - tmpfs " in mounts[0] and filesystem.f_blocks * filesystem.f_frsize == 32 << 20
+             and filesystem.f_files == 4096 and filesystem.f_flag & 14 == 14 and status.get("NoNewPrivs", "").strip() == "1"
+             and digest(Path(f"/proc/{pid}/exe")) == expected_sha256
+             and all(status.get(name, "").strip() == "0000000000000000" for name in ("CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb")))
+    return valid, {"capacity_bytes": filesystem.f_blocks * filesystem.f_frsize, "inode_units": filesystem.f_files,
+                   "worker_pid": pid, "mount_namespace": os.readlink(f"/proc/{pid}/ns/mnt"),
+                   "filesystem_id": filesystem.f_fsid, "stage_dev": stage.stat().st_dev, "stage_inode": stage.stat().st_ino,
+                   "stage_mount_id": mounts[0].split()[0] if len(mounts) == 1 else None,
+                   "stage_empty": not any(stage.iterdir())}
 
 
 class CapsuleObserver:
@@ -389,13 +411,37 @@ def docker_snapshot_matches(row, config):
             and mounts_ok)
 
 
-def main():
+def retained_accounting(store):
+    """Recompute Store.actualCharge for a fresh fixture's committed records."""
+    ledger = json.loads((store / "ledger.json").read_bytes())
+    charges, matches = {}, True
+    for lease, stored in ledger["records"].items():
+        if not re.fullmatch("[0-9a-f]{32}", lease):
+            raise Failure("accounting_lease_invalid")
+        objects = store / "objects" / lease
+        serialized = {key: stored[key] for key in ("job_id", "input_sha256", "state", "charge", "files", "manifest_sha256", "proof_sha256")}
+        serialized["files"] = {key: {field: stored["files"][key][field] for field in ("state", "sha256", "bytes")}
+                               for key in sorted(stored["files"])}
+        computed = sum(file["bytes"] for file in stored["files"].values())
+        computed += sum((objects / name).stat().st_size for name in ("manifest.json", "proof.json"))
+        computed += 2 * len(json.dumps(serialized, separators=(",", ":"), ensure_ascii=True).encode("ascii")) + 72
+        charges[lease] = computed
+        matches = matches and computed == stored["charge"] and stored["state"] == "committed"
+    return ({"header_reserve": 4096, "record_charges": charges, "total_charged_bytes": 4096 + sum(charges.values())}, ledger, matches)
+
+
+def main(argv=None, *, scenario=None, bridge_proxy_factory=None):
+    """Default acceptance or a trusted local fault scenario using the same setup.
+
+    Hooks are Python-only fixture composition, never RPC/caller execution input.
+    No scenario changes the default CLI or the baseline acceptance assertions.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", required=True, type=Path, help="New private ignored .biozero path or a path outside the repository")
     parser.add_argument("--binaries-dir", required=True, type=Path, help="Existing current-UID ARM64 Go executable directory; never built here")
     parser.add_argument("--capsule-provider", choices=("native", "docker"), default="native", help="Actual broker capsule provider; app containers alone do not select it")
     parser.add_argument("--tools-prefix", type=Path, help="Existing native broker tool prefix; required only for native capsules")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.capsule_provider == "native" and args.tools_prefix is None:
         parser.error("native capsules require --tools-prefix")
     if args.capsule_provider == "docker" and args.tools_prefix is not None:
@@ -428,6 +474,7 @@ def main():
     broker = None
     broker_log = None
     observer = None
+    bridge_proxy = None
     commands = 0
     complete = False
 
@@ -538,6 +585,12 @@ def main():
             if broker.poll() is not None or time.monotonic() > deadline:
                 raise Failure("broker_socket_readiness_failed")
             time.sleep(0.05)
+        worker_channel = host / "channel"
+        if bridge_proxy_factory is not None:
+            worker_channel = host / "worker-channel"
+            worker_channel.mkdir(mode=0o700)
+            bridge_proxy = bridge_proxy_factory(worker_channel / "b.sock", Path(config["socket_path"]), profile)
+            bridge_proxy.start()
         if provider == "docker":
             store_id = json.loads((host / "store/ledger.json").read_bytes()).get("store_id", "")
             if not re.fullmatch("[0-9a-f]{32}", store_id):
@@ -567,7 +620,7 @@ def main():
                                                "org.biozero.acceptance_observer": ownership_nonce}
             mount_sets[service] = volumes
         volumes = [mount(bin_dir / "enclave-runner", "/run/bin/enclave-runner", True), mount(data / "uploads", "/data/uploads", True),
-                   mount(pki / "runtime/worker", "/pki", True), mount(host / "channel", "/channel", True), mount(policy, "/config/worker-policy.json", True)]
+                   mount(pki / "runtime/worker", "/pki", True), mount(worker_channel, "/channel", True), mount(policy, "/config/worker-policy.json", True)]
         volumes.extend(mount(data / name, "/data/" + name, False) for name in ("jobs", "results", "worker-custody", "security-events"))
         services["worker"] = {**base, "entrypoint": ["/run/bin/enclave-runner"], "network_mode": "none", "volumes": volumes,
                               "tmpfs": ["/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777", "/data/decrypted:rw,noexec,nosuid,nodev,size=32m,nr_inodes=4096,uid=1000,gid=1000,mode=0700"],
@@ -632,20 +685,8 @@ def main():
                 raise Failure("worker_custody_readiness_failed")
             time.sleep(0.05)
         worker_state = inspect("worker")
-        init_pid = worker_state["state"]["Pid"]
-        worker_children = children(init_pid)
-        if len(worker_children) != 1:
-            raise Failure("worker_child_identity_ambiguous")
-        worker_pid = next(iter(worker_children))
-        stage_path = Path(f"/proc/{worker_pid}/root/data/decrypted")
-        filesystem = os.statvfs(stage_path)
-        status = dict(line.split(":", 1) for line in Path(f"/proc/{worker_pid}/status").read_text().splitlines() if ":" in line)
-        mounts = [line for line in Path(f"/proc/{worker_pid}/mountinfo").read_text().splitlines() if line.split()[4] == "/data/decrypted"]
-        record("worker_plaintext_tmpfs_actual_kernel_guards", len(mounts) == 1 and " - tmpfs " in mounts[0] and filesystem.f_blocks * filesystem.f_frsize == 32 << 20
-               and filesystem.f_files == 4096 and filesystem.f_flag & 14 == 14 and status.get("NoNewPrivs", "").strip() == "1"
-               and digest(Path(f"/proc/{worker_pid}/exe")) == source_binary_pins["enclave-runner"]["sha256"]
-               and all(status.get(name, "").strip() == "0000000000000000" for name in ("CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb")),
-               {"capacity_bytes": filesystem.f_blocks * filesystem.f_frsize, "inode_units": filesystem.f_files})
+        stage_valid, stage_observation = worker_plaintext_observation(worker_state, source_binary_pins["enclave-runner"]["sha256"])
+        record("worker_plaintext_tmpfs_actual_kernel_guards", stage_valid, stage_observation)
 
         def docker_retained(job, payload, label):
             if observer is None:
@@ -697,11 +738,13 @@ def main():
                    and proof.get("capsule_wait_finished") is True and proof.get("export_authority_closed") is True
                    and (payload.get("status") == "succeeded" or (receipt.get("evaluation") is None and result.get("scientific_evaluation") is None)))
 
-        def submit(path, label):
-            argv = [bin_dir / "uploader-cli", "--file", path, "--client-id", "researcher-a", "--upload-url", upload_base + "/upload", "--results-url", results_base + "/results",
+        def upload_argv(path):
+            return [bin_dir / "uploader-cli", "--file", path, "--client-id", "researcher-a", "--upload-url", upload_base + "/upload", "--results-url", results_base + "/results",
                     "--mtls-cert", pki / "clients/researcher-a.crt", "--mtls-key", pki / "clients/researcher-a.key", "--ca-cert", pki / "clients/ca.crt",
                     "--server-cert", pki / "clients/decrypt.crt", "--sign-key", pki / "clients/signer.key", "--wait-timeout", "110s", "--poll-seconds", "1"]
-            uploaded = command(argv, "submit-" + label, timeout=120, check=False)
+
+        def submit(path, label):
+            uploaded = command(upload_argv(path), "submit-" + label, timeout=120, check=False)
             match = re.search(r"uploaded job ([0-9a-f]{16})", uploaded.stdout)
             if not match:
                 raise Failure("protected_upload_job_missing")
@@ -709,6 +752,16 @@ def main():
             result = await_result(job)
             write_private(run / (label + "-result.json"), result)
             return job, result, uploaded.returncode
+
+        if scenario is not None:
+            scenario(SimpleNamespace(run=run, runtime=runtime, data=data, host=host, env=env, config=config,
+                                     profile=profile, pins=pins, report=report, broker=broker, observer=observer,
+                                     proxy=bridge_proxy, owned_ids=owned_ids, record=record, command=command,
+                                     inspect=inspect, await_result=await_result, upload_argv=upload_argv,
+                                     docker_retained=docker_retained, client_a=client_a, client_b=client_b,
+                                     results_base=results_base, binary_pins=source_binary_pins, stage_observation=stage_observation))
+            complete = True
+            return
 
         jobs, leases, callsets = [], [], []
         for number in (1, 2):
@@ -830,22 +883,9 @@ def main():
                 record("docker_die_destroy_and_retained_quiescence_" + label, row.get("exit_code") == ("1" if label == "invalid" else "0")
                        and records[row["lease"]]["state"] == "committed"
                        and not any(Path(config["workspace_root"]).iterdir()))
-            charges, charges_ok = {}, True
-            for lease, stored in records.items():
-                objects = host / "store/objects" / lease
-                # Match Go struct/map serialization in actualCharge exactly;
-                # record fields and hashes are fixed ASCII, map keys sorted.
-                serialized = {key: stored[key] for key in ("job_id", "input_sha256", "state", "charge", "files", "manifest_sha256", "proof_sha256")}
-                serialized["files"] = {key: {field: stored["files"][key][field] for field in ("state", "sha256", "bytes")}
-                                       for key in sorted(stored["files"])}
-                computed = sum(file["bytes"] for file in stored["files"].values())
-                computed += sum((objects / name).stat().st_size for name in ("manifest.json", "proof.json"))
-                computed += 2 * len(json.dumps(serialized, separators=(",", ":"), ensure_ascii=True).encode("ascii")) + 72
-                charges[lease] = computed
-                charges_ok = charges_ok and computed == stored["charge"] and stored["state"] == "committed"
-            report["retained_accounting"] = {"header_reserve": 4096, "record_charges": charges, "total_charged_bytes": 4096 + sum(charges.values())}
+            report["retained_accounting"], _, charges_ok = retained_accounting(host / "store")
             record("docker_retained_charge_exact_three_commits", charges_ok and len(records) == 3
-                   and 4096 + sum(charges.values()) <= ledger["policy"]["global_bytes"])
+                   and report["retained_accounting"]["total_charged_bytes"] <= ledger["policy"]["global_bytes"])
         complete = True
     except Exception as exc:
         report["error_type"] = type(exc).__name__
@@ -883,6 +923,16 @@ def main():
             except Exception as exc:
                 cleanup_ok = False
                 report["container_stop_error_type"] = type(exc).__name__
+        if bridge_proxy is not None:
+            try:
+                bridge_proxy.close()
+                report["fault_proxy_final"] = bridge_proxy.snapshot()
+                cleanup_ok = cleanup_ok and report["fault_proxy_final"].get("error_code") is None and report["fault_proxy_final"].get("joined") is True
+                cleanup_ok = cleanup_ok and all(report["fault_proxy_final"].get(key) == value
+                                               for key, value in report.get("fault_proxy_required_final", {}).items())
+            except Exception as exc:
+                cleanup_ok = False
+                report["fault_proxy_close_error_type"] = type(exc).__name__
         if broker is not None:
             if broker.poll() is None:
                 broker.send_signal(signal.SIGTERM)

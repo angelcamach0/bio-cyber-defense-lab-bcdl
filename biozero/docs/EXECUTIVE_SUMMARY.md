@@ -36,6 +36,16 @@ checks. The392-file runtime snapshot reused verified existing binaries; later
 documentation and public aggregates are distinguished. Its publication/CI status
 is tracked in the [draft PR](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/22).
 
+[Postcommit interruption acceptance](evidence/20261015-protected-postcommit-faults/public/README.md)
+now adds26response-loss and32whole worker-container SIGKILL/restart checks, with
+41/45independent readback checks. Each recovers the same committed result through
+queries, with one Submit/capsule and unchanged artifacts/proofs/custody/charges.
+A fresh default Docker regression passed57checks and52independent checks on the
+same399-file snapshot. This establishes downstream response loss and postcommit
+container restart, not a failed broker ACK write, process-only recovery retaining
+plaintext or broker-death reconciliation. Temporary kernel measurement references
+retain both plaintext tmpfs generations until comparison; no secure erase follows.
+
 ## What the evidence means
 
 The benchmark measures normalized synthetic SNP presence. It does not establish
@@ -55,8 +65,9 @@ novelty claim follows from those results.
 
 ## Work required for delivery
 
-Extend protected native/Docker execution with integrated death/cancellation/
-lost-ACK tests and explicit reconciliation of uncertain custody. Then close image/tool/
+Extend protected execution with broker-death, active-cancellation, upstream
+ACK-write/storage/removal faults and explicit reconciliation of uncertain custody
+and retained plaintext. Then close image/tool/
 license provenance, immutable owner records, principal and physical-storage
 quotas/retention, durable queues/multiple workers, effective SOC response and
 verified free cloud identity/key/storage/network controls. These requirements

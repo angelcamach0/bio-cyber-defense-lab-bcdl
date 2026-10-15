@@ -6,6 +6,11 @@ ARM64/Docker29.9.0, followed by35independent retained-evidence checks. See the
 The separate **Docker-provider** run subsequently passed57actual assertions and
 52independent retained-evidence checks. See its
 [public scope and pins](../../docs/evidence/20261015-protected-docker-capsule-worker/public/README.md).
+The later postcommit fault snapshot passed26downstream-response-loss checks,
+32worker-SIGKILL/restart checks and a fresh57-case Docker baseline. Independent
+readbacks passed41and45checks for the two fault runs respectively, and a new
+52checks for that fresh baseline. See
+[postcommit faults, failed attempts and exact pins](../../docs/evidence/20261015-protected-postcommit-faults/public/README.md).
 Execute against a fixed source/binary/configuration snapshot and preserve failed
 attempts separately. Earlier component/legacy results retain their own scope.
 
@@ -14,8 +19,8 @@ worker. The artifact broker runs on the host. `--capsule-provider native|docker`
 selects where that broker actually executes pipeline, evaluator and detection;
 the default remains `native`. Running the three service containers alone does
 not exercise the Docker capsule provider. The new Docker selection has its own
-57-case executed acceptance. Earlier receipts remain
-native-provider evidence. Neither selection exercises the reviewer gateway,
+57-case executed acceptance. Earlier native-provider receipts retain that scope.
+Neither selection exercises the reviewer gateway,
 browser, biological model, production deployment or reproducible OCI image
 construction.
 
@@ -59,6 +64,24 @@ python3 biozero/infra/compose/run_capsule_worker.py \
   --binaries-dir /absolute/existing/private/bin \
   --capsule-provider docker
 ```
+
+The two postcommit scenarios use the same protected setup, each with a new
+private root and a fixed Docker capsule provider:
+
+```sh
+python3 biozero/infra/compose/run_capsule_faults.py \
+  --run-dir "$PWD/.biozero/downstream-response-loss-NEW" \
+  --binaries-dir /absolute/existing/private/bin \
+  --scenario downstream-response-loss
+
+python3 biozero/infra/compose/run_capsule_faults.py \
+  --run-dir "$PWD/.biozero/worker-sigkill-postcommit-NEW" \
+  --binaries-dir /absolute/existing/private/bin \
+  --scenario worker-sigkill-postcommit
+```
+
+Do not reuse a run directory or reset a previous fixture's history. The fault
+runner does not edit job/result metadata or repeat Submit to recover a result.
 
 The program has no caller-selected Docker command. It uses fixed argv:
 `/usr/bin/sudo -n /usr/bin/env -u DOCKER_HOST -u DOCKER_CONTEXT -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKER_CERT_PATH /usr/bin/docker --host=unix:///var/run/docker.sock`.
@@ -219,3 +242,88 @@ and broker0; all three containers remain stopped and preserved. Kernel readings
 refer to the recorded live worker, not a new measurement after shutdown.
 A prior native, component, legacy Compose or browser PASS cannot approve this new
 harness or its SDK v2 protected route.
+
+## Executed postcommit faults
+
+`run_capsule_faults.py` reuses setup, resource observations, receipt/proof checks,
+accounting and scoped shutdown from `run_capsule_worker.py`; the default runner
+keeps its57-case Docker path. A private host proxy has one fixed upstream broker
+and profile. Only its separate worker-channel directory is mounted read-only
+into the worker; the real upstream socket remains outside that mount. The proxy
+relays bounded V2 frames and SCM_RIGHTS descriptors without sending plaintext
+or artifact paths or granting caller-selected commands or Docker authority to
+the worker.
+
+The injection barrier follows the complete real Submit response **and upstream
+EOF**. Neither side half-closes the request to delimit a frame: request EOF can
+cancel broker execution. The response is already committed and delivered to the
+proxy before the intentional downstream loss. This measures lost downstream
+delivery, not a broker ACK write error.
+
+In `downstream-response-loss`, the proxy drops that response once. The same live
+worker recovers through real status/receipt queries. In
+`worker-sigkill-postcommit`, the proxy holds the response while the harness
+observes live verified plaintext still staged, sends SIGKILL to the exact worker
+container and requires Docker wait137 with exited/PID0 state. It drops the held
+response, starts the same container ID, and observes query-only recovery.
+Neither scenario deletes or modifies a job/result to simulate the fault.
+
+Namespace inode numbers and mount IDs can be reused after teardown. The SIGKILL
+fixture therefore pins the old namespace with an O_RDONLY FD and its plaintext
+stage with an O_PATH directory FD before death. It holds corresponding new FDs
+until simultaneous fstat/statvfs observations distinguish namespace device/inode,
+stage device and filesystem ID, and verify the new stage is empty. All four
+measurement references have CLOEXEC and were closed in `finally`. The fixture
+temporarily retains two32MiB plaintext tmpfs generations, at most64MiB of
+plaintext filesystem capacity; the namespace pin also retains its mount tree.
+This is a finite measurement, not a total host-memory quota or secure-erasure
+claim. The old plaintext is not read or listed after worker death, and no setns
+operation is performed.
+
+Each fault run observed exactly one Submit, one Docker capsule and one committed
+lease. Recovery used status/receipt queries with unchanged Store ledger, broker
+journal, worker custody, retained artifacts and proof. Both retained the same
+TP3/FP0/FN0 scientific verdict, observed/evaluated/retained VCF hash, four artifact
+files,1,171mapped reads and0.7/medium detection. A/B authorization remained
+enforced. The proxy and observer joined without error; broker/worker exited0
+after final shutdown, APIs143. The worker's earlier137exit is separate causal
+evidence. Successful capsules were removed by the provider after authoritative
+wait; the three stopped application containers and private histories remain.
+
+| Fresh final-source run | Assertions | Independent readback | Retained slots | Total charged bytes, including4096header |
+| --- | ---: | ---: | ---: | ---: |
+| Downstream loss |26/26 |41/41 |1 |27,731 |
+| Worker SIGKILL/restart |32/32 |45/45 |1 |27,732 |
+| Positive Docker baseline |57/57 |52/52 |3 |65,356 |
+
+The reviewed [public aggregate](../../docs/evidence/20261015-protected-postcommit-faults/public/README.md),
+[receipt summaries and digests](../../docs/evidence/20261015-protected-postcommit-faults/public/summary.json)
+and [bundle checksums](../../docs/evidence/20261015-protected-postcommit-faults/public/SHA256SUMS)
+identify these runs without exposing private roots. The baseline's52-check
+readback is new evidence for this run, separate from the historical52-check
+Docker readback.
+
+All three runs used the same399-file runtime source snapshot, unchanged before
+and after execution. Six binaries were reused after checking all51production
+Go/module inputs against the prior build receipt; their original build metadata
+remains VCS333995f dirty. The acceptance did not compile service binaries,
+pull/build an image, run a model or acquire a dataset. The earlier57/52Docker receipt and its65,354byte
+charge remain a different run; neither its independent count nor its charge is
+reassigned to this baseline. Documentation added afterward is outside the runtime
+snapshot.
+
+Two proxy failures and the unpinned-namespace comparison failure remain preserved
+in their original private roots. The proxy failures exposed a redundant empty
+send after a complete frame; the namespace failure exposed reliance on a reusable
+number. Their subsequent fixes did not weaken scientific or custody assertions.
+A separate `make test` failure under umask077 also remains preserved. Restoring
+the test process's umask022 corrected the operator environment, without editing
+Go sources or test fixtures. A fresh full check then passed
+279Python cases (277passed/two opt-ins skipped) and test/vet in eight Go modules,
+with source unchanged. This environment correction made no runtime change.
+
+These two positive recoveries do not close the complete lifecycle gate. Broker
+death, cancellation during active execution, actual broker ACK write failure and
+reconciliation of pending plaintext remain separate integrated work. In
+particular, a stale broker socket or old provider anchor currently denies restart;
+there is no automatic deletion, adoption, replay or refund to restore service.
