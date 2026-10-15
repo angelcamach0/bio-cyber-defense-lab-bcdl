@@ -450,6 +450,64 @@ as owner-v1. Authority network/key/mount isolation, actual worker/broker enforce
 protected result projection and integrated substitutions remain pending. TM02 and
 the full roadmap stay open; scientific/economic conclusions remain unchanged.
 
+## Owner-v1 CLI and upload delivery adapter
+
+The explicit owner-v1 CLI now connects authority operations to a separate upload
+spool while retaining the original signed job ID. Client input/config intent
+precedes Reserve; separate operation/delivery journals retain two ciphertext
+copies (approximately50MiB maximum combined). Deliver publishes intent before
+its sole POST. A lost response is recovered only through a known-job GET; local
+status verifies both journals without network. The new upload service verifies
+external pin/scope, exact owner leaf, decoded OAEP envelope and measured body,
+charges its full maximum-body promise before reading ciphertext, and retains
+charges for delivered/rejected/uncertain entries. Cold pending history stays
+fenced. It has no authority signing key or worker decrypt key in its configuration.
+
+Corrected focused tests passed ingress/delivery26 principal/109 subcases,
+CLI11/18, selector2/3 and worker gate1/2. The initial subprocess barrier incorrectly
+stopped metadata reads before the intended body read; the original failed run and
+source remain preserved. Only that test barrier changed. Full race then passed
+146 principal/543 subcases across three modules (including four authority-command
+tests), with ten explicit opt-in/helper skips. The136 repository Go/module inputs
+were identical in focused/race and retained runtime acceptance.
+
+A fresh native acceptance built four pinned executables: authority, upload API,
+uploader and an independent stdlib-only payload inspector. All27 controls passed
+actual TLS1.3/mTLS with separate server/client EKUs, trusted genesis scope,
+signed-ID preservation, bounded exact frame/body/envelope, and A200/B403 on both
+services. The inspector opened the CLI's actual OAEP/GCM ciphertext with canonical
+signed-context AAD and matched the synthetic input; changed AAD failed. This
+inspects emitted payload bytes, not a worker's ownership enforcement.
+
+A test TLS relay received the complete upstream upload receipt and dropped it
+before writing downstream HTTP bytes. Cold CLI recovery made only GET, preserving
+both server histories and exactly26,345,472 charged bytes in each single-record
+store. Both owned service processes exited zero on SIGTERM/Wait, with history
+unchanged; binaries, private keys, journals, ledgers and original logs are retained
+privately. Independent public-key-only retained-evidence review passed57 controls
+without rerunning acceptance or opening private keys/plaintext. This response-loss
+acceptance is separate from the unit fixture's
+actual upstream TCP RST/delegated write failure, SIGKILL and cold replay. Those
+unit fixture directories were temporary and were cleaned by the test framework.
+
+Final make passed294 Python cases (292 passed/two kernel opt-ins skipped) and
+ordinary test/vet in nine Go modules over an unchanged474-file snapshot, identical
+to runtime acceptance. An earlier captured make inherited umask077, which made
+two historical unsafe-permission fixtures safe and failed their negative checks;
+that original run remains preserved. The capture runner corrected only its child
+umask to the ordinary022, without changing production/test sources. Later status,
+requirement/decision/threat documentation and the public bundle are separate from
+that snapshot. See the [public evidence](evidence/20261015-owner-upload-delivery/public/README.md)
+and [delivery contract](security/ownership-delivery-contract.md).
+
+Delivered means transport only. The existing worker rejects owner-v1 before
+legacy decryption/custody; a valid legacy signature cannot bypass the algorithm
+gate. Gateway, worker/broker acceptance-hash/AAD enforcement, receipt-based Results,
+deployed keys/mounts/network and integrated substitutions remain open under TM02.
+No Docker/image build, capsule analysis, model/dataset acquisition, deployment or
+scientific recomputation ran in this increment. The broader roadmap and prior
+scientific/economic conclusions are unchanged.
+
 ## Regulatory feasibility
 
 The frozen10adapter and100evaluation cases completed finite, identical repeats.

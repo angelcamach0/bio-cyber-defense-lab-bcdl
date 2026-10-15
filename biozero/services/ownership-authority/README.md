@@ -4,10 +4,10 @@ This standard-library Go package (`biozero/ownership-authority`, package
 `ownership`) implements the cryptographic foundation of
 [ADR 004](../../docs/decisions/004-authenticated-ownership.md). Its Linux Store
 persists reservations and signed accepted records. The new Linux
-`cmd/ownership-authority` serves a separate HTTPS/mTLS authority. Existing upload,
-gateway, worker, broker and Results services are not integrated with it yet.
-The current upload/results/worker path does not acquire immutable ownership by
-importing or testing this module.
+`cmd/ownership-authority` serves a separate HTTPS/mTLS authority. The explicit
+owner-v1 CLI/upload adapter is described below. Gateway, worker, broker and
+Results ownership integration remains pending. The historical upload/results/
+worker path does not acquire immutable ownership by importing this module.
 
 ## Public API and trust boundary
 
@@ -367,3 +367,15 @@ it explicitly. Without the opt-in, both external entry tests skip. Evidence,
 including synthetic private keys and pending Store history, stays in the private
 destination; the fixture never deletes or retries that history. This is a Store
 process test, not a running authority endpoint or a failed network ACK write.
+
+## Owner delivery adapter
+
+The [owner delivery contract](../../docs/security/ownership-delivery-contract.md)
+describes the separate charged ingress spool and client delivery journal.
+`ClientOperation.AcceptedBundle` exports only a reverified accepted encrypted
+bundle. `ClientDelivery` retains its own ciphertext and append-only intent before
+its sole POST; recovery is a known-job GET. `OwnerIngressStore` verifies signed
+acceptance and the actual owner leaf before reading ciphertext, retains full
+charges after rejection and never adopts pending history. The upload service's
+receipt is transport-only. The new CLI/API do not make the existing worker,
+broker, Results or gateway ownership-aware; those remain separate gates.

@@ -1,8 +1,9 @@
 # Upload API container: builds Go binary and runs as non-root user.
 FROM golang:1.26-alpine AS build
-WORKDIR /src
-COPY go.mod ./
-COPY main.go admission.go securefiles.go streamupload.go ./
+WORKDIR /src/upload-api
+# Build with biozero/services as context for the local ownership module.
+COPY ownership-authority/ /src/ownership-authority/
+COPY upload-api/ /src/upload-api/
 RUN CGO_ENABLED=0 go build -o /out/upload-api .
 
 FROM alpine:3.23

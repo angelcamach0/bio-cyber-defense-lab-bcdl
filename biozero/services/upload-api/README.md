@@ -1,5 +1,23 @@
 # Upload API
 
+`BIOZERO_UPLOAD_PROTOCOL=owner-v1` selects the separate signed-ownership
+transport service. Set `BIOZERO_OWNER_UPLOAD_CONFIG` to its private pinned
+configuration; use `--init-owner-ingress` once for exclusive genesis, then run
+without that flag to open the existing spool. This service accepts only the fixed
+owner-v1 routes, requires TLS1.3/mTLS and binds a literal loopback address. It
+never falls back to multipart after an error and receives no authority signing
+key or worker decryption key. See the
+[owner delivery contract](../../docs/security/ownership-delivery-contract.md)
+and the [CLI](../uploader-cli/README.md). Worker/results integration remains open.
+
+`BIOZERO_UPLOAD_PROTOCOL=legacy` (also the compatibility default) selects the
+historical behavior below. The checked-in Compose file selects it explicitly;
+it is not a deployment of the new owner service. Build the image using
+`biozero/services` as context with `upload-api/Dockerfile`, so the local
+ownership module is available. A Dockerfile change alone is not image acceptance.
+
+## Historical multipart protocol
+
 `POST /upload` admits one retained input for the worker. Protected mode requires
 mTLS with a verified, valid certificate CN. The optional `client_id` form field
 must match that CN; headers and IP addresses never supply a quota identity.

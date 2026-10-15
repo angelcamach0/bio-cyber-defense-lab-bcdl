@@ -169,3 +169,15 @@ same-job owner rewrite, cross-owner new-job ciphertext replay and result relabel
 negative cases, alongside successful owner execution/readback and fault recovery.
 No raw DNA, private results, credentials, case identifiers or ownership registry
 entries belong in public evidence; publish reviewed aggregate verdicts and hashes.
+
+## Explicit owner-v1 delivery increment
+
+The direct CLI and separate upload service preserve the authority-signed job ID
+and retain full local transport promises before ciphertext reads. A lost reply
+recovers only by known-job GET. The transport receipt cannot replace signed owner
+context or a committed execution receipt. Configuration includes external public
+pin/scope and TLS assets; it has no signing/decrypt-key enrollment field. See the
+[delivery contract](../security/ownership-delivery-contract.md) and
+[source-bound acceptance](../evidence/20261015-owner-upload-delivery/public/README.md).
+Gateway, worker/broker binding, protected result projection and deployed isolation
+remain required. The historical protocol is explicitly selected separately.

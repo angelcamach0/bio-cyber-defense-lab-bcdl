@@ -763,7 +763,7 @@ def main(argv=None, *, scenario=None, bridge_proxy_factory=None, assets_factory=
                    and (payload.get("status") == "succeeded" or (receipt.get("evaluation") is None and result.get("scientific_evaluation") is None)))
 
         def upload_argv(path):
-            return [bin_dir / "uploader-cli", "--file", path, "--client-id", "researcher-a", "--upload-url", upload_base + "/upload", "--results-url", results_base + "/results",
+            return [bin_dir / "uploader-cli", "--protocol", "legacy", "--file", path, "--client-id", "researcher-a", "--upload-url", upload_base + "/upload", "--results-url", results_base + "/results",
                     "--mtls-cert", pki / "clients/researcher-a.crt", "--mtls-key", pki / "clients/researcher-a.key", "--ca-cert", pki / "clients/ca.crt",
                     "--server-cert", pki / "clients/decrypt.crt", "--sign-key", pki / "clients/signer.key", "--wait-timeout", "110s", "--poll-seconds", "1"]
 

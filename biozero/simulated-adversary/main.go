@@ -66,7 +66,7 @@ func main() {
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-		cmd := exec.CommandContext(ctx, "go", "run", "./main.go", "--file", path, "--client-id", "simulator")
+		cmd := exec.CommandContext(ctx, "go", "run", ".", "--protocol", "legacy", "--file", path, "--client-id", "simulator")
 		cmd.Dir = *uploader
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

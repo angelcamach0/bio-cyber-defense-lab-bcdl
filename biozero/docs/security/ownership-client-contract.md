@@ -1,10 +1,12 @@
 # Durable owner-v1 client contract
 
-This component is a shared client for the ownership authority. It does not submit
-work to the current upload route, start analysis or release results. The uploader
-and reviewer gateway still need integration; the upload service currently assigns
-a different job ID and its mutable spool cannot supply owner authority. TM02
-remains open until consumers, isolation and integrated negatives pass.
+This component is a shared client for the ownership authority. Its original
+verification scope below covers authority operations, encryption and local
+history; the subsequent [owner delivery adapter](ownership-delivery-contract.md)
+has a separate scope and preserves the signed job ID on an explicitly selected
+upload route. The historical upload path still assigns a different ID. Neither
+mutable spool nor transport ACK supplies owner authority, execution or result
+release. Gateway, worker, broker and Results integration remain TM02 gates.
 
 ## Trusted configuration and private state
 

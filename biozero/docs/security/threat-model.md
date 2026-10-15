@@ -357,3 +357,16 @@ repeats, sign agreement61/100 and Spearman0.1840864086408641. This is descriptiv
 GBR/LCL-to-GM12878 transfer, without proven head-training holdout, LD independence,
 matched-scale biological accuracy or clinical validity. The comparable FP32/
 QNNPACK economic no-go is unchanged. See [biological evidence](../experiments/005-biological-evaluation.md).
+
+## Owner delivery adapter boundary
+
+The explicit owner-v1 CLI/upload transport verifies externally pinned signed
+acceptance, exact leaf DER and actual ciphertext/envelope before publishing the
+original signed job ID. The private spool keeps full charges and refuses pending
+recovery unchanged. Its unsigned ledger and TLS ACK are fabricable by a
+compromised upload/host; consumers must independently verify signed context and
+remeasure bytes. The retained27-control native response-loss acceptance and
+separate unit TCP-RST/SIGKILL controls do not establish deployed key separation,
+worker/broker AAD/acceptance-hash enforcement, Results authorization or scientific
+release. TM02 remains open. See the
+[delivery contract](ownership-delivery-contract.md).

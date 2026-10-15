@@ -188,7 +188,7 @@ def main():
                {"capacity_bytes": filesystem.f_blocks * filesystem.f_frsize, "inode_units": filesystem.f_files})
 
         def submit(path, label):
-            argv = [str(binaries / "uploader-cli"), "--file", str(path), "--client-id", "researcher-a", "--upload-url", upload_base + "/upload",
+            argv = [str(binaries / "uploader-cli"), "--protocol", "legacy", "--file", str(path), "--client-id", "researcher-a", "--upload-url", upload_base + "/upload",
                     "--results-url", results_base + "/results", "--mtls-cert", str(pki / "clients/researcher-a.crt"), "--mtls-key", str(pki / "clients/researcher-a.key"),
                     "--ca-cert", str(pki / "clients/ca.crt"), "--server-cert", str(pki / "clients/decrypt.crt"), "--sign-key", str(pki / "clients/signer.key"),
                     "--wait-timeout", "90s", "--poll-seconds", "1"]

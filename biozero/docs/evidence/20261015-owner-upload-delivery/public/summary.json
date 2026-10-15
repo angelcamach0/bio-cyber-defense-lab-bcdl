@@ -1,0 +1,316 @@
+{
+  "schema_version": 1,
+  "component": "owner_v1_upload_transport",
+  "date_utc": "2026-10-15",
+  "baseline_commit": "087231755a21c51008a94a979347930d7ba3faf4",
+  "verification": {
+    "initial_focused": {
+      "passed": false,
+      "source_count": 135,
+      "source_unchanged": true,
+      "report_sha256": "503b1822961f2fd1fbd9678a3daa0117b566c1e716198c8aac958b760ebbce93",
+      "commands": [
+        {
+          "name": "ingress-delivery",
+          "argv": [
+            "go",
+            "test",
+            "-count=1",
+            "-timeout=180s",
+            "-json",
+            "-run",
+            "^(TestOwnerIngress|TestClientDelivery)",
+            "./..."
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 16.125,
+          "stdout_sha256": "2bd0863db2145497d7dc597e599e8eb9982b800c9a85e732e83c1e20db180ddd",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed_top": 25,
+          "passed_sub": 108,
+          "skipped": [
+            "TestOwnerIngressProcessHelper"
+          ],
+          "failed": [
+            "TestOwnerIngressOwnedSIGKILLReadingAndRealRSTRecovery/reading",
+            "TestOwnerIngressOwnedSIGKILLReadingAndRealRSTRecovery",
+            null
+          ]
+        }
+      ]
+    },
+    "focused": {
+      "passed": true,
+      "source_count": 136,
+      "source_unchanged": true,
+      "report_sha256": "fb977510352bcd8ba3642172c32852b4545a9941450ccfe35d7f1199c448a84d",
+      "commands": [
+        {
+          "name": "ingress-delivery",
+          "argv": [
+            "go",
+            "test",
+            "-count=1",
+            "-timeout=180s",
+            "-json",
+            "-run",
+            "^(TestOwnerIngress|TestClientDelivery)",
+            "./..."
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.953,
+          "stdout_sha256": "4a1148b900bdb25ff445776ca94521074f664645e3ea7106467a4abefcb3c87d",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed_top": 26,
+          "passed_sub": 109,
+          "skipped": [
+            "TestOwnerIngressProcessHelper"
+          ],
+          "failed": []
+        },
+        {
+          "name": "owner-cli",
+          "argv": [
+            "go",
+            "test",
+            "-count=1",
+            "-timeout=180s",
+            "-json",
+            "./..."
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.878,
+          "stdout_sha256": "ef03598e45770be5aed6ae2854dec5745de98932fcfc87a3b5f3237585103229",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed_top": 11,
+          "passed_sub": 18,
+          "skipped": [
+            "TestOwnerCLIProcessHelper"
+          ],
+          "failed": []
+        },
+        {
+          "name": "upload-selector",
+          "argv": [
+            "go",
+            "test",
+            "-count=1",
+            "-timeout=180s",
+            "-json",
+            "-run",
+            "^TestOwner",
+            "./..."
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.725,
+          "stdout_sha256": "6fbfdb0d97bf1596187dea556aa4f9475b50970b0d653630854f86a75836a58a",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed_top": 2,
+          "passed_sub": 3,
+          "skipped": [
+            "TestOwnerUploadSelectorProcessHelper"
+          ],
+          "failed": []
+        },
+        {
+          "name": "worker-gate",
+          "argv": [
+            "go",
+            "test",
+            "-count=1",
+            "-timeout=120s",
+            "-json",
+            "-run",
+            "^TestOwnerAlgorithmCannotEnterLegacyWorkerCustody$",
+            "./..."
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.429,
+          "stdout_sha256": "af782de4e7dd9fa9dd5f4a8d31b23c09d73a1298ec50fba1f4de5d0bbb085895",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed_top": 1,
+          "passed_sub": 2,
+          "skipped": [],
+          "failed": []
+        }
+      ]
+    },
+    "race": {
+      "passed": true,
+      "source_count": 136,
+      "source_unchanged": true,
+      "report_sha256": "810aa3734684920d8e140f20a156b48ad5be600db28c4ba6a54a5eee9c5916b8",
+      "commands": [
+        {
+          "name": "ownership-authority",
+          "argv": [
+            "go",
+            "test",
+            "-race",
+            "-count=1",
+            "-timeout=240s",
+            "-json",
+            "./..."
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 54.187,
+          "stdout_sha256": "14498aa408007fe4ead3dd70e56a1c5dbf909cbc3d096c48757dc866c8b4e185",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed_top": 99,
+          "passed_sub": 427,
+          "skipped": [
+            "TestClientOperationProcessHelper",
+            "TestOwnerIngressProcessHelper",
+            "TestAuthorityHTTPProcessHelper",
+            "TestAuthorityHTTPProcessAcceptance",
+            "TestOwnedStoreChild",
+            "TestOwnedStoreProcessAcceptance",
+            "TestOwnershipCommandSignalHelper"
+          ],
+          "failed": []
+        },
+        {
+          "name": "uploader-cli",
+          "argv": [
+            "go",
+            "test",
+            "-race",
+            "-count=1",
+            "-timeout=240s",
+            "-json",
+            "./..."
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.284,
+          "stdout_sha256": "b1085fe7f1966e5d41209cc567a2cfe1a0a4cf8edff2da73f36a49a31e654dc9",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed_top": 11,
+          "passed_sub": 18,
+          "skipped": [
+            "TestOwnerCLIProcessHelper"
+          ],
+          "failed": []
+        },
+        {
+          "name": "upload-api",
+          "argv": [
+            "go",
+            "test",
+            "-race",
+            "-count=1",
+            "-timeout=240s",
+            "-json",
+            "./..."
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 8.552,
+          "stdout_sha256": "7dd679a4d31662f5ce694821d5648027ef293bd547b367c28d84aa0cacc9e0b7",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed_top": 36,
+          "passed_sub": 98,
+          "skipped": [
+            "TestAdmissionDistinctBindMountPublicationAndRecovery",
+            "TestOwnerUploadSelectorProcessHelper"
+          ],
+          "failed": []
+        }
+      ]
+    },
+    "initial_make": {
+      "passed": false,
+      "source_count": 474,
+      "source_unchanged": true,
+      "report_sha256": "4149bb4f22e436077b6ba58faf6551c476f7f7e99d04cb958a5b5d357a139634",
+      "commands": [
+        {
+          "name": "make",
+          "argv": [
+            "make",
+            "test"
+          ],
+          "exit_code": 2,
+          "elapsed_seconds": 40.407,
+          "stdout_sha256": "5dbdf1914c37a99879ef2ec35e34a97b4d3e0d22caf4b0577b66f3fd549685ed",
+          "stderr_sha256": "17ccf80a095f38803b76622a50bcf56163ac4d6453af8372d93dc11c0f8a7f06"
+        }
+      ]
+    },
+    "make": {
+      "passed": true,
+      "source_count": 474,
+      "source_unchanged": true,
+      "report_sha256": "9cb4ac32d8beda8bf747241f68b44080792548c3b32ed371b621da83160cc163",
+      "commands": [
+        {
+          "name": "make",
+          "argv": [
+            "make",
+            "test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 79.619,
+          "stdout_sha256": "5c834b520d0cc3657d45ebdcb7558299bb6515fe092761ae626ea50344238471",
+          "stderr_sha256": "ed263fb08c112873839e03a879bf13bd0a0617890e2d8a49d9b0ac3c273cf632"
+        }
+      ]
+    }
+  },
+  "runtime_acceptance": {
+    "passed": true,
+    "controls": 27,
+    "report_sha256": "1071dcb810dde2d053cc5f54fa06c46597f35e5d96414766d8cd8d848a077905",
+    "binary_pins": {
+      "uploader-cli": {
+        "sha256": "c263641f30301e9a8a1107daf593823ac8e46b4864a56487709ae250076f99b9",
+        "bytes": 9361569
+      },
+      "ownership-authority": {
+        "sha256": "39f234ac08e8ac5d623855ae1b51d909ca2c26d006d6caa332934b266eff951d",
+        "bytes": 9301357
+      },
+      "upload-api": {
+        "sha256": "16dadfa32fb682ae0da525fb8ff412cd5d8acefa7bf2292663afd6bd912a0dd1",
+        "bytes": 9590506
+      },
+      "owner-upload-verify": {
+        "sha256": "fd6f417a8b460911319b5995965f48412ba9dc7e7cb6be3104e9209ec2b08e8f",
+        "bytes": 4255461
+      }
+    },
+    "source_count": 474,
+    "repository_go_module_inputs": 136,
+    "unchanged_through_cleanup": true,
+    "service_exit_codes": [
+      0,
+      0
+    ],
+    "histories_unchanged_after_wait": true,
+    "retained_charged_bytes": {
+      "authority": 26345472,
+      "transport": 26345472
+    },
+    "retained_records_each": 1,
+    "cli_request_methods": [
+      "POST",
+      "GET"
+    ],
+    "independent_payload_inspector": {
+      "plaintext_matches": true,
+      "changed_aad_rejected": true
+    },
+    "scope": "Native retained authority/CLI/upload transport, owned TLS relay loses downstream reply after complete upstream receipt. No worker/broker/Results/science/deployment."
+  },
+  "limits": [
+    "Delivered is upload-service transport claim, fabricable by compromised upload/host.",
+    "Unit fixture RST/SIGKILL directories were temporary; their logs/pins are retained. Runtime acceptance directories and binaries are retained privately.",
+    "Initial focused failed due to body barrier wrapping metadata; only that helper changed.",
+    "Initial make inherited capture umask077, making historical unsafe-mode fixtures0600; runner child mask corrected to022 without changing source.",
+    "No image/container/model/data download, scientific recomputation or deployed isolation acceptance."
+  ],
+  "independent_readback": {
+    "passed": true,
+    "controls": 57,
+    "report_sha256": "861de155d35a57836048c4399206d926f8c57d0eab461602ea36f50cfa57c9dc",
+    "scope": "Retained public-key-only signature/source/binary/receipt/accounting/history review. No acceptance rerun, private key/plaintext read or repeated decryption."
+  }
+}
