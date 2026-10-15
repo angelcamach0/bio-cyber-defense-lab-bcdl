@@ -99,9 +99,10 @@ gate remains pending until the real worker consumes this protocol.
 Every wire field is required. Duplicate validation applies inside every accepted
 object. Arrays and other structures in scalar positions are rejected rather than
 coerced. Errors are stable codes and do not include certificate contents, raw
-reader errors, paths or secret values. No ciphertext framing format or OAEP label
-is established by this component; those integration contracts remain explicit
-future work.
+reader errors, paths or secret values. The stateless authority measures opaque
+ciphertext; the durable client contract below now fixes owner-v1 GCM tag/body
+framing and the empty-label OAEP key/nonce envelope for future execution consumers.
+Their integration remains pending.
 
 ## Acceptance time and historical verification
 
@@ -282,6 +283,26 @@ Prepare a separate private serve config containing that trusted scope, then run
 initializes missing state. SIGTERM stops/drains the service; uncertainty produces
 a nonzero exit with history retained. No key generator, client integration,
 automatic enrollment, migration or operator repair is hidden in startup.
+
+## Durable client component
+
+The new Linux AuthorityClient is a verified one-call HTTPS/mTLS transport;
+ClientOperation adds an exclusive private append-only workspace before Reserve,
+prepares one owner-v1 encrypted payload, records Finalize intent and recovers by
+Get without resending ciphertext. EncryptForChallenge and DecryptAcceptedPayload
+fix the actual OAEP key/nonce framing and mandatory canonical GCM AAD for future
+consumers. See the [durable client contract](../../docs/security/ownership-client-contract.md)
+for transitions, resource limits, ambiguous IO and trust boundaries.
+
+These shared APIs do not activate the current uploader/gateway or execution path.
+The existing upload-generated job ID, gateway post-upload persistence, deployed
+key/mount isolation and worker/broker/Results integration remain pending. An
+accepted client operation is neither an execution nor a scientific approval.
+
+The [client aggregate and exact source scopes](../../docs/evidence/20261015-ownership-client/public/README.md)
+record the focused transport/operation tests, full race and repository regression.
+Temporary unit fixture checks do not establish a retained client acceptance or
+a newly compiled standalone client command.
 
 ## Checks
 

@@ -150,10 +150,19 @@ or claim their old results demonstrate the new protocol.
 | --- | --- | --- |
 | Cryptographic protocol component | Real TLS identities; strict parser boundaries; same-leaf signatures; ciphertext exact/+1 checks; invalid authorization rejected before Reader.Read; altered AAD fails actual GCM Open | Verified protocol and authority component; no upload/worker/broker/Results integration |
 | Durable authority Reserve/Finalize/readback | Actual restart and injected transaction failures; retained charges; immutable owner; concurrent final-slot/duplicate-finalize behavior; no implicit legacy adoption | Linux Store and HTTPS/mTLS authority implemented; local RST/death/replay and separately compiled CLI verified; deployed isolation and consumers pending |
-| Client and gateway integration | Both use direct authenticated authority sessions, per-client signing and exact context-bound encryption; shared admission and cross-client replay denied | Pending |
+| Client and gateway integration | Both use direct authenticated authority sessions, per-client signing and exact context-bound encryption; shared admission and cross-client replay denied | Shared HTTP/crypto/durable-operation component verified locally; CLI/gateway adapters, authoritative upload ID and shared-route acceptance pending |
 | Worker and broker integration | Accepted owner/context checked before crypto/execution; actual ciphertext rebinding rejected; recovery keeps original registry/lease/charges | Pending |
 | Result delivery and release | Direct and gateway owner reassignment denied; relabeled private result cannot be released; trusted receipt projection and nonowner denial before private read | Pending |
 | Reproducible protected acceptance | Fresh rebuilt services, local/Compose crypto/science/lifecycle regressions, independent retained-evidence review and source-specific CI | Pending |
+
+The [durable client component](../security/ownership-client-contract.md) now
+persists original operation identity before Reserve, exact encrypted payload before
+Finalize and its own finalizing intent before the network call. Recovery only
+queries the known job; ambiguous preparation/IO is retained. It fixes the actual
+OAEP44/empty-label envelope and mandatory GCM AAD framing for consumers. This does
+not activate current clients: upload still generates a different job ID, while
+the gateway persists runs after upload. Both contracts must change deliberately.
+Local unit/process tests are not deployed key isolation or protected execution.
 
 A component milestone cannot close the requirement. The complete gate needs the
 same-job owner rewrite, cross-owner new-job ciphertext replay and result relabel

@@ -400,6 +400,56 @@ isolation, actual OAEP-envelope comparison/GCM AAD enforcement, protected receip
 projection and integrated substitution negatives remain pending. Scientific and
 economic conclusions below are unchanged.
 
+## Durable shared ownership client component
+
+The new verified HTTPS/mTLS client performs one explicit Reserve, Finalize or Get
+call, without redirects, demo fallback or automatic network retries. Its private
+operation workspace persists the original request identity before Reserve, the
+original challenge and one encrypted payload before Finalize, then a finalizing
+phase before the network call. Records are append-only and bounded; unknown files,
+transaction markers or changed context fail unchanged. Ambiguous IO keeps the raw
+lifetime flock even after both Go file descriptors are collected.
+
+A lost Reserve response permits only an explicit same-token action. A lost
+Finalize response is recovered through Get of the already-known job; no method
+resends ciphertext or starts execution. A direct acceptance retains its raw bytes;
+Get recovery stores the canonical verified signed object. Both are compared with
+the original challenge/manifest/leaf/body/envelope. Prepare uses explicit caller
+time; fresh Finalize independently enforces its real transport clock.
+
+The payload helper defines AES-GCM body/tag plus RSA-OAEP-SHA256 key32/nonce12,
+empty OAEP label and mandatory signed-context AAD. Actual ciphertext and decoded
+envelope digests are checked before unwrap. In the pure measured-protocol/signature
+fixture, B really signs copied ciphertext and obtains authority acceptance; GCM Open under
+B's context fails. This proves the helper gate, not integration into the worker.
+
+Focused transport tests passed eight principal/39 subcases; an initial shared
+quota fixture could shadow wrong-pin verification and is preserved as source plus
+transcript-only limitation. Corrected isolated fixtures have original captured
+stdout/stderr. Payload/operation focused tests passed eleven principal/45 subcases
+on the first run. Three owned SIGKILL/WaitStatus cases cover prepared readback,
+query-only finalizing recovery and rejection of uncertain history; the last also
+observes both original file descriptors closed with the raw CLOEXEC lock live.
+All these fixture directories are temporary. Retained source pins/logs do not
+constitute a retained client acceptance workspace or standalone client execution.
+
+Full module race passed 69 principal tests/318 subcases and four CLI tests with
+five ownership opt-in/helper skips and one CLI helper skip. It pinned 26 Go/module
+inputs unchanged. Final make passed 294 Python cases (292 passed/two kernel opt-ins
+skipped) and ordinary test/vet in nine Go modules on an unchanged 453-file snapshot.
+Five technical documentation updates and the four-file client aggregate follow
+that snapshot. No runtime Go changed after race/make; the earlier focused operation
+snapshot differs only by a later explanatory comment. No retained CLI build,
+Docker/model execution, dataset acquisition or existing-workspace cleanup ran in
+this increment. See the [client contract](security/ownership-client-contract.md)
+and [reviewed source scopes](evidence/20261015-ownership-client/public/README.md).
+
+This is the dependency for direct CLI/gateway adapters. The old upload creates
+another job ID and gateway only persists its run after upload; neither is activated
+as owner-v1. Authority network/key/mount isolation, actual worker/broker enforcement,
+protected result projection and integrated substitutions remain pending. TM02 and
+the full roadmap stay open; scientific/economic conclusions remain unchanged.
+
 ## Regulatory feasibility
 
 The frozen10adapter and100evaluation cases completed finite, identical repeats.
