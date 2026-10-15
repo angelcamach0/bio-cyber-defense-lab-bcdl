@@ -1,0 +1,106 @@
+{
+  "base_commit": "af24c9e027bc9a6dc01074486993500216e5c160",
+  "independent_review": {
+    "crypto_checks_passed": 15,
+    "failed_checks": 0,
+    "private_review_sha256": "13312774cab8f5a828ee1a840ef378aa15e477ada022f25cf1c7b7d7d0f6ec6c",
+    "provenance": "Original tool transcript observations; saved verifier and outputs reconstructed afterward, not original execution-time logs",
+    "read_private_keys": false
+  },
+  "limits": [
+    "Library only; no ownership authority HTTP service, isolation, deployment, CLI/gateway/worker/broker/Results integration or existing TM02 repair.",
+    "SIGKILL after Store acceptance does not demonstrate a failed network ACK write.",
+    "AcceptedAt describes the verified decision; signing and durable commit follow, without a before-expiry commit guarantee.",
+    "Pending history and full charges are retained; no retry, automatic refund, legacy adoption, migration or operator repair.",
+    "After intent unlink and failed parent sync, actual crash may leave no intent; universal cold-start rejection at this boundary is not established.",
+    "Signed acceptance authenticates declared envelope digest but does not measure actual OAEP bytes, unwrap or perform GCM decryption.",
+    "No antirollback, revocation, hostile-host protection, scientific approval, service/image build, Docker acceptance, model run or dataset acquisition."
+  ],
+  "make": {
+    "exit_code": 0,
+    "go_modules_uncached_test_and_vet": 9,
+    "private_summary_sha256": "c0802bffab86f5ae3caff5bfd9d44c8128e89fcda4cec455bf3e94d323f32dfc",
+    "python_discovered": 294,
+    "python_optins_skipped": 2,
+    "python_passed": 292,
+    "source_files": 430,
+    "source_unchanged": true,
+    "stderr_sha256": "3ea88420f847c7605efaaa706afb80ad6a9a846256c3379a6352a6f40bc4b582",
+    "stdout_sha256": "7f4bc416790c8e506ffc5b51276e25ad75b6f6bd5c29d9c3346a4cd34e25289c",
+    "test_umask": "022"
+  },
+  "module_gc_corrected": {
+    "gc_fd_closure_observations_per_suite": 11,
+    "private_receipt_sha256": "24626e926f2d426278c501510a4cc6162d8a55ee15107090d573c126ea08af0f",
+    "race": {
+      "failed": 0,
+      "skipped_tests": [],
+      "subcases_passed": 176,
+      "top_level_passed": 34
+    },
+    "race_log_sha256": "a07c8cc6eca39222bb20da8833b42a316e5b2d2ef712abab67a7131b995bbf40",
+    "source_files": 12,
+    "source_unchanged": true,
+    "test": {
+      "failed": 0,
+      "skipped_tests": [],
+      "subcases_passed": 176,
+      "top_level_passed": 34
+    },
+    "test_log_sha256": "25d8415e8de616cb3f22018aeb96e7fad231daf0a86ca66848bfff04cbd19062",
+    "vet_exit_code": 0
+  },
+  "original_exported_api_process_test": {
+    "accepted_cold_replay_byte_identical": true,
+    "accepted_replay_reader_calls": 0,
+    "actual_mtls": true,
+    "log_sha256": "f1c9c6f87a1af740572361dddaa6f8d79048567c0a207d3c42bf24c942ca9c2c",
+    "nonowner_denied": true,
+    "owned_sigkill_waits": 2,
+    "parent_helper_skipped": 1,
+    "physical_ledger_signatures_and_files_verified": true,
+    "private_summary_sha256": "c29fa511eb92046d299278bd87244b175184f54f720adba8ce9cb0e016103a84",
+    "reading_cold_open_rejected": true,
+    "real_wait_hours": 0,
+    "replay_clock_argument_hours_ahead": 24,
+    "retained_charge_per_case": 131136,
+    "source_files": 430,
+    "source_unchanged": true,
+    "subcases_passed": 2,
+    "top_level_passed": 1
+  },
+  "preserved_limits": {
+    "independent_audit_initial_parser_failure": "Python 3.9 datetime parser rejected fractional RFC3339 nanoseconds; audit parser corrected, source and experiment not rerun",
+    "older_gc_fixture_retained_deferred_receiver": true,
+    "older_gc_receipt_sha256": "eff1cf7a0c282450c71a8da8468b3ba4e3e360f5e83c23a2aeb73edca35bbe3e"
+  },
+  "published_reproduction_fixture": {
+    "actual_mtls": true,
+    "default_module": {
+      "failed": 0,
+      "skipped_tests": [
+        "TestOwnedStoreChild",
+        "TestOwnedStoreProcessAcceptance"
+      ],
+      "subcases_passed": 176,
+      "top_level_passed": 34
+    },
+    "optin_log_sha256": "ac9b6abe92cd96aa80fec4badc8ba47106d155b34109b05a94040d4aa017019b",
+    "optin_process_race": {
+      "failed": 0,
+      "skipped_tests": [
+        "TestOwnedStoreChild"
+      ],
+      "subcases_passed": 2,
+      "top_level_passed": 1
+    },
+    "owned_sigkill_waits": 2,
+    "private_summary_sha256": "88dc5df21cac6b653990af5bd504dae9810c428c1844bc6dc6d96f3f210e9177",
+    "production_go_unchanged": true,
+    "source_files": 13,
+    "source_unchanged": true,
+    "vet_exit_code": 0
+  },
+  "schema_version": 1,
+  "scope": "Unintegrated Linux ownership Store and historical acceptance; existing protected route remains unchanged and TM02 open"
+}

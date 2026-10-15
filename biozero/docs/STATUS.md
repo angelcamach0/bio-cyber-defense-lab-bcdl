@@ -292,11 +292,63 @@ handle; its exception is preserved without rerunning successful checks. Document
 and aggregates added after acceptance are distinguished. No service/image build,
 Docker acceptance or biological model run establishes integration here.
 
-Next: durable authority Reserve before body, single-use verified Finalize and
-immutable accepted records with retained accounting; then direct/gateway clients,
-worker/broker verification and protected receipt-based result projection. Full
-same-job reassignment, cross-job ciphertext replay and result relabel negatives
-must pass on the integrated protected route before closing TM02.
+The following component extends this protocol. Direct/gateway clients,
+worker/broker verification and protected receipt-based result projection remain
+pending. Full same-job reassignment, cross-job ciphertext replay and result
+relabel negatives must pass on the integrated protected route before closing TM02.
+
+## Durable ownership registry component
+
+The Linux Store now reserves full slots/bytes before a body, generates job/nonce,
+persists the exact manifest before reading and signs measured acceptance before
+returning it. Its externally pinned genesis/policy and signed bounded ledger
+prevent implicit enrollment or relabeling of history. Exact accepted replay
+returns the original bytes without reading or resigning; known read rejection,
+expiry, process death and acceptance retain the full charge. Quotas aggregate
+renewed credentials by configured namespace/CN while ownership stays exact-leaf.
+
+Historical verification revalidates the authority signature, original leaf,
+challenge, manifest, complete binding and original decision time against the
+external Store scope. Decision time follows ciphertext verification; durable
+commit follows and is not asserted to finish before challenge expiry. There is
+no caller-provided historical clock and no retroactive expiry of accepted work.
+
+Independent exported-API acceptance used actual HTTPS/mTLS with the same client
+credentials across separate processes. One principal test and two cases passed:
+SIGKILL after durable acceptance followed by byte-identical cold replay/nonowner
+denial/zero Reader calls, and SIGKILL inside the first Reader followed by rejected
+cold Open. Actual WaitStatus proved both deaths. Physical signed ledger, owner
+fingerprint, full 131,136-byte charge and all original Store files remained
+unchanged on cold readback. The replay supplied a time 24 hours ahead; it did not
+wait 24 hours. No HTTP Finalize endpoint or failed network ACK write was tested.
+
+The independent run and full make each fixed the same 430-file source snapshot.
+Make passed 294 Python cases (292 passed, two opt-ins skipped) and uncached
+test/vet in nine Go modules. A later change only strengthens the Store GC fixture:
+its predecessor retained a deferred receiver and could not prove last-reference
+loss. Both receipts remain preserved; production Go source is unchanged. The
+corrected fixture verifies actual closure of the three os.File descriptors while
+the separate raw CLOEXEC flock remains live. Its full module/race/vet passed
+34 principal tests and 176 subcases. After adding the public external reproduction
+fixture, default module tests/vet passed the same 34/176 with two explicit opt-ins
+skipped; the new fixture passed one principal/two subcases under race, with its
+parent helper skipped. Production Go stayed unchanged. Exact results and source
+delta are recorded in the [public aggregate](evidence/20261015-ownership-store/public/README.md).
+
+Defaults retain 64/16 jobs, 512/128 MiB global/principal charges, 2/1 active
+reserved-or-reading jobs and 25 MiB plus 131,072 bytes per reservation. The ledger
+and one replacement are each bounded to 8 MiB. Unknown/pending history fails
+unchanged; a sticky live writer retains its raw lock until process exit. A crash
+after marker unlink but failed parent sync need not preserve the marker, so
+universal cold rejection at that boundary is not claimed. No automatic refund,
+retry, repair, migration, hostile-host protection or antirollback is implemented.
+
+This remains an unintegrated library, with no new service/image build, Docker
+acceptance or model execution. Authority ingress/key isolation, actual envelope
+measurement/AAD enforcement, worker/broker binding and receipt-based release
+remain the next dependency chain. Existing services still have the reproduced
+TM02 weaknesses. See the [contract](../services/ownership-authority/README.md) and
+[ADR 004](decisions/004-authenticated-ownership.md); the full gate remains open.
 
 ## Regulatory feasibility
 

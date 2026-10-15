@@ -1,9 +1,10 @@
-# Authenticated ownership protocol library
+# Authenticated ownership protocol and durable registry
 
 This standard-library Go package (`biozero/ownership-authority`, package
 `ownership`) implements the cryptographic foundation of
-[ADR 004](../../docs/decisions/004-authenticated-ownership.md). It does not run a
-server, persist reservations or ownership records, or change existing services.
+[ADR 004](../../docs/decisions/004-authenticated-ownership.md). Its Linux Store
+persists reservations and signed accepted records. It does not run a server or
+change existing services.
 The current upload/results/worker path does not acquire immutable ownership by
 importing or testing this module.
 
@@ -18,11 +19,10 @@ importing or testing this module.
    fabricated `tls.ConnectionState` or a permissive TLS verifier is outside the
    authenticated transport boundary; the authority must configure real chain
    validation and certificate policy itself.
-2. After durable reservation, the future authority calls
-   `SignChallenge(ed25519PrivateKey, pin, principal, ChallengeInput)` and
-   `MarshalChallenge`. This library does not perform that reservation. The
-   authority, never upload metadata, must generate a fresh unpredictable nonce
-   and job ID and enforce single use in its future store.
+2. The authority calls `Store.Reserve` before reading a body. It persists the
+   full reservation, generates its own unpredictable job ID and nonce and returns
+   the signed challenge. `SignChallenge` remains a stateless primitive; using it
+   directly does not establish a reservation.
 3. The client calls `VerifyChallengeForClient(raw, pin, ownLeaf, now)` and
    `CanonicalAAD`. The local leaf is used because a client's TLS peer certificate
    describes the server. Server-side consumers can use `VerifyChallenge` with a
@@ -102,7 +102,7 @@ reader errors, paths or secret values. No ciphertext framing format or OAEP labe
 is established by this component; those integration contracts remain explicit
 future work.
 
-## Acceptance time and remaining stateful work
+## Acceptance time and historical verification
 
 `now` must come from the authority's trusted clock, never from request metadata.
 Verification accepts `issued_at <= now < expires_at`. Finalize also counts
@@ -112,21 +112,88 @@ call. Future ingress needs its own deadlines and verified regular read-only file
 descriptors/provenance. A reader returning zero bytes without an error is rejected
 as nonprogress rather than retried forever.
 
-The five-minute window applies to reserve-to-finalize acceptance. A future
-authority store must durably record an authoritative `acceptedAt` within that
-window, then bind its accepted record to the verified content. Historical
-execution/results must validate that durable acceptance and signatures rather
-than expire accepted work retroactively or accept a historical clock supplied
-by the caller. This library provides neither that store nor a historical-record
-verification API.
+The five-minute window applies to the original acceptance decision. Store
+Finalize computes `AcceptedAt` after actual ciphertext verification using the
+trusted starting time plus elapsed preparation/read time. It checks challenge
+and leaf validity at that decision. Signing and durable commit follow; this is
+not a claim that the commit completes before expiry. Cancellation observed after
+reading or before committing prevents acceptance.
 
-Pending integration includes durable reserve-before-body quotas, nonce/job
-uniqueness, atomic single-use finalize, signed durable ownership records,
-separate authority-key custody, CLI/gateway authority ingress, envelope/AAD
-enforcement in the worker/broker, result authorization from authoritative records,
-revocation/rotation policy and explicit historical migration without adoption.
-Repeated pure Finalize calls are possible: no quota, replay-prevention,
-restart-safety, deployment isolation or full TM02 closure is claimed here.
+`VerifyAcceptance(raw, pin, expectedScope)` verifies the outer authority
+signature, exact external StoreID/policy hash, original certificate DER, challenge,
+client manifest, decision time and every reconstructed Binding field. It returns
+an opaque `VerifiedAcceptance`; `Claims()`/`Binding()` return copies and
+`CanonicalAADFromAcceptance` derives the original AAD. There is no caller-supplied
+historical clock. Accepted work does not expire retroactively. `SignedAcceptance`
+is only a DTO; `MarshalAcceptance` does not authenticate constructed values.
+The acceptance envelope is bounded to 64 KiB and strict JSON.
+
+## Linux durable Store
+
+`CreateStore` creates an exclusive new 0700 directory; it never replaces or adopts
+existing history. `OpenStore` requires a trusted external
+`AcceptanceScope{StoreID, PolicySHA256}` from genesis. Persist that scope outside
+the mutable spool; reading an arbitrary local scope is not enrollment. The policy
+hash binds the namespace, authority/key, mode/profile and all numeric limits.
+Changed configuration fails rather than silently migrating or resetting quotas.
+
+Reserve takes a 32-hex request token, filename and trusted whole-second time.
+An exact same-owner retry returns the original challenge, even after expiry;
+changing the leaf or filename conflicts. Ownership uses the exact leaf DER hash.
+Quota identity separately hashes the enrollment namespace and verified CN, so
+renewing a certificate does not create a fresh quota bucket or transfer a job.
+The authority must control namespace/CN enrollment policy.
+
+| Default resource | Bound |
+| --- | --- |
+| Retained jobs, global / principal | 64 / 16 |
+| Charged bytes, global / principal | 512 MiB / 128 MiB |
+| Active reserved-or-reading jobs, global / principal | 2 / 1 |
+| Body reservation per job | 25 MiB plus 131,072 bytes metadata headroom |
+| Free-space sensor floor | 128 MiB plus all retained promises and two ledger bounds |
+| Challenge lifetime | 300 seconds |
+| Physical ledger / replacement / intent | 8 MiB / 8 MiB / less than 1 KiB, plus empty lock |
+
+All reserved, reading, rejected and accepted jobs retain their full charge and
+slot. Expiry never refunds or frees an active reservation; operator retention or
+reconciliation is still required. Policies may lower body/record limits and set
+the floor to zero for controlled fixtures. The free-space sensor is conservative,
+not a filesystem reservation. This module does not retain ciphertext; ingress
+must enforce its own physical storage, deadlines and descriptor provenance.
+
+Store Finalize verifies the exact stored challenge, real mTLS leaf and client
+signature before reading. It commits `reading` with the exact manifest before
+the first Reader call, then releases its mutex for bounded streaming. A second
+Finalize cannot start another reader. Known read failures persist `rejected` with
+the full charge. Success signs the measured facts, commits `accepted`, then
+returns the DTO. An exact accepted retry returns byte-identical history without
+reading, resigning or reapplying challenge freshness. `Get` checks the exact
+owner before returning protocol records. No public API signs arbitrary Binding
+values into authority acceptance records.
+
+The canonical strict ledger is signed with the pinned Ed25519 authority key.
+Writes use exclusive intent creation/sync, exclusive replacement write/sync/close,
+rename and parent sync, then intent retirement and parent sync. Anchored no-follow
+operations check current-UID 0700 directories, 0600 regular single-link files,
+bounded contents and live root/lock/ledger identities. Unknown files, transaction
+markers, incomplete reading history and invalid signatures fail Open unchanged.
+
+Any ambiguous persistence/ACK failure makes the live Store unavailable, including
+in-flight acceptance. `Healthy` rechecks physical history. A raw CLOEXEC duplicate
+of the locked open-file description has no Go finalizer; sticky `Close` refuses
+to release it, so losing Go handles cannot permit another writer. Healthy Close
+releases the lock only after other anchors close. Actual process death releases
+the lock. A fresh process may recover a genuinely committed signed record; it
+never reads a pending body again or refunds its charge. If intent unlink happened
+but its parent sync failed, a later crash may leave no intent: universal rejection
+of every such cold restart is not claimed. No antirollback, revocation, secure
+erasure, hostile-host protection or operator repair service is provided.
+
+Pending integration includes an authority mTLS service with separate key custody,
+CLI/gateway ingress, envelope/AAD enforcement in worker/broker, result release
+from protected receipts, revocation/rotation and explicit historical migration.
+Repeated stateless Finalize calls remain possible outside Store. Existing
+upload/worker/broker/Results interfaces are unchanged and TM02 stays open.
 
 ## Checks
 
@@ -143,3 +210,28 @@ before authentication, exact and excess ciphertext boundaries, cancellation,
 time windows, strict JSON, private-key mismatch, signature-algorithm negatives
 and AES-GCM AAD rebinding rejection. They do not exercise the deployed service
 path or demonstrate scientific approval.
+
+The exported-API process fixture is an explicit Linux opt-in. From repository
+root, create a new private destination for each run:
+
+```sh
+install -d -m 700 .biozero
+evidence_root=$(mktemp -d "$PWD/.biozero/ownership-store-XXXXXXXX")
+(
+  cd biozero/services/ownership-authority
+  BIOZERO_OWNERSHIP_ACCEPTANCE_ROOT="$evidence_root" \
+    go test -race -count=1 -v \
+    -run '^(TestOwnedStoreProcessAcceptance|TestOwnedStoreChild)$' ./...
+)
+```
+
+It creates synthetic credentials, establishes actual verified mTLS in each
+process, applies SIGKILL only to its own live children and verifies WaitStatus
+before cold readback. The two cases cover death after durable acceptance and
+death inside the first body Read. The accepted record/charges remain identical;
+reading remains pending and blocks Open. It compares the physical ledger signature
+and all Store-file hashes. The helper's parent test skips while children execute
+it explicitly. Without the opt-in, both external entry tests skip. Evidence,
+including synthetic private keys and pending Store history, stays in the private
+destination; the fixture never deletes or retries that history. This is a Store
+process test, not a running authority endpoint or a failed network ACK write.

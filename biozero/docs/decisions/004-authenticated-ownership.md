@@ -112,6 +112,23 @@ exclusive writer locking, no-follow anchored files and explicit durable ordering
 Retention or a terminal status is not permission to refund unknown reservations.
 A pure signature/Reader implementation does not establish these properties.
 
+The Linux library Store now implements exclusive fresh genesis, externally pinned
+StoreID/policy, pre-body reservations and signed strict ledger transactions.
+Exact accepted retries preserve original signed bytes without reading a new body.
+Reading or retained transaction evidence blocks cold Open; unknown history is not
+adopted. Full charges and slots survive rejection, acceptance and process death.
+A sticky live writer retains a raw CLOEXEC flock descriptor until actual process
+exit, including when Go handles are lost. See the
+[Store contract](../../services/ownership-authority/README.md) for budgets and
+the intent-unlink/parent-sync crash boundary. It is still a library: a separate
+authority service, isolation and end-to-end consumers remain to be constructed.
+
+Acceptance time records the verified decision, after elapsed preparation and
+reading, within the challenge and leaf validity windows. Signing/commit follow
+and are not asserted to finish before expiry. Historical verification requires
+the external pin and Store scope and revalidates the original leaf, challenge,
+manifest and every binding field; it has no caller-selected historical clock.
+
 The existing upload admission contract reserves before body reads. Integration
 must preserve that invariant while moving owner authority outside upload. It must
 not let upload pick an arbitrary principal for fresh quota. Client/gateway shared
@@ -127,8 +144,8 @@ or claim their old results demonstrate the new protocol.
 
 | Deliverable | Required evidence | Status |
 | --- | --- | --- |
-| Cryptographic protocol component | Real TLS identities; strict parser boundaries; same-leaf signatures; ciphertext exact/+1 checks; invalid authorization rejected before Reader.Read; altered AAD fails actual GCM Open | In progress; component only |
-| Durable authority Reserve/Finalize/readback | Actual restart and injected transaction failures; retained charges; immutable owner; concurrent final-slot/duplicate-finalize behavior; no implicit legacy adoption | Pending |
+| Cryptographic protocol component | Real TLS identities; strict parser boundaries; same-leaf signatures; ciphertext exact/+1 checks; invalid authorization rejected before Reader.Read; altered AAD fails actual GCM Open | Verified component; no service integration |
+| Durable authority Reserve/Finalize/readback | Actual restart and injected transaction failures; retained charges; immutable owner; concurrent final-slot/duplicate-finalize behavior; no implicit legacy adoption | Linux Store component implemented; process interruption/readback verified separately; authority service and deployment boundary pending |
 | Client and gateway integration | Both use direct authenticated authority sessions, per-client signing and exact context-bound encryption; shared admission and cross-client replay denied | Pending |
 | Worker and broker integration | Accepted owner/context checked before crypto/execution; actual ciphertext rebinding rejected; recovery keeps original registry/lease/charges | Pending |
 | Result delivery and release | Direct and gateway owner reassignment denied; relabeled private result cannot be released; trusted receipt projection and nonowner denial before private read | Pending |
