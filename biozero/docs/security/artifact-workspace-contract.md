@@ -21,6 +21,11 @@ synthetic/store, aggregate byte/inode and lifecycle acceptance; see
 Worker integration remains pending: no phase B artifact ledger, server or
 retained-export quota is installed in the protected worker. The cached-image
 acceptance does not establish a reproducible image build or distribution.
+A separate worker FD broker and durable job-to-lease journal now have standalone
+storage/channel acceptance; see [broker scope](../../services/artifact-executor/README-broker.md).
+The extracted analysis CLI preserves detection within a future configured capsule
+boundary; its compiled standalone acceptance is separate from worker integration.
+Neither component is installed in the protected worker yet.
 Atlas authored the base contract; Chiquis integrates these additions with independent review.
 
 This contract complements admission/input-retention and bounded metadata. An input

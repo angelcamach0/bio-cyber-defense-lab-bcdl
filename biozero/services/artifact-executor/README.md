@@ -9,6 +9,11 @@ three-SNP pipeline and evaluator, without running a trained model. See
 [coordinator ordering](README-coordinator.md), [Unix channel](README-server.md)
 and [the contract](../../docs/security/artifact-workspace-contract.md).
 
+A new standalone [worker FD broker](README-broker.md) adds a separate strict
+submit/status/cancel/receipt protocol and durable job-to-lease binding. It is not
+yet connected to the worker or installed as a service; its acceptance scope is
+separate from the native/Docker provider receipts.
+
 `Open(ctx, root, policy)` requires Linux, private root mode0700, files0600 owned by
 the effective UID, descriptor-anchored no-follow traversal and same-filesystem
 hard-link/rename publication within each managed directory. A lifetime flock

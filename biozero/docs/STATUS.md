@@ -1,13 +1,75 @@
 # BioZero implementation status
 
-Updated 2026-10-14. Local branch: biozero/container-capsule-provider.
+Updated 2026-10-15 UTC. Local branch: biozero/container-capsule-provider.
 Historical first-milestone base: b8731934fbe7c7dc00bf51fa978ce370361b3f74. Implementation commit:
 a27221c6f2174ea9d116779fcd47c88f9794dddb, published in
 [PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21),
 merged on2026-10-14. See the current checkpoint below for the merge observation
 and subsequent candidate scope. No production deployment is established.
 
-## Current checkpoint: standalone Docker provider accepted locally
+## Current checkpoint: worker bridge and analysis components accepted locally
+
+Observed 2026-10-15 00:27 UTC. Published head remains
+[bba2637](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/commit/bba2637e87a2ea302b0e6ba3ba527971c72f6f34),
+[PR22, draft](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/22).
+Its [hosted ARM CI](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38657120252)
+passed:252Python (250passed/two skips), eight Go test/vet modules, PKI/science
+and78protected native assertions; logs checked merge ref325f18d1 into af3fb3c.
+That CI predates the new source described below, which is still local/uncommitted.
+
+Chiquis implemented a bounded durable job-to-lease broker; Vale implemented its
+separate FD-aware Unix protocol and reviewed persistence/ACK; Nora extracted worker
+detection into a reusable Go package and strict capsule-analysis CLI. These are
+standalone components. The worker still uses its prior path; no new bridge/analysis
+end-to-end or installed service is claimed. Configured evaluation and detection
+must both move inside the bounded provider before integration is accepted.
+
+The journal writes intent before Reserve, persists lease before Bind and seals
+committed custody before the real ACK. Exact duplicates consult prior custody;
+changed tuples conflict. Lost ACK cannot bypass health or trigger another run.
+Explicit restart can seal only a prior linked binding whose Store history is
+already fully committed/verified; unknown pending history stays blocked. Metadata
+is separately bounded to1MiB plus one1MiB replacement, outside the Store charge.
+Vale found two causal ACK windows; corrected locking and two barriers verify
+that Store commit cannot outrun journal sealing or race the final ACK check.
+
+Final artifact-module race composition passed90top-level functions plus subcases
+in23.847s, all six native/Docker opt-ins enabled, no failures. Two internal keeper
+entries skip only in the parent and execute in spawned subprocesses. This includes
+nine broker and eight bridge test functions; broker positive/lifecycle tests use
+synthetic trusted providers, while existing kernel opt-ins retain their separate
+scope. Vale independently checked the log and33source pins, without rerunning.
+
+Analysis/CLI passed15functions plus36subcases, ordinary/race/vet. Scoring/defaults
+and SAM-record definitions are preserved; tool failures discard partial metrics.
+Rules/argv panel presence must agree before tools. Input/output64KiB and bounded
+SAM/target/stderr limits are explicit; future pipeline projection must fit those
+budgets without truncating accepted results. Targets remain private. Root's final
+make test passed252Python (250passed/two skips), eight Go test/vet modules.
+
+Two clean-cache local ARM64 Go builds produced identical3,565,542-byte analysis
+binaries, SHA cb95d52dcf6c601039a4f801fd4b1ca02fa16a8c89b7a87706ffbc553fd1edf6.
+Actual compiled CLI/minimap2 on the public synthetic fixture passed1,171mapped/
+1,171SAM-record observations, one private target and expected configured0.9/high.
+Nora independently verified binary/source/output bindings. Caller crypto facts
+were synthetic. This proves standalone execution and same-environment binary
+repeatability, not worker/broker/capsule/TLS, biological accuracy, cross-host or OCI
+reproduction. No model, dataset download or image build/pull was performed.
+
+See [broker contract and evidence](../services/artifact-executor/README-broker.md),
+[transport](../services/artifact-executor/README-bridge-transport.md),
+[analysis](../services/enclave-runner/analysis/README.md) and
+[CLI](../services/enclave-runner/cmd/capsule-analysis/README.md).
+Next: publish reviewed source with its own CI, install the pinned analysis/context
+inside both providers, connect protected worker crypto/result/recovery through the
+broker and run fresh integrated native/Compose acceptance. Reproducible image
+closure, operator reconciliation, TM02, complete retention/quotas, queues/leases,
+SOC/cloud and final delivery remain required. Full objective stays active/free.
+Thanks, Vale, for finding both ACK windows and cross-review; Nora, for preserving
+analysis semantics, fixing panel coherence and independently checking build evidence.
+
+## Earlier published Docker checkpoint
+
 
 Observed 2026-10-14 23:55 UTC. GitHub PR21 was merged at23:29UTC as
 [af3fb3c](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/commit/af3fb3cffb67379bc5e3b9dc7a8aeb0c76ec7e07).
