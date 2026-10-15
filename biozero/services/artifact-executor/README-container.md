@@ -6,6 +6,12 @@ installed in enclave-runner. The worker receives no Docker socket or general
 container-command API. Existing native and container acceptance have separate
 source, resource and lifecycle evidence.
 
+Subsequent [complete analysis acceptance](README-analysis-integration.md) installs
+pinned analysis/rules/panel and per-job context inside this capsule. It composes
+the v2 FD broker and compiled [host service](README-service.md), including failed
+analysis withholding and committed readback. The protected worker remains separate;
+the earlier receipts below are not relabeled as that newer source or scope.
+
 ## Trusted configuration and entry
 
 ContainerProviderConfig fixes a local Docker argv prefix, exact cached image ID,

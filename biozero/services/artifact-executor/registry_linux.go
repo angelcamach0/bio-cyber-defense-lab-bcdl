@@ -28,6 +28,7 @@ type scopedReference struct {
 	bytes                                 int64
 	file                                  *os.File
 	consumed                              bool
+	analysis                              *AnalysisContext
 }
 
 // ScopedInput contains a private read-only descriptor, not a caller path. The
@@ -39,6 +40,7 @@ type ScopedInput struct {
 	OriginalSHA256  string
 	ProcessedSHA256 string
 	Bytes           int64
+	AnalysisContext *AnalysisContext
 	file            *os.File
 }
 
@@ -95,6 +97,19 @@ func checkInputFile(f *os.File, expectedBytes int64) error {
 }
 
 func (r *InputRegistry) Bind(ctx context.Context, lease string, source *os.File, processedSHA string, expectedBytes int64) (string, error) {
+	return r.bind(ctx, lease, source, processedSHA, expectedBytes, nil)
+}
+
+// BindWithAnalysis binds a value copy of verifier-established facts to the
+// same one-shot descriptor authority. The legacy Bind does not enable analysis.
+func (r *InputRegistry) BindWithAnalysis(ctx context.Context, lease string, source *os.File, processedSHA string, expectedBytes int64, facts AnalysisContext) (string, error) {
+	if err := validateAnalysisContext(facts, expectedBytes); err != nil {
+		return "", err
+	}
+	return r.bind(ctx, lease, source, processedSHA, expectedBytes, &facts)
+}
+
+func (r *InputRegistry) bind(ctx context.Context, lease string, source *os.File, processedSHA string, expectedBytes int64, facts *AnalysisContext) (string, error) {
 	if !hexID(lease, 32) || !hexID(processedSHA, 64) || expectedBytes < 0 || expectedBytes > MaxInputBytes || ctx.Err() != nil {
 		return "", fail("artifact_input_binding_invalid")
 	}
@@ -156,7 +171,7 @@ func (r *InputRegistry) Bind(ctx context.Context, lease string, source *os.File,
 		return "", fail("artifact_random_failed")
 	}
 	r.inputs[ref] = &scopedReference{lease: lease, job: entry.JobID, originalSHA: entry.InputSHA256,
-		processedSHA: processedSHA, bytes: expectedBytes, file: f}
+		processedSHA: processedSHA, bytes: expectedBytes, file: f, analysis: facts}
 	r.leases[lease] = ref
 	retained = true
 	return ref, nil
@@ -177,6 +192,10 @@ func (r *InputRegistry) Acquire(lease, ref string) (*ScopedInput, error) {
 	}
 	input := &ScopedInput{JobID: entry.job, OriginalSHA256: entry.originalSHA,
 		ProcessedSHA256: entry.processedSHA, Bytes: entry.bytes, file: entry.file}
+	if entry.analysis != nil {
+		facts := *entry.analysis
+		input.AnalysisContext = &facts
+	}
 	entry.consumed = true
 	entry.file = nil
 	return input, nil

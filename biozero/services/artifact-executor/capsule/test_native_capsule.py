@@ -67,6 +67,26 @@ def outcome_fixture():
             "observed_sha256": "", "evaluated_sha256": ""}
 
 
+def analysis_fixture(root="/fixture", size=8):
+    return {"executable_path": root + "/analysis/capsule-analysis", "executable_sha256": "1" * 64,
+            "rules_path": root + "/analysis/rules.json", "rules_sha256": "2" * 64,
+            "panel_path": "", "panel_sha256": "",
+            "context": {"original_name": "private-synthetic.fastq", "processed_size_bytes": size,
+                        "decrypted": True, "decryption_error": "", "signature_valid": True, "signature_error": ""}}
+
+
+def analysis_capture_fixture(panel=False):
+    signals = {"warnings": {"critical": 0, "warn": 0, "info": 0},
+               "integrity": {"signature_valid": True, "decrypted": True},
+               "pipeline": {"read_count": 3, "avg_read_length": 10}}
+    if panel:
+        signals["alignment"] = {"mapped_reads": 1, "total_reads": 3, "fraction": 1 / 3,
+                                "targets": {"private-synthetic-target": 1}}
+    payload = {"schema_version": 1, "status": "succeeded", "error_code": "", "warnings": [],
+               "detection": {"score": .1, "reason": "no suspicious indicators", "verdict": "low", "signals": signals}}
+    return {"returncode": 0, "payload": payload, "raw_stdout": json.dumps(payload), "raw_stderr": ""}
+
+
 def receive_frame(channel):
     raw, ancillary, flags, _ = channel.recvmsg(capsule.FRAME_LIMIT + 4,
                                               socket.CMSG_SPACE(4 * array.array("i").itemsize))
@@ -441,7 +461,7 @@ channel.sendall(json.dumps(facts).encode('ascii'))
             with self.assertRaises(capsule.CapsuleError):
                 capsule.pipeline_directory(config, changed)
 
-    def _fake_execute(self, root, evaluation=None, pipeline_status="succeeded", mutate=False):
+    def _fake_execute(self, root, evaluation=None, pipeline_status="succeeded", mutate=False, analysis_result=None):
         work = Path(root) / "work"
         work.mkdir(mode=0o700)
         reference = Path(root) / "source-reference.fa"
@@ -451,10 +471,23 @@ channel.sendall(json.dumps(facts).encode('ascii'))
                       reference_sha256=digest(reference.read_bytes()),
                       evaluator_path=root + "/assets/evaluator.py", evaluator_sha256="e" * 64,
                       truth_path=root + "/truth.vcf", truth_sha256="f" * 64)
+        if analysis_result is not None:
+            config.update(schema_version=2, analysis=analysis_fixture(root))
         commands = []
         observed = work / "biozero-run-fixture" / "variants.vcf"
-        def capture(command, environment, directory, deadline):
+        def capture(command, environment, directory, deadline, **options):
             commands.append(command)
+            if options:
+                self.assertEqual(command, [config["analysis"]["executable_path"], "--rules", config["analysis"]["rules_path"],
+                                            "--panel", "", "--content", str(work / "input.fastq")])
+                self.assertEqual(options["stdout_limit"], 64 << 10)
+                request = json.loads(options["stdin_bytes"])
+                self.assertEqual(request["schema_version"], 1)
+                self.assertEqual(request["context"], config["analysis"]["context"])
+                self.assertEqual(request["pipeline"]["pipeline_status"], pipeline_status)
+                if isinstance(analysis_result, BaseException):
+                    raise analysis_result
+                return analysis_result
             if "--observed" in command:
                 self.assertEqual(command[command.index("--observed") + 1], str(observed))
                 self.assertEqual(command[command.index("--reference") + 1], str(work / "reference.fa"))
@@ -518,6 +551,9 @@ channel.sendall(json.dumps(facts).encode('ascii'))
                 self.assertEqual(files[1][2]["sha256"], outcome["observed_sha256"])
                 self.assertEqual(len(commands), 2)
                 receipt = json.loads(os.read(files[0][1], files[0][2]["bytes"]))
+                self.assertEqual(receipt["schema_version"], 1)
+                self.assertNotIn("analysis_capture", receipt)
+                self.assertNotIn("analysis_context", receipt)
                 self.assertEqual(receipt["evaluation"]["raw_stderr"], "private canary")
                 self.assertEqual(receipt["input_sha256"], "a" * 64)
             finally:
@@ -543,6 +579,188 @@ channel.sendall(json.dumps(facts).encode('ascii'))
         with tempfile.TemporaryDirectory() as root, self.assertRaises(capsule.CapsuleError) as caught:
             self._fake_execute(root, evaluation=evaluation, mutate=True)
         self.assertEqual(caught.exception.code, "capsule_observed_changed")
+
+
+class NativeAnalysisUnitTests(unittest.TestCase):
+    def _capture_unread_large_stdin(self, payload, exit_code):
+        # Force less pipe capacity than the request before the helper writes.
+        # The child deliberately emits a complete response without reading stdin.
+        real_popen = subprocess.Popen
+        def small_input_pipe(*args, **kwargs):
+            process = real_popen(*args, **kwargs)
+            try:
+                # Linux UAPI: F_LINUX_SPECIFIC_BASE(1024)+7. Python3.9 may
+                # omit the named constant even though the kernel supports it.
+                command = getattr(capsule.fcntl, "F_SETPIPE_SZ", 1031)
+                actual = capsule.fcntl.fcntl(process.stdin.fileno(), command, 4096)
+                self.assertLess(actual, 60000)
+            except BaseException:
+                process.kill()
+                process.wait(timeout=1)
+                for stream in (process.stdin, process.stdout, process.stderr): stream.close()
+                raise
+            return process
+        body = "import sys;sys.stdout.write(%r);sys.stdout.flush();sys.exit(%d)" % (json.dumps(payload), exit_code)
+        with tempfile.TemporaryDirectory() as root, mock.patch.object(capsule.subprocess, "Popen", side_effect=small_input_pipe):
+            return capsule.capture_command([sys.executable, "-I", "-B", "-S", "-c", body],
+                {"PATH": "/usr/bin", "LANG": "C"}, root, time.monotonic() + 2,
+                stdin_bytes=b"s" * 60000, stdout_limit=64 << 10)
+
+    def test_early_cli_failure_preserves_complete_response_after_stdin_epipe(self):
+        payload = {"schema_version": 1, "status": "failed", "error_code": "rules_parse_error", "warnings": [], "detection": None}
+        capture = self._capture_unread_large_stdin(payload, 1)
+        self.assertEqual(set(capture), {"returncode", "payload", "raw_stdout", "raw_stderr"})
+        self.assertEqual(capture["returncode"], 1)
+        self.assertEqual(capture["payload"], payload)
+        self.assertEqual(json.loads(capture["raw_stdout"]), payload)
+        config = config_fixture(); config.update(schema_version=2, analysis=analysis_fixture())
+        self.assertFalse(capsule.analysis_passed(capture, config))
+        # The transport exception does not bypass strict validation of failures.
+        malformed = copy.deepcopy(capture)
+        malformed["payload"]["detection"] = {"invented": True}
+        with self.assertRaises(capsule.CapsuleError): capsule.analysis_passed(malformed, config)
+
+    def test_unread_stdin_never_accepts_success_or_exit_schema_disagreement(self):
+        success = analysis_capture_fixture()["payload"]
+        failed = {"schema_version": 1, "status": "failed", "error_code": "rules_parse_error", "warnings": [], "detection": None}
+        alias = dict(failed, schema_version=True)
+        for payload, exit_code in ((success, 0), (failed, 0), (alias, 1)):
+            with self.subTest(status=payload["status"], exit=exit_code):
+                with self.assertRaises(capsule.CapsuleError) as caught:
+                    self._capture_unread_large_stdin(payload, exit_code)
+                self.assertEqual(caught.exception.code, "capsule_analysis_stdin_failed")
+
+    def test_v2_exact_fields_context_and_v1_no_analysis(self):
+        valid = config_fixture()
+        valid.update(schema_version=2, analysis=analysis_fixture())
+        self.assertEqual(capsule.validate_config(valid), valid)
+        mutations = [dict(valid, schema_version=1), config_fixture(), copy.deepcopy(valid)]
+        mutations[1]["schema_version"] = 2
+        mutations[2]["analysis"]["command"] = "forbidden"
+        for key, value in (("processed_size_bytes", True), ("processed_size_bytes", 7),
+                           ("signature_valid", 1), ("decryption_error", "private error"),
+                           ("original_name", "é" * 2049), ("signature_error", "é" * 65)):
+            wrong = copy.deepcopy(valid)
+            wrong["analysis"]["context"][key] = value
+            mutations.append(wrong)
+        for key, value in (("panel_path", "/assets/panel.fa"), ("rules_sha256", "A" * 64),
+                           ("executable_path", "/fixture/work/executable")):
+            wrong = copy.deepcopy(valid)
+            wrong["analysis"][key] = value
+            mutations.append(wrong)
+        for wrong in mutations:
+            with self.assertRaises(capsule.CapsuleError):
+                capsule.validate_config(wrong)
+
+    def test_analysis_asset_pins_executable_metadata_and_mutation(self):
+        with tempfile.TemporaryDirectory() as root:
+            assets = Path(root) / "assets"
+            analysis = Path(root) / "analysis"
+            assets.mkdir(); analysis.mkdir()
+            (assets / "pipeline.py").write_bytes(b"# pipeline\n")
+            (assets / "resource_budget.py").write_bytes(b"# budget\n")
+            exe, rules = analysis / "capsule-analysis", analysis / "rules.json"
+            exe.write_bytes(b"#!/bin/sh\nexit 0\n"); exe.chmod(0o755)
+            rules.write_bytes(b"{}")
+            config = config_fixture(root)
+            config.update(schema_version=2, analysis=analysis_fixture(root),
+                          python_path=os.path.realpath(sys.executable), tool_path=os.path.realpath(os.path.dirname(sys.executable)),
+                          pipeline_sha256=digest((assets / "pipeline.py").read_bytes()),
+                          resource_budget_sha256=digest((assets / "resource_budget.py").read_bytes()))
+            config["analysis"].update(executable_sha256=digest(exe.read_bytes()), rules_sha256=digest(rules.read_bytes()))
+            pins = capsule.verify_sources(config)
+            self.assertEqual(pins["analysis_executable"]["sha256"], digest(exe.read_bytes()))
+            self.assertEqual(pins["analysis_rules"]["sha256"], digest(rules.read_bytes()))
+            self.assertNotIn("analysis_panel", pins)
+            for mode in (0o644, 0o775, 0o4755):
+                exe.chmod(mode)
+                with self.assertRaises(capsule.CapsuleError): capsule.verify_sources(config)
+            exe.chmod(0o755)
+            rules.write_bytes(b'{"mutated":true}')
+            with self.assertRaises(capsule.CapsuleError) as caught: capsule.verify_sources(config)
+            self.assertEqual(caught.exception.code, "capsule_source_pin_mismatch")
+
+    def test_analysis_response_is_typed_context_bound_and_panel_required(self):
+        config = config_fixture(); config.update(schema_version=2, analysis=analysis_fixture())
+        good = analysis_capture_fixture()
+        self.assertTrue(capsule.analysis_passed(good, config))
+        for section, key, value in ((None, "score", True), ("integrity", "decrypted", 1),
+                                     ("integrity", "signature_valid", False), ("pipeline", "read_count", True),
+                                     ("warnings", "critical", True)):
+            wrong = copy.deepcopy(good)
+            target = wrong["payload"]["detection"] if section is None else wrong["payload"]["detection"]["signals"][section]
+            target[key] = value
+            with self.assertRaises(capsule.CapsuleError): capsule.analysis_passed(wrong, config)
+        configured = copy.deepcopy(config)
+        configured["analysis"].update(panel_path="/panel.fa", panel_sha256="3" * 64)
+        with self.assertRaises(capsule.CapsuleError): capsule.analysis_passed(good, configured)
+        self.assertTrue(capsule.analysis_passed(analysis_capture_fixture(panel=True), configured))
+        bad_exit = copy.deepcopy(good); bad_exit["returncode"] = 1
+        with self.assertRaises(capsule.CapsuleError): capsule.analysis_passed(bad_exit, config)
+
+    def test_selector_stdin_and_stdout_share_deadline_without_pipe_deadlock(self):
+        body = "import sys,json;sys.stdout.write(' '*20000);sys.stdout.flush();b=sys.stdin.buffer.read();print(json.dumps({'received':len(b)}))"
+        with tempfile.TemporaryDirectory() as root:
+            fd = os.open(Path(root) / "private-descriptor", os.O_RDWR | os.O_CREAT, 0o600)
+            os.set_inheritable(fd, True)
+            try:
+                capture = capsule.capture_command([sys.executable, "-I", "-B", "-S", "-c", body],
+                    {"PATH": "/usr/bin", "LANG": "C"}, root, time.monotonic() + 2,
+                    stdin_bytes=b"s" * 60000, stdout_limit=64 << 10)
+                self.assertEqual(capture["payload"], {"received": 60000})
+                descriptor_body = "import os,json,sys;sys.stdin.buffer.read()\ntry:os.fstat(%d);present=True\nexcept OSError:present=False\nprint(json.dumps({'present':present}))" % fd
+                capture = capsule.capture_command([sys.executable, "-I", "-B", "-S", "-c", descriptor_body],
+                    {"PATH": "/usr/bin"}, root, time.monotonic() + 2, stdin_bytes=b"{}", stdout_limit=64 << 10)
+                self.assertFalse(capture["payload"]["present"])
+            finally:
+                os.close(fd)
+
+    def test_analysis_request_and_capture_fail_without_truncated_success(self):
+        config = config_fixture(); config.update(schema_version=2, analysis=analysis_fixture())
+        with mock.patch.object(capsule, "capture_command") as command:
+            capture, error = capsule.run_analysis(config, {"payload": {"large": "x" * 65536}}, "/work/input", {}, "/work", time.monotonic() + 1)
+            self.assertEqual(error, "capsule_analysis_request_limit")
+            self.assertIsNone(capture["returncode"]); self.assertIsNone(capture["payload"])
+            command.assert_not_called()
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(capsule.CapsuleError) as caught:
+                capsule.capture_command([sys.executable, "-I", "-B", "-S", "-c", "import sys;sys.stdin.buffer.read();print('x'*65537)"],
+                    {"PATH": "/usr/bin"}, root, time.monotonic() + 1, stdin_bytes=b"{}", stdout_limit=64 << 10)
+            self.assertEqual(caught.exception.code, "capsule_capture_limit")
+
+    def test_v2_private_receipt_failed_analysis_revokes_passed_science(self):
+        evaluation = {"returncode": 0, "payload": {"evaluation_status": "passed", "tp": 3, "fp": 0, "fn": 0,
+                      "precision": 1.0, "recall": 1.0, "unexpected": [], "missing": []}}
+        failed = {"returncode": 1, "payload": {"schema_version": 1, "status": "failed", "error_code": "rules_parse_error", "warnings": [], "detection": None},
+                  "raw_stdout": "private failed response", "raw_stderr": "private stderr"}
+        for result, expected in ((analysis_capture_fixture(), "evaluated_passed"), (failed, "withheld"),
+                                 (capsule.CapsuleError("capsule_capture_limit"), "withheld")):
+            with tempfile.TemporaryDirectory() as root:
+                outcome, files, commands = NativeCapsuleUnitTests._fake_execute(self, root, evaluation=evaluation, analysis_result=result)
+                try:
+                    receipt = json.loads(os.read(files[0][1], files[0][2]["bytes"]))
+                    self.assertEqual(receipt["schema_version"], 2)
+                    self.assertEqual(receipt["analysis_context"], analysis_fixture(root)["context"])
+                    self.assertEqual(outcome["release_status"], expected)
+                    self.assertEqual(len(commands), 3)
+                    if expected == "withheld": self.assertEqual(outcome["execution_status"], "failed")
+                    if result is failed: self.assertEqual(receipt["analysis_capture"], failed)
+                    self.assertEqual(outcome["observed_sha256"], outcome["evaluated_sha256"])
+                finally:
+                    for _, fd, _ in files: os.close(fd)
+
+    def test_failed_pipeline_still_analyzes_without_promotion(self):
+        with tempfile.TemporaryDirectory() as root:
+            outcome, files, commands = NativeCapsuleUnitTests._fake_execute(self, root, pipeline_status="failed", analysis_result=analysis_capture_fixture())
+            try:
+                receipt = json.loads(os.read(files[0][1], files[0][2]["bytes"]))
+                self.assertEqual(outcome["execution_status"], "failed")
+                self.assertEqual(outcome["release_status"], "withheld")
+                self.assertEqual(len(commands), 2)
+                self.assertEqual([name for name, _, _ in files], ["execution_receipt"])
+                self.assertEqual(receipt["analysis_capture"]["returncode"], 0)
+            finally:
+                for _, fd, _ in files: os.close(fd)
 
 
 @unittest.skipUnless(os.environ.get("BIOZERO_NATIVE_CAPSULE_ACCEPTANCE") == "1",

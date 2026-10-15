@@ -96,6 +96,19 @@ func (c *Coordinator) latch(code string) error {
 }
 
 func (c *Coordinator) RegisterInput(ctx context.Context, jobID, originalSHA, processedSHA string, size int64, input *os.File) (RegisteredExecution, error) {
+	return c.registerInput(ctx, jobID, originalSHA, processedSHA, size, input, nil)
+}
+
+// RegisterInputWithAnalysis is a trusted local API, absent from both current
+// Unix protocols. Invalid facts are rejected before any durable reservation.
+func (c *Coordinator) RegisterInputWithAnalysis(ctx context.Context, jobID, originalSHA, processedSHA string, size int64, input *os.File, facts AnalysisContext) (RegisteredExecution, error) {
+	if err := validateAnalysisContext(facts, size); err != nil {
+		return RegisteredExecution{}, err
+	}
+	return c.registerInput(ctx, jobID, originalSHA, processedSHA, size, input, &facts)
+}
+
+func (c *Coordinator) registerInput(ctx context.Context, jobID, originalSHA, processedSHA string, size int64, input *os.File, facts *AnalysisContext) (RegisteredExecution, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.closed || ctx.Err() != nil {
@@ -105,7 +118,7 @@ func (c *Coordinator) RegisterInput(ctx context.Context, jobID, originalSHA, pro
 	if err != nil {
 		return RegisteredExecution{}, err
 	}
-	ref, err := c.registry.Bind(ctx, lease, input, processedSHA, size)
+	ref, err := c.registry.bind(ctx, lease, input, processedSHA, size, facts)
 	if err != nil {
 		// No provider was called for this new reservation. Preserve the reservation
 		// and stop admission; this is not a recovery of unknown older pending work.

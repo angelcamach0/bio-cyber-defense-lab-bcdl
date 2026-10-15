@@ -29,6 +29,23 @@ parser. Wire UTF8 must be valid before JSON parsing. Client paths, commands,
 images, mounts, policies and proofs are absent. OriginalName is bounded data for
 preserved detection semantics; it is never a transport path or command.
 
+## Fixed analysis protocol v2
+
+`ListenBridgeUnixV2(config, BridgeHandlerV2)` selects the strict v2 codec for the
+entire listener lifetime. `HandleBridgeV2` and optional `AcknowledgeBridgeV2`
+receive `BridgeRequestV2`; `CallBridgeUnixV2` validates v2 replies. V1 and v2 do not
+negotiate or fall back to one another. Both successful responses and error
+envelopes on the v2 listener have `schema_version: 2`.
+
+Every v2 request includes a complete `analysis_context` object. Its six facts
+must match submit's processed size/name; queries require the zero-valued object.
+Unknown, missing, duplicate or null nested fields are rejected by the existing
+strict parser, which has not been widened. The fixed UID remains the caller's
+trust boundary; transmitting asserted verification facts does not authenticate
+cryptographic work. All framing, FD, deadline and ACK rules below apply unchanged.
+The broker separately persists the context with the lease binding; see
+[its v2 contract](README-broker.md#explicit-analysis-protocol-v2).
+
 ## Framing, resources and cancellation
 
 One request per connection: four-byte big-endian length, then 1..65536 bytes JSON.
@@ -70,6 +87,9 @@ Server Close is not a Wait operation or a quota/lease release.
 
 ## Validation scope
 
+The recorded runs and source hashes below predate the new v2 codec. They are
+not evidence that changed v2 source has passed its new checks.
+
 Tests use real local Unix sockets, descriptor passing and context races with
 fake handlers/acknowledgers. They exercise submit/status/cancel/receipt, first-byte
 fragmentation, strict JSON and oversize/timeout recovery; invalid/missing/extra/
@@ -88,7 +108,7 @@ completed with exit 0. These eight top-level functions contain 26 subcases. The
 module compiled the then-current broker/DTO files too; TestBroker and worker
 analysis/CLI behavior are separate tests and were not executed by this command.
 
-Frozen transport SHA256:
+Earlier pre-v2 transport snapshot SHA256:
 `f489e88851fb25675e36bca1696bd61c8c6912b8cec9eed7619022da4b41fdca`.
 Test SHA256:
 `258f73db0b8ec561d06b1a44e270c95dd250e055a0a6b70844f7ada22d65536e`.
@@ -125,3 +145,22 @@ these fake-handler tests. Those integrations have separate acceptance. Receipt
 FD custody/ACK does not grant scientific approval, operator recovery or retention
 release. TM02 immutable owner binding, per-principal quotas and retention remain
 pending.
+
+## Analysis protocol v2 checks
+
+The new v2 broker/context tests passed10top-level functions and their subcases
+with ordinary execution (0.988s) and the race detector (2.564s); `go vet ./...`
+exited0. They use real private Store/journal files and Unix FD sockets with
+synthetic providers. They cover fixed v2/error envelopes, complete strict context,
+registry propagation, changed-context/profile conflicts, duplicate custody,
+lost-ACK committed-only restart, missing/mismatched context history, bilateral
+version refusal, durable context before Reserve, storage/crash gaps and both
+causal journal/Store ACK barriers. No kernel provider, worker crypto or scientific
+pipeline is exercised by this narrow command.
+
+An initial run failed three crash-test subcases because its fixture attempted to
+create a registry from correctly unavailable pending Store history. The fixture
+now asserts that refusal and unchanged ledger/journal bytes. The failed log is
+preserved alongside the corrected ordinary/race/vet logs under the private
+`.biozero/bridge-v2-checks-20261015T005815.199358Z/` evidence root. No production
+guard was weakened. The earlier v1 receipts above remain scoped to their source.

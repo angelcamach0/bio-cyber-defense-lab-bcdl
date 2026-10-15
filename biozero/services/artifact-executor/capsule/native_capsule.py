@@ -47,6 +47,11 @@ KEYS = {
     "reference_path", "reference_sha256", "evaluator_path", "evaluator_sha256",
     "truth_path", "truth_sha256", "python_path", "tool_path", "timeout_seconds",
 }
+ANALYSIS_KEYS = {"executable_path", "executable_sha256", "rules_path", "rules_sha256",
+                 "panel_path", "panel_sha256", "context"}
+CONTEXT_KEYS = {"original_name", "processed_size_bytes", "decrypted", "decryption_error",
+                "signature_valid", "signature_error"}
+ANALYSIS_LIMIT = 64 << 10
 HASH = re.compile(r"[0-9a-f]{64}\Z")
 CODE = re.compile(r"[a-z][a-z0-9_]{0,63}\Z")
 
@@ -106,9 +111,12 @@ def canonical_path(value):
 
 
 def validate_config(config):
-    if type(config) is not dict or set(config) != KEYS:
+    if type(config) is not dict:
         fail("capsule_config_invalid")
-    if type(config["schema_version"]) is not int or config["schema_version"] != 1:
+    version = config.get("schema_version")
+    if type(version) is not int or version not in (1, 2):
+        fail("capsule_config_invalid")
+    if set(config) != (KEYS if version == 1 else KEYS | {"analysis"}):
         fail("capsule_config_invalid")
     for key, low, high in (("input_bytes", 0, INPUT_LIMIT), ("timeout_seconds", 1, 600)):
         if type(config[key]) is not int or not low <= config[key] <= high:
@@ -158,7 +166,41 @@ def validate_config(config):
             parent = os.path.dirname(config[key])
             if parent == "/" or workspace.startswith(parent + "/") or parent.startswith("/proc"):
                 fail("capsule_config_invalid")
+    if version == 2:
+        validate_analysis_config(config)
     return config
+
+
+def validate_analysis_config(config):
+    analysis = config["analysis"]
+    if type(analysis) is not dict or set(analysis) != ANALYSIS_KEYS:
+        fail("capsule_analysis_config_invalid")
+    for name in ("executable", "rules", "panel"):
+        path, pin = analysis[name + "_path"], analysis[name + "_sha256"]
+        if name == "panel" and path == pin == "":
+            continue
+        if (not canonical_path(path) or "\n" in path or "\r" in path
+                or type(pin) is not str or not HASH.fullmatch(pin)
+                or path == "/proc" or path.startswith("/proc/")
+                or path == config["workspace"] or path.startswith(config["workspace"] + "/")):
+            fail("capsule_analysis_config_invalid")
+    facts = analysis["context"]
+    if type(facts) is not dict or set(facts) != CONTEXT_KEYS:
+        fail("capsule_analysis_context_invalid")
+    if (type(facts["processed_size_bytes"]) is not int
+            or facts["processed_size_bytes"] != config["input_bytes"]
+            or type(facts["decrypted"]) is not bool or type(facts["signature_valid"]) is not bool):
+        fail("capsule_analysis_context_invalid")
+    for key, limit in (("original_name", 4096), ("decryption_error", 128), ("signature_error", 128)):
+        try:
+            valid = type(facts[key]) is str and len(facts[key].encode("utf-8")) <= limit
+        except UnicodeError:
+            valid = False
+        if not valid:
+            fail("capsule_analysis_context_invalid")
+    if ((facts["decrypted"] and facts["decryption_error"])
+            or (facts["signature_valid"] and facts["signature_error"])):
+        fail("capsule_analysis_context_invalid")
 
 
 def open_anchored(path, directory=False):
@@ -291,6 +333,11 @@ def prepare_mounts(config):
     for key in ("reference_path", "truth_path", "python_path"):
         if config[key]:
             readonly_bind(config[key])
+    if config["schema_version"] == 2:
+        for name in ("executable", "rules", "panel"):
+            path = config["analysis"][name + "_path"]
+            if path:
+                readonly_bind(path)
 
 
 class CapHeader(ctypes.Structure):
@@ -368,26 +415,49 @@ def stop_namespace_children():
             break
 
 
-def capture_command(command, environment, work, deadline):
+def capture_command(command, environment, work, deadline, stdin_bytes=None, stdout_limit=JSON_LIMIT):
+    if (type(stdout_limit) is not int or not 0 < stdout_limit <= JSON_LIMIT
+            or (stdin_bytes is not None and (type(stdin_bytes) is not bytes or len(stdin_bytes) > ANALYSIS_LIMIT))):
+        fail("capsule_analysis_request_limit")
     remaining = deadline - time.monotonic()
     if remaining <= 0:
         fail("capsule_timeout")
-    process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+    process = subprocess.Popen(command, stdin=subprocess.DEVNULL if stdin_bytes is None else subprocess.PIPE, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, env=environment, cwd=work,
                                close_fds=True)
     captures = {"stdout": bytearray(), "stderr": bytearray()}
     selector = selectors.DefaultSelector()
     try:
-        for name, stream, maximum in (("stdout", process.stdout, JSON_LIMIT),
+        for name, stream, maximum in (("stdout", process.stdout, stdout_limit),
                                       ("stderr", process.stderr, STDERR_LIMIT)):
             os.set_blocking(stream.fileno(), False)
             selector.register(stream, selectors.EVENT_READ, (name, maximum))
+        written, stdin_incomplete = 0, False
+        if stdin_bytes is not None:
+            os.set_blocking(process.stdin.fileno(), False)
+            selector.register(process.stdin, selectors.EVENT_WRITE, ("stdin", 0))
         while selector.get_map():
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 fail("capsule_timeout")
             for key, _ in selector.select(min(remaining, 0.1)):
                 name, maximum = key.data
+                if name == "stdin":
+                    try:
+                        written += os.write(process.stdin.fileno(), stdin_bytes[written:written + 65536])
+                    except BlockingIOError:
+                        continue
+                    except BrokenPipeError:
+                        # The pinned CLI may reject rules before reading stdin.
+                        # Preserve its bounded failure response, not a JSON prefix.
+                        stdin_incomplete = True
+                        selector.unregister(process.stdin)
+                        process.stdin.close()
+                        continue
+                    if written == len(stdin_bytes):
+                        selector.unregister(process.stdin)
+                        process.stdin.close()
+                    continue
                 chunk = os.read(key.fileobj.fileno(), min(65536, maximum - len(captures[name]) + 1))
                 if not chunk:
                     selector.unregister(key.fileobj)
@@ -406,13 +476,19 @@ def capture_command(command, environment, work, deadline):
         payload = parse_json(raw_stdout)
         if type(payload) is not dict:
             fail("capsule_json_invalid")
+        if stdin_incomplete and not (type(code) is int and code == 1
+                                     and type(payload.get("schema_version")) is int
+                                     and payload["schema_version"] == 1
+                                     and payload.get("status") == "failed"):
+            fail("capsule_analysis_stdin_failed")
         return {"returncode": code, "payload": payload,
                 "raw_stdout": raw_stdout.decode("utf-8", errors="strict"),
                 "raw_stderr": bytes(captures["stderr"]).decode("utf-8", errors="replace")}
     finally:
         selector.close()
-        for stream in (process.stdout, process.stderr):
-            stream.close()
+        for stream in (process.stdin, process.stdout, process.stderr):
+            if stream is not None:
+                stream.close()
         if process.poll() is None:
             process.kill()
             try:
@@ -525,6 +601,24 @@ def verify_sources(config):
             sources[name] = {"sha256": digest, "bytes": size}
         finally:
             os.close(fd)
+    if config["schema_version"] == 2:
+        analysis = config["analysis"]
+        for name, limit in (("executable", PIN_LIMIT), ("rules", ANALYSIS_LIMIT), ("panel", REFERENCE_LIMIT)):
+            path = analysis[name + "_path"]
+            if not path:
+                continue
+            fd = open_anchored(path)
+            try:
+                info = os.fstat(fd)
+                if name == "executable" and (not info.st_mode & 0o100 or info.st_mode & 0o7022
+                                              or info.st_nlink != 1 or info.st_uid != os.geteuid()):
+                    fail("capsule_source_unsafe")
+                digest, size = hash_fd(fd, limit)
+                if digest != analysis[name + "_sha256"]:
+                    fail("capsule_source_pin_mismatch")
+                sources["analysis_" + name] = {"sha256": digest, "bytes": size}
+            finally:
+                os.close(fd)
     fd = open_anchored(config["python_path"])
     try:
         if not os.fstat(fd).st_mode & 0o111:
@@ -535,6 +629,100 @@ def verify_sources(config):
         fd = open_anchored(path, directory=True)
         os.close(fd)
     return sources
+
+
+def analysis_passed(capture, config):
+    """Validate the pinned CLI's complete typed result, never its exit alone."""
+    payload, code = capture["payload"], capture["returncode"]
+    if (type(payload) is not dict or set(payload) != {"schema_version", "status", "error_code", "warnings", "detection"}
+            or type(payload["schema_version"]) is not int or payload["schema_version"] != 1
+            or payload["warnings"] != [] or type(code) is not int):
+        fail("capsule_analysis_invalid")
+    if payload["status"] == "failed":
+        if (code != 1 or payload["detection"] is not None or type(payload["error_code"]) is not str
+                or not CODE.fullmatch(payload["error_code"])):
+            fail("capsule_analysis_invalid")
+        return False
+    if payload["status"] != "succeeded" or code != 0 or payload["error_code"] != "":
+        fail("capsule_analysis_invalid")
+    detection = payload["detection"]
+    if (type(detection) is not dict or not {"score", "reason", "verdict", "signals"}.issubset(detection)
+            or set(detection) - {"score", "reason", "verdict", "signals", "reasons"}):
+        fail("capsule_analysis_invalid")
+    def number(value):
+        return type(value) in (int, float) and math.isfinite(value)
+    def integer(value, maximum=(1 << 63) - 1):
+        return type(value) is int and 0 <= value <= maximum
+    reasons = detection.get("reasons", [])
+    valid_reasons = {"suspicious_filename", "file_size_exceeded", "decryption_failed", "signature_invalid",
+                     "critical_pipeline_warnings", "low_quality_reads", "threat_panel_hit"}
+    if (not number(detection["score"]) or not 0 <= detection["score"] <= 1
+            or detection["verdict"] not in ("low", "medium", "high") or type(reasons) is not list
+            or any(type(item) is not str or item not in valid_reasons for item in reasons)
+            or len(reasons) > 7 or len(set(reasons)) != len(reasons)
+            or detection["reason"] != (reasons[0] if reasons else "no suspicious indicators")):
+        fail("capsule_analysis_invalid")
+    signals = detection["signals"]
+    if (type(signals) is not dict or not {"warnings", "integrity", "pipeline"}.issubset(signals)
+            or set(signals) - {"warnings", "integrity", "pipeline", "fastp", "alignment"}):
+        fail("capsule_analysis_invalid")
+    warnings, integrity, pipeline = signals["warnings"], signals["integrity"], signals["pipeline"]
+    if (type(warnings) is not dict or set(warnings) != {"critical", "warn", "info"}
+            or not all(integer(v, 1 << 20) for v in warnings.values())
+            or type(integrity) is not dict or set(integrity) != {"signature_valid", "decrypted"}
+            or not all(type(v) is bool for v in integrity.values())
+            or integrity != {key: config["analysis"]["context"][key] for key in ("signature_valid", "decrypted")}
+            or type(pipeline) is not dict or set(pipeline) != {"read_count", "avg_read_length"}
+            or not all(integer(v) for v in pipeline.values())):
+        fail("capsule_analysis_invalid")
+    if "fastp" in signals:
+        fastp = signals["fastp"]
+        if type(fastp) is not dict or set(fastp) != {"q30_rate"} or not number(fastp["q30_rate"]):
+            fail("capsule_analysis_invalid")
+    if bool(config["analysis"]["panel_path"]) != ("alignment" in signals):
+        fail("capsule_analysis_invalid")
+    if "alignment" in signals:
+        alignment = signals["alignment"]
+        if (type(alignment) is not dict or not {"mapped_reads", "total_reads", "fraction"}.issubset(alignment)
+                or set(alignment) - {"mapped_reads", "total_reads", "fraction", "targets"}):
+            fail("capsule_analysis_invalid")
+        mapped, total, fraction = alignment["mapped_reads"], alignment["total_reads"], alignment["fraction"]
+        targets = alignment.get("targets", {})
+        if (not integer(total, 1000000) or not integer(mapped, total) or not number(fraction)
+                or fraction != (mapped / total if total else 0)
+                or type(targets) is not dict or len(targets) > 128):
+            fail("capsule_analysis_invalid")
+        for target, count in targets.items():
+            if (type(target) is not str or len(target) > 128 or any(not 33 <= ord(c) <= 126 for c in target)
+                    or not integer(count, mapped) or count == 0):
+                fail("capsule_analysis_invalid")
+        if sum(targets.values()) != mapped:
+            fail("capsule_analysis_invalid")
+    return True
+
+
+def run_analysis(config, pipeline, input_path, env, work, deadline):
+    """No projection/truncation: unsupported large payloads remain explicit failure."""
+    capture = None
+    try:
+        analysis = config["analysis"]
+        request = json_bytes({"schema_version": 1, "context": analysis["context"], "pipeline": pipeline["payload"]})
+        if len(request) > ANALYSIS_LIMIT:
+            fail("capsule_analysis_request_limit")
+        capture = capture_command([analysis["executable_path"], "--rules", analysis["rules_path"],
+                                   "--panel", analysis["panel_path"], "--content", input_path],
+                                  env, work, deadline, stdin_bytes=request, stdout_limit=ANALYSIS_LIMIT)
+        return capture, "" if analysis_passed(capture, config) else "capsule_analysis_failed"
+    except CapsuleError as exc:
+        if exc.code in ("capsule_timeout", "capsule_cancelled"):
+            raise
+        code = exc.code
+    except OSError:
+        code = "capsule_analysis_start_failed"
+    if capture is None:
+        # No valid complete CLI result was observed; no exit/status is invented.
+        capture = {"returncode": None, "payload": None, "raw_stdout": "", "raw_stderr": "", "error_code": code}
+    return capture, code
 
 
 def write_receipt(work, receipt):
@@ -609,13 +797,21 @@ def execute(config, deadline):
                 else:
                     outcome["release_status"] = "withheld"
                     outcome["error_code"] = "capsule_science_failed"
+        analysis_capture = None
+        if config["schema_version"] == 2:
+            analysis_capture, analysis_error = run_analysis(config, pipeline, input_path, env, work, deadline)
+            stop_namespace_children()
+            if analysis_error:
+                outcome.update(execution_status="failed", release_status="withheld", error_code=analysis_error)
         stop_namespace_children()
-        receipt = {"schema_version": 1, "input_sha256": input_sha, "input_bytes": input_bytes,
+        receipt = {"schema_version": config["schema_version"], "input_sha256": input_sha, "input_bytes": input_bytes,
                    "source_pins": sources, "mode": config["mode"], "capsule_state": state,
                    "workspace_policy": {"filesystem": "tmpfs", "bytes": WORKSPACE_LIMIT,
                                         "nr_inodes": 4096, "file_bytes": FILE_LIMIT},
                    "outcome": outcome, "pipeline": pipeline, "evaluation": evaluated,
                    "scope": "synthetic normalized allele presence; no biological accuracy claim"}
+        if config["schema_version"] == 2:
+            receipt.update(analysis_capture=analysis_capture, analysis_context=config["analysis"]["context"])
         receipt_path = write_receipt(work, receipt)
         fd, metadata = export_file(receipt_path)
         files.append(("execution_receipt", fd, metadata))

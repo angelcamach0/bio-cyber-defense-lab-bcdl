@@ -24,8 +24,8 @@ production readiness, biological accuracy or the complete platform.
 | Strict metadata and output bounds | shared job/result corpus; metadata-contract; pipeline/resource_budget | Bounded private reads and projected lifecycle; stdout/stderr/result/file limits; failure stays withheld | Remaining payload/config/event/cache/cardinality and physical-spool controls |
 | Aggregate capsule workspace | native/Docker providers; artifact-workspace-contract | Actual128MiB/4096inode-unit limits,64MiB per file, separate byte/inode exhaustion and capsule controls | Install providers in protected worker and repeat native/Compose integrated acceptance |
 | Retained artifact custody | artifact-executor Store/coordinator | Reserve/Begin/export/proof/commit before ACK;1GiB/64slots,64MiB exports; failure/cancel/restart accounting | Full principal binding/quotas, operator reconciliation and explicit provenance-preserving retention |
-| Worker FD bridge | broker/bridge protocol and journal | Strict Unix FD tests, durable job-to-lease identity, duplicates/conflicts, ACK-loss and crash barriers | Protected crypto→submit, complete result projection/readback and worker-death acceptance |
-| Complete bounded analysis | analysis package and capsule-analysis CLI | Preserved scoring/defaults, bounded SAM/targets/capture/deadlines, strict panel configuration; standalone actual minimap2 | Pin/install executable/rules/panel and per-job facts inside both providers; no tools outside quota |
+| Worker FD bridge | broker/bridge protocol and journal; fixed host service | V1 preserved, strict separatev2 with durable exact context, compiled service/profile/restart/receipt/cleanup-error acceptance | Protected crypto→submit, verified bounded plaintext staging, complete result projection/readback and worker-death acceptance |
+| Complete bounded analysis | analysis package/CLI in both capsule providers | Actual broker+native/Docker pipeline/evaluator/alignment; exact pins/context/receipt,3SNP truth, rules failure revokes approval | Connect protected worker without moving tools outside quota; repeat full native/Compose crypto and authorization acceptance |
 | Image/tool reproducibility | ARM native lock; cached capsule image; analysis build receipts | Same-environment analysis binaries repeat byte-for-byte; tool versions/source pins recorded | Full image base/dependency/builder closure, verified offline builds/transfer, licenses and separate AMD64 acceptance |
 | Execution lifecycle and recovery | native/container lifecycle opt-ins | Cancel/timeout/PID1/keeper death, immediate pending restart denial, preserved charges and failed histories | Integrated worker/broker/capsule lifecycle, injected attach/removal/storage uncertainty and safe operator recovery |
 | Independent reproducible experiment | Makefile; native/Compose runbooks; public evidence allowlists | Protected native78assertions, Compose30, Firefox23 and optional responder13 at their exact source snapshots | Fresh acceptance for every changed integration; hosted CI does not cover all local opt-ins |
@@ -55,7 +55,9 @@ production readiness, biological accuracy or the complete platform.
 - New source requires its own checks. CI38660550112 at0dd7384 failed before
   protected-service startup on a recursive single-output build; its unit/PKI and
   scientific repeat passed. The corrected harness uses one executable package
-  per output and passed a fresh local78-check run; publication/CI remain separate.
+  per output and passed a fresh local78-check run and its own CI38661813114 at
+  98f2f89. Later capsule/service source has separate local receipts and needs its
+  own publication/CI; no previous result silently approves new source.
 
 ## Reproduction entry points
 

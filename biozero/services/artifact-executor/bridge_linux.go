@@ -38,20 +38,32 @@ type bridgeJournal struct {
 	Records       map[string]bridgeBinding `json:"records"`
 }
 
+// bridgeJournalV2 is deliberately separate: legacy journals never acquire empty
+// contexts by migration. Exact map-key equality is required before any recovery.
+type bridgeJournalV2 struct {
+	SchemaVersion    int                        `json:"schema_version"`
+	StoreID          string                     `json:"store_id"`
+	PolicySHA256     string                     `json:"policy_sha256"`
+	ProfileSHA256    string                     `json:"profile_sha256"`
+	Records          map[string]bridgeBinding   `json:"records"`
+	AnalysisContexts map[string]AnalysisContext `json:"analysis_contexts"`
+}
+
 // Broker is the trusted worker FD bridge. Its journal is bounded metadata outside
 // Store's managed byte charge: <=1MiB plus one <=1MiB atomic replacement. It adds
 // no terminal release/TTL and never turns an ambiguous historical job into a retry.
 // Store/coordinator ownership stays with the caller until provider Wait finishes.
 type Broker struct {
-	mu             sync.Mutex
-	coordinator    *Coordinator
-	root, lock     *os.File
-	data           bridgeJournal
-	journalSHA     string
-	sticky, closed bool
-	released       bool
-	activeDone     chan struct{}
-	fault          func(string) error // private injection points, never wire fields
+	mu               sync.Mutex
+	coordinator      *Coordinator
+	root, lock       *os.File
+	data             bridgeJournal
+	analysisContexts map[string]AnalysisContext
+	journalSHA       string
+	sticky, closed   bool
+	released         bool
+	activeDone       chan struct{}
+	fault            func(string) error // private injection points, never wire fields
 }
 
 func (b *Broker) point(name string) error {
@@ -77,6 +89,15 @@ func (b *Broker) ready() error {
 	return s.ready()
 }
 func NewBroker(ctx context.Context, cfg BrokerConfig, c *Coordinator) (*Broker, error) {
+	return newBroker(ctx, cfg, c, 1)
+}
+
+// NewBrokerV2 selects analysis-bearing history explicitly. It refuses v1 history
+// and never adopts existing Store records into an empty analysis baseline.
+func NewBrokerV2(ctx context.Context, cfg BrokerConfig, c *Coordinator) (*Broker, error) {
+	return newBroker(ctx, cfg, c, 2)
+}
+func newBroker(ctx context.Context, cfg BrokerConfig, c *Coordinator, version int) (*Broker, error) {
 	if ctx == nil || c == nil || !hexID(cfg.ProfileSHA256, 64) || cfg.JournalRoot == "" {
 		return nil, fail("artifact_bridge_config_invalid")
 	}
@@ -111,7 +132,7 @@ func NewBroker(ctx context.Context, cfg BrokerConfig, c *Coordinator) (*Broker, 
 	if err != nil {
 		return nil, err
 	}
-	b := &Broker{coordinator: c, root: root}
+	b := &Broker{coordinator: c, root: root, analysisContexts: map[string]AnalysisContext{}}
 	keep := false
 	defer func() {
 		if !keep {
@@ -165,16 +186,16 @@ func NewBroker(ctx context.Context, cfg BrokerConfig, c *Coordinator) (*Broker, 
 		if !empty {
 			return nil, b.latch("artifact_bridge_history_missing")
 		}
-		b.data = bridgeJournal{1, storeID, policySHA, cfg.ProfileSHA256, map[string]bridgeBinding{}}
+		b.data = bridgeJournal{version, storeID, policySHA, cfg.ProfileSHA256, map[string]bridgeBinding{}}
 		if e = b.save(); e != nil {
 			return nil, e
 		}
 	} else {
-		if err != nil || strictJSON(raw, &b.data) != nil {
+		if err != nil || b.decodeJournal(raw, version) != nil {
 			return nil, b.latch("artifact_bridge_history_invalid")
 		}
 		b.journalSHA = digest(raw)
-		if b.data.SchemaVersion != 1 || b.data.StoreID != storeID || b.data.PolicySHA256 != policySHA || b.data.ProfileSHA256 != cfg.ProfileSHA256 || b.data.Records == nil || len(b.data.Records) > maxJobs {
+		if b.data.SchemaVersion != version || b.data.StoreID != storeID || b.data.PolicySHA256 != policySHA || b.data.ProfileSHA256 != cfg.ProfileSHA256 || b.data.Records == nil || len(b.data.Records) > maxJobs {
 			return nil, b.latch("artifact_bridge_history_invalid")
 		}
 		if e := b.validateHistory(ctx); e != nil {
@@ -184,11 +205,35 @@ func NewBroker(ctx context.Context, cfg BrokerConfig, c *Coordinator) (*Broker, 
 	keep = true
 	return b, nil
 }
+func (b *Broker) decodeJournal(raw []byte, version int) error {
+	if version == 1 {
+		return strictJSON(raw, &b.data)
+	}
+	var j bridgeJournalV2
+	if strictJSON(raw, &j) != nil || j.SchemaVersion != 2 || j.AnalysisContexts == nil || j.Records == nil || len(j.AnalysisContexts) != len(j.Records) {
+		return fail("artifact_bridge_history_invalid")
+	}
+	for job, v := range j.Records {
+		facts, ok := j.AnalysisContexts[job]
+		if !ok || validateAnalysisContext(facts, v.ProcessedBytes) != nil || facts.OriginalName != v.OriginalName {
+			return fail("artifact_bridge_history_invalid")
+		}
+	}
+	b.data = bridgeJournal{j.SchemaVersion, j.StoreID, j.PolicySHA256, j.ProfileSHA256, j.Records}
+	b.analysisContexts = j.AnalysisContexts
+	return nil
+}
 func (b *Broker) save() error {
 	if b.closed || b.sticky {
 		return fail("artifact_bridge_unavailable")
 	}
-	raw, err := jsonBytes(b.data)
+	var raw []byte
+	var err error
+	if b.data.SchemaVersion == 2 {
+		raw, err = jsonBytes(bridgeJournalV2{2, b.data.StoreID, b.data.PolicySHA256, b.data.ProfileSHA256, b.data.Records, b.analysisContexts})
+	} else {
+		raw, err = jsonBytes(b.data)
+	}
 	if err != nil || int64(len(raw)) > bridgeJournalLimit {
 		return b.latch("artifact_bridge_journal_oversized")
 	}
@@ -328,6 +373,22 @@ func (b *Broker) response(ctx context.Context, v bridgeBinding, cancelled bool) 
 // duplicates it atomically. Returning a receipt transfers that descriptor to the
 // transport; neither arbitrary Store files nor namespace paths are exposed.
 func (b *Broker) HandleBridge(ctx context.Context, q BridgeRequest, input *os.File) (BridgeResponse, *os.File, error) {
+	return b.handleBridge(ctx, q, input, nil, 1)
+}
+
+// HandleBridgeV2 binds supplied verifier facts durably before Reserve and into
+// the one-shot FD registry. These caller facts are not cryptographic proofs.
+func (b *Broker) HandleBridgeV2(ctx context.Context, q BridgeRequestV2, input *os.File) (BridgeResponse, *os.File, error) {
+	if validateBridgeRequestV2(q) != nil {
+		return BridgeResponse{}, nil, fail("artifact_bridge_request_invalid")
+	}
+	r, f, e := b.handleBridge(ctx, q.legacy(), input, &q.AnalysisContext, 2)
+	if e == nil {
+		r.SchemaVersion = 2
+	}
+	return r, f, e
+}
+func (b *Broker) handleBridge(ctx context.Context, q BridgeRequest, input *os.File, facts *AnalysisContext, version int) (BridgeResponse, *os.File, error) {
 	if ctx == nil || ctx.Err() != nil || validateBridgeRequest(q) != nil || (q.Operation == "submit") != (input != nil) {
 		return BridgeResponse{}, nil, fail("artifact_bridge_request_invalid")
 	}
@@ -336,12 +397,12 @@ func (b *Broker) HandleBridge(ctx context.Context, q BridgeRequest, input *os.Fi
 		b.mu.Unlock()
 		return BridgeResponse{}, nil, err
 	}
-	if q.ExpectedProfileSHA256 != b.data.ProfileSHA256 {
+	if version != b.data.SchemaVersion || q.ExpectedProfileSHA256 != b.data.ProfileSHA256 {
 		b.mu.Unlock()
 		return BridgeResponse{}, nil, fail("artifact_bridge_profile_mismatch")
 	}
 	v, exists := b.data.Records[q.JobID]
-	if exists && (v.UploadSHA256 != q.UploadSHA256 || (q.Operation == "submit" && (v.ProcessedSHA256 != q.ProcessedSHA256 || v.ProcessedBytes != q.ProcessedBytes || v.OriginalName != q.OriginalName))) {
+	if exists && (v.UploadSHA256 != q.UploadSHA256 || (q.Operation == "submit" && (v.ProcessedSHA256 != q.ProcessedSHA256 || v.ProcessedBytes != q.ProcessedBytes || v.OriginalName != q.OriginalName || (version == 2 && b.analysisContexts[q.JobID] != *facts)))) {
 		b.mu.Unlock()
 		return BridgeResponse{}, nil, fail("artifact_bridge_conflict")
 	}
@@ -410,6 +471,9 @@ func (b *Broker) HandleBridge(ctx context.Context, q BridgeRequest, input *os.Fi
 	}
 	v = bridgeBinding{JobID: q.JobID, UploadSHA256: q.UploadSHA256, ProcessedSHA256: q.ProcessedSHA256, ProcessedBytes: q.ProcessedBytes, OriginalName: q.OriginalName, Stage: "intent"}
 	b.data.Records[q.JobID] = v
+	if version == 2 {
+		b.analysisContexts[q.JobID] = *facts
+	}
 	if err = b.save(); err != nil {
 		b.mu.Unlock()
 		return BridgeResponse{}, nil, err
@@ -443,7 +507,12 @@ func (b *Broker) HandleBridge(ctx context.Context, q BridgeRequest, input *os.Fi
 		b.mu.Unlock()
 		return BridgeResponse{}, nil, err
 	}
-	ref, err := b.coordinator.registry.Bind(ctx, v.LeaseID, verified, v.ProcessedSHA256, v.ProcessedBytes)
+	var ref string
+	if version == 2 {
+		ref, err = b.coordinator.registry.BindWithAnalysis(ctx, v.LeaseID, verified, v.ProcessedSHA256, v.ProcessedBytes, *facts)
+	} else {
+		ref, err = b.coordinator.registry.Bind(ctx, v.LeaseID, verified, v.ProcessedSHA256, v.ProcessedBytes)
+	}
 	if err != nil {
 		err = b.latch("artifact_bridge_input_binding_failed")
 		b.mu.Unlock()
@@ -536,6 +605,15 @@ func (b *Broker) latchStoreLocked(code string) error {
 	return b.coordinator.store.latch(code)
 }
 func (b *Broker) AcknowledgeBridge(ctx context.Context, q BridgeRequest, write func() error) error {
+	return b.acknowledgeBridge(ctx, q, write, nil, 1)
+}
+func (b *Broker) AcknowledgeBridgeV2(ctx context.Context, q BridgeRequestV2, write func() error) error {
+	if validateBridgeRequestV2(q) != nil {
+		return fail("artifact_bridge_ack_invalid")
+	}
+	return b.acknowledgeBridge(ctx, q.legacy(), write, &q.AnalysisContext, 2)
+}
+func (b *Broker) acknowledgeBridge(ctx context.Context, q BridgeRequest, write func() error, facts *AnalysisContext, version int) error {
 	if ctx == nil || ctx.Err() != nil || validateBridgeRequest(q) != nil || write == nil {
 		return fail("artifact_bridge_ack_invalid")
 	}
@@ -545,10 +623,10 @@ func (b *Broker) AcknowledgeBridge(ctx context.Context, q BridgeRequest, write f
 		return err
 	}
 	v, ok := b.data.Records[q.JobID]
-	if !ok || v.UploadSHA256 != q.UploadSHA256 || q.ExpectedProfileSHA256 != b.data.ProfileSHA256 {
+	if version != b.data.SchemaVersion || !ok || v.UploadSHA256 != q.UploadSHA256 || q.ExpectedProfileSHA256 != b.data.ProfileSHA256 {
 		return fail("artifact_bridge_ack_invalid")
 	}
-	if q.Operation == "submit" && (v.ProcessedSHA256 != q.ProcessedSHA256 || v.ProcessedBytes != q.ProcessedBytes || v.OriginalName != q.OriginalName) {
+	if q.Operation == "submit" && (v.ProcessedSHA256 != q.ProcessedSHA256 || v.ProcessedBytes != q.ProcessedBytes || v.OriginalName != q.OriginalName || (version == 2 && b.analysisContexts[q.JobID] != *facts)) {
 		return fail("artifact_bridge_ack_invalid")
 	}
 	if b.point("before_ack_store_lock") != nil {

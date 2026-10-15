@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"net"
 	"os"
@@ -25,6 +26,133 @@ type PinnedAsset struct {
 	SHA256 string
 }
 
+// CapsuleAnalysisConfig is fixed host configuration, never an RPC surface.
+// Optional Panel must agree in presence with the pinned rules before execution.
+type CapsuleAnalysisConfig struct {
+	Executable, Rules, Panel PinnedAsset
+}
+
+type nativeAnalysisSpec struct {
+	ExecutablePath   string          `json:"executable_path"`
+	ExecutableSHA256 string          `json:"executable_sha256"`
+	RulesPath        string          `json:"rules_path"`
+	RulesSHA256      string          `json:"rules_sha256"`
+	PanelPath        string          `json:"panel_path"`
+	PanelSHA256      string          `json:"panel_sha256"`
+	Context          AnalysisContext `json:"context"`
+}
+
+func copyCapsuleAnalysis(config *CapsuleAnalysisConfig) *CapsuleAnalysisConfig {
+	if config == nil {
+		return nil
+	}
+	copy := *config
+	return &copy
+}
+
+// Verify pinned metadata before any workspace/producer exists. Rules are parsed
+// here only to preserve panel presence; the strict CLI still validates all rule
+// fields inside the capsule, and can fail without approving prior pipeline work.
+func verifyCapsuleAnalysis(ctx context.Context, config *CapsuleAnalysisConfig, workspaceRoot string, container bool) error {
+	if config == nil {
+		return nil
+	}
+	root, err := filepath.Abs(workspaceRoot)
+	if err != nil {
+		return fail("artifact_analysis_config_invalid")
+	}
+	for _, entry := range []struct {
+		asset      PinnedAsset
+		limit      int64
+		executable bool
+		optional   bool
+	}{
+		{config.Executable, 4 << 20, true, false}, {config.Rules, 64 << 10, false, false}, {config.Panel, 32 << 20, false, true},
+	} {
+		a := entry.asset
+		if a.Path == "" && a.SHA256 == "" && entry.optional {
+			continue
+		}
+		if a.Path == "" || !hexID(a.SHA256, 64) || a.Path == root || strings.HasPrefix(a.Path, root+"/") || (container && !safeContainerSource(a.Path)) {
+			return fail("artifact_analysis_config_invalid")
+		}
+		f, err := openPinnedAsset(ctx, a, entry.limit)
+		if err != nil {
+			return fail("artifact_analysis_asset_invalid")
+		}
+		if entry.executable {
+			info, e := f.Stat()
+			if e != nil {
+				f.Close()
+				return fail("artifact_analysis_asset_invalid")
+			}
+			stat, ok := info.Sys().(*syscall.Stat_t)
+			// Capsule UID maps this host UID; a private root-owned executable would not
+			// have the same permission/owner interpretation in the native namespace.
+			if !ok || stat.Uid != uint32(os.Geteuid()) || stat.Mode&0100 == 0 {
+				f.Close()
+				return fail("artifact_analysis_executable_invalid")
+			}
+		}
+		f.Close()
+	}
+	rules, err := openPinnedAsset(ctx, config.Rules, 64<<10)
+	if err != nil {
+		return fail("artifact_analysis_asset_invalid")
+	}
+	defer rules.Close()
+	raw, err := io.ReadAll(io.NewSectionReader(rules, 0, (64<<10)+1))
+	if err != nil || len(raw) > 64<<10 || digest(raw) != config.Rules.SHA256 {
+		return fail("artifact_analysis_asset_invalid")
+	}
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.UseNumber()
+	value, err := scanJSON(decoder, 0)
+	if err != nil {
+		return fail("artifact_analysis_rules_invalid")
+	}
+	if _, err = decoder.Token(); err != io.EOF {
+		return fail("artifact_analysis_rules_invalid")
+	}
+	object, ok := value.(map[string]any)
+	if !ok {
+		return fail("artifact_analysis_rules_invalid")
+	}
+	enabled := false
+	if field, exists := object["threat_panel_fasta"]; exists {
+		path, ok := field.(string)
+		if !ok {
+			return fail("artifact_analysis_rules_invalid")
+		}
+		enabled = path != ""
+	}
+	if enabled != (config.Panel.Path != "") {
+		return fail("artifact_analysis_panel_mismatch")
+	}
+	return nil
+}
+
+func analysisForInput(config *CapsuleAnalysisConfig, facts *AnalysisContext, bytes int64, container bool) (*nativeAnalysisSpec, error) {
+	if (config == nil) != (facts == nil) {
+		return nil, fail("artifact_analysis_context_invalid")
+	}
+	if config == nil {
+		return nil, nil
+	}
+	if validateAnalysisContext(*facts, bytes) != nil {
+		return nil, fail("artifact_analysis_context_invalid")
+	}
+	a := &nativeAnalysisSpec{ExecutablePath: config.Executable.Path, ExecutableSHA256: config.Executable.SHA256, RulesPath: config.Rules.Path, RulesSHA256: config.Rules.SHA256, PanelPath: config.Panel.Path, PanelSHA256: config.Panel.SHA256, Context: *facts}
+	if container {
+		a.ExecutablePath = "/run/biozero/analysis/capsule-analysis"
+		a.RulesPath = "/run/biozero/analysis/rules.json"
+		if a.PanelPath != "" {
+			a.PanelPath = "/run/biozero/analysis/panel.fa"
+		}
+	}
+	return a, nil
+}
+
 // NativeProviderConfig is trusted host configuration. None of its paths, tool
 // selection, policy or limits are accepted through run/status/cancel RPC.
 type NativeProviderConfig struct {
@@ -34,6 +162,7 @@ type NativeProviderConfig struct {
 	Evaluator, Truth            PinnedAsset
 	ResourceBudgetSHA256        string
 	TimeoutSeconds              int
+	Analysis                    *CapsuleAnalysisConfig
 }
 
 type NativeProvider struct {
@@ -44,23 +173,24 @@ type NativeProvider struct {
 }
 
 type nativeSpec struct {
-	SchemaVersion        int    `json:"schema_version"`
-	Workspace            string `json:"workspace"`
-	InputBytes           int64  `json:"input_bytes"`
-	InputSHA256          string `json:"input_sha256"`
-	Mode                 string `json:"mode"`
-	PipelinePath         string `json:"pipeline_path"`
-	PipelineSHA256       string `json:"pipeline_sha256"`
-	ResourceBudgetSHA256 string `json:"resource_budget_sha256"`
-	ReferencePath        string `json:"reference_path"`
-	ReferenceSHA256      string `json:"reference_sha256"`
-	EvaluatorPath        string `json:"evaluator_path"`
-	EvaluatorSHA256      string `json:"evaluator_sha256"`
-	TruthPath            string `json:"truth_path"`
-	TruthSHA256          string `json:"truth_sha256"`
-	PythonPath           string `json:"python_path"`
-	ToolPath             string `json:"tool_path"`
-	TimeoutSeconds       int    `json:"timeout_seconds"`
+	SchemaVersion        int                 `json:"schema_version"`
+	Workspace            string              `json:"workspace"`
+	InputBytes           int64               `json:"input_bytes"`
+	InputSHA256          string              `json:"input_sha256"`
+	Mode                 string              `json:"mode"`
+	PipelinePath         string              `json:"pipeline_path"`
+	PipelineSHA256       string              `json:"pipeline_sha256"`
+	ResourceBudgetSHA256 string              `json:"resource_budget_sha256"`
+	ReferencePath        string              `json:"reference_path"`
+	ReferenceSHA256      string              `json:"reference_sha256"`
+	EvaluatorPath        string              `json:"evaluator_path"`
+	EvaluatorSHA256      string              `json:"evaluator_sha256"`
+	TruthPath            string              `json:"truth_path"`
+	TruthSHA256          string              `json:"truth_sha256"`
+	PythonPath           string              `json:"python_path"`
+	ToolPath             string              `json:"tool_path"`
+	TimeoutSeconds       int                 `json:"timeout_seconds"`
+	Analysis             *nativeAnalysisSpec `json:"analysis,omitempty"`
 }
 
 type nativeFile struct {
@@ -193,7 +323,7 @@ func (p *NativeProvider) verifyAssets(ctx context.Context) error {
 		}
 		f.Close()
 	}
-	return nil
+	return verifyCapsuleAnalysis(ctx, p.config.Analysis, p.config.WorkspaceRoot, false)
 }
 
 func NewNativeProvider(ctx context.Context, config NativeProviderConfig) (*NativeProvider, error) {
@@ -226,6 +356,7 @@ func NewNativeProvider(ctx context.Context, config NativeProviderConfig) (*Nativ
 	if err != nil {
 		return nil, fail("artifact_native_config_invalid")
 	}
+	config.Analysis = copyCapsuleAnalysis(config.Analysis)
 	provider := &NativeProvider{config: config}
 	if err := provider.verifyAssets(ctx); err != nil {
 		return nil, err
@@ -294,11 +425,20 @@ func (p *NativeProvider) Execute(parent context.Context, input *ScopedInput, exp
 	input.mu.Lock()
 	file, err := duplicateReadOnly(input.file)
 	inputBytes, sha := input.Bytes, input.ProcessedSHA256
+	var facts *AnalysisContext
+	if input.AnalysisContext != nil {
+		copy := *input.AnalysisContext
+		facts = &copy
+	}
 	input.mu.Unlock()
 	if err != nil {
 		return nativeFailure("artifact_native_input_unavailable", true)
 	}
 	defer file.Close()
+	analysis, err := analysisForInput(p.config.Analysis, facts, inputBytes, false)
+	if err != nil {
+		return nativeFailure("artifact_analysis_context_invalid", true)
+	}
 	name, err := token()
 	if err != nil {
 		return nativeFailure("artifact_native_unavailable", true)
@@ -322,10 +462,13 @@ func (p *NativeProvider) Execute(parent context.Context, input *ScopedInput, exp
 	if p.root.Sync() != nil {
 		return nativeFailure("artifact_native_workspace_unavailable", true)
 	}
-	spec := nativeSpec{1, workspace, inputBytes, sha, p.config.Mode, p.config.Pipeline.Path, p.config.Pipeline.SHA256,
-		p.config.ResourceBudgetSHA256, p.config.Reference.Path, p.config.Reference.SHA256,
-		p.config.Evaluator.Path, p.config.Evaluator.SHA256, p.config.Truth.Path, p.config.Truth.SHA256,
-		p.config.PythonPath, p.config.ToolPath, p.config.TimeoutSeconds}
+	spec := nativeSpec{SchemaVersion: 1, Workspace: workspace, InputBytes: inputBytes, InputSHA256: sha, Mode: p.config.Mode,
+		PipelinePath: p.config.Pipeline.Path, PipelineSHA256: p.config.Pipeline.SHA256, ResourceBudgetSHA256: p.config.ResourceBudgetSHA256,
+		ReferencePath: p.config.Reference.Path, ReferenceSHA256: p.config.Reference.SHA256, EvaluatorPath: p.config.Evaluator.Path, EvaluatorSHA256: p.config.Evaluator.SHA256,
+		TruthPath: p.config.Truth.Path, TruthSHA256: p.config.Truth.SHA256, PythonPath: p.config.PythonPath, ToolPath: p.config.ToolPath, TimeoutSeconds: p.config.TimeoutSeconds, Analysis: analysis}
+	if analysis != nil {
+		spec.SchemaVersion = 2
+	}
 	raw, err := jsonBytes(spec)
 	if err != nil || len(raw) > MaxFrameBytes {
 		return nativeFailure("artifact_native_config_invalid", true)

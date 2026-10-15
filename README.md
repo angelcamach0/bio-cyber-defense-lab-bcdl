@@ -65,10 +65,17 @@ deployment remains pending. ZeroResponder is optional simulation.
 The initial implementation and curated evidence were merged through [PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21) on2026-10-14.
 The standalone [container capsule provider](biozero/services/artifact-executor/README-container.md)
 has separate synthetic, quota and recovery acceptance; protected worker integration
-and a reproducible image build remain pending. See the current status for the
+and a reproducible image build remain pending. Pinned analysis now executes inside
+both providers through the v2 FD broker, and the compiled
+[host service](biozero/services/artifact-executor/README-service.md) has actual
+native/Docker science, detection, restart and visible cleanup-failure acceptance.
+These tests supply synthetic crypto facts; connecting the protected worker is next.
+See [complete analysis scope](biozero/services/artifact-executor/README-analysis-integration.md)
+and the current status for the
 source and publication scope of this subsequent delivery.
-[Hosted ARM CI](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38587738514)
-passed unit/PKI checks, the scientific repeat and the protected native experiment.
+[Hosted ARM CI for98f2f89](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38661813114)
+passed unit/PKI checks, the scientific repeat and the protected native experiment;
+subsequent source has its own checks in the current PR.
 
 Reports separate execution status from scientific release: evaluated_passed,
 withheld or unassessed. A completed process alone does not approve scientific results.

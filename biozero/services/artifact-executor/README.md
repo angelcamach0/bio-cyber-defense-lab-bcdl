@@ -2,17 +2,20 @@
 
 This standalone module implements durable storage/framing, a Unix listener/client,
 a scoped-input registry/coordinator, a native namespace provider and an explicitly
-configured host Docker provider. It is not installed in the worker or deployed as
-a service. Separate native and Docker module acceptance ran the synthetic
+configured host Docker provider. The [host service command](README-service.md)
+has compiled native/Docker acceptance, without a persistent production deployment.
+It is not installed in the protected worker. Separate module acceptance ran the synthetic
 three-SNP pipeline and evaluator, without running a trained model. See
 [native evidence](README-native.md), [Docker evidence](README-container.md),
 [coordinator ordering](README-coordinator.md), [Unix channel](README-server.md)
 and [the contract](../../docs/security/artifact-workspace-contract.md).
 
 A new standalone [worker FD broker](README-broker.md) adds a separate strict
-submit/status/cancel/receipt protocol and durable job-to-lease binding. It is not
-yet connected to the worker or installed as a service; its acceptance scope is
-separate from the native/Docker provider receipts.
+submit/status/cancel/receipt protocol and durable job-to-lease binding. Separate v2
+persists verified-caller context for pinned capsule analysis; v1 remains unchanged.
+[Combined acceptance](README-analysis-integration.md) now covers broker plus actual
+providers/analysis and the compiled service. Protected-worker integration remains
+required; earlier receipts retain their original separate scope.
 
 `Open(ctx, root, policy)` requires Linux, private root mode0700, files0600 owned by
 the effective UID, descriptor-anchored no-follow traversal and same-filesystem

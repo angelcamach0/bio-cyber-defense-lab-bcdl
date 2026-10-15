@@ -78,7 +78,8 @@ the corrected panel-presence guard and nonempty host-to-capsule path mapping. Ex
 GOTOOLCHAIN=local, GOPROXY=off and GOSUMDB=off; no dependency/network acquisition.
 These tests do not launch a standalone compiled CLI binary. Independent source review
 subsequently checked the corrected panel guard without rerunning tests and identified no further
-blocker. Package/CLI integration into the worker or capsule remains separate.
+blocker. Those tests retain their package/CLI scope; subsequent real capsule
+integration is described below. The protected worker remains separate.
 
 ## Subsequent compiled-binary checkpoint
 
@@ -108,5 +109,15 @@ Evidence remains under ignored
 `.biozero/analysis-repro-build-20261015T002250.270419Z/`; target names and raw
 output remain private. Caller crypto facts were synthetic. No broker, capsule,
 protected-worker TLS/signature/decryption, image or biological model was exercised
-by that CLI acceptance. Pinning/integrating the binary into those paths remains
-the next step; these local receipts have not become hosted-CI evidence.
+by that CLI acceptance. Those local receipts have not become hosted-CI evidence.
+
+## Subsequent capsule integration
+
+The same pinned binary now runs inside both native and Docker providers with
+pinned rules/panel and durable per-job facts through the separate v2 FD broker.
+[Complete acceptance](../../artifact-executor/README-analysis-integration.md)
+demonstrates actual pipeline/evaluator/detection, duplicate custody and failed
+rules withholding. The compiled host service additionally exercises restart and
+visible socket-cleanup failure. Those receipts have their own source/scope;
+the earlier standalone run is not relabeled. Protected-worker integration,
+authenticated facts and production deployment remain pending.

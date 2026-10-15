@@ -27,6 +27,13 @@ type BridgeHandler interface {
 
 // BridgeAcknowledger wraps the actual bounded socket write, synchronously and at
 // most once. Without this interface the generic transport claims no durable ACK.
+type BridgeHandlerV2 interface {
+	HandleBridgeV2(context.Context, BridgeRequestV2, *os.File) (BridgeResponse, *os.File, error)
+}
+type BridgeAcknowledgerV2 interface {
+	AcknowledgeBridgeV2(context.Context, BridgeRequestV2, func() error) error
+}
+
 type BridgeAcknowledger interface {
 	AcknowledgeBridge(context.Context, BridgeRequest, func() error) error
 }
@@ -34,8 +41,10 @@ type BridgeAcknowledger interface {
 // BridgeUnixServer reuses v1's private descriptor-anchored socket lifetime and
 // limits, but runs a separate FD-aware protocol. It never dispatches v1 requests.
 type BridgeUnixServer struct {
-	base    *UnixServer
-	handler BridgeHandler
+	base      *UnixServer
+	handler   BridgeHandler
+	handlerV2 BridgeHandlerV2
+	version   int
 }
 type bridgeUnusedV1 struct{}
 
@@ -51,7 +60,20 @@ func ListenBridgeUnix(config UnixServerConfig, handler BridgeHandler) (*BridgeUn
 	if err != nil {
 		return nil, err
 	}
-	return &BridgeUnixServer{base: base, handler: handler}, nil
+	return &BridgeUnixServer{base: base, handler: handler, version: 1}, nil
+}
+
+// ListenBridgeUnixV2 selects a separate fixed codec; no per-frame fallback or
+// version negotiation is permitted on this listener.
+func ListenBridgeUnixV2(config UnixServerConfig, handler BridgeHandlerV2) (*BridgeUnixServer, error) {
+	if handler == nil {
+		return nil, fail("artifact_bridge_config_invalid")
+	}
+	base, err := ListenUnixServer(config, bridgeUnusedV1{})
+	if err != nil {
+		return nil, err
+	}
+	return &BridgeUnixServer{base: base, handlerV2: handler, version: 2}, nil
 }
 func (s *BridgeUnixServer) Close() error { return s.base.Close() }
 func (s *BridgeUnixServer) Serve(ctx context.Context) error {
@@ -225,7 +247,9 @@ func bridgeWriteFrame(conn *net.UnixConn, raw []byte, f *os.File) error {
 }
 func (s *BridgeUnixServer) writeError(conn *net.UnixConn, code string) {
 	conn.SetWriteDeadline(time.Now().Add(s.base.config.WriteTimeout))
-	raw, err := json.Marshal(bridgeErrorResponse(code))
+	r := bridgeErrorResponse(code)
+	r.SchemaVersion = s.version
+	raw, err := json.Marshal(r)
 	if err == nil {
 		bridgeWriteFrame(conn, raw, nil)
 	}
@@ -255,7 +279,21 @@ func (s *BridgeUnixServer) serveConnection(parent context.Context, conn *net.Uni
 		defer input.Close()
 	}
 	var q BridgeRequest
-	if err != nil || strictJSON(raw, &q) != nil || validateBridgeRequest(q) != nil {
+	var q2 BridgeRequestV2
+	var decodeErr error
+	if s.version == 2 {
+		decodeErr = strictJSON(raw, &q2)
+		if decodeErr == nil {
+			decodeErr = validateBridgeRequestV2(q2)
+		}
+		q = q2.legacy()
+	} else {
+		decodeErr = strictJSON(raw, &q)
+		if decodeErr == nil {
+			decodeErr = validateBridgeRequest(q)
+		}
+	}
+	if err != nil || decodeErr != nil {
 		s.writeError(conn, "artifact_bridge_request_invalid")
 		return
 	}
@@ -284,7 +322,14 @@ func (s *BridgeUnixServer) serveConnection(parent context.Context, conn *net.Uni
 	monitored := make(chan struct{})
 	go func() { defer close(monitored); bridgeReadEnd(conn); stopRun() }()
 	defer func() { conn.SetReadDeadline(time.Now()); <-monitored }()
-	response, output, handlerErr := s.handler.HandleBridge(runCtx, q, input)
+	var response BridgeResponse
+	var output *os.File
+	var handlerErr error
+	if s.version == 2 {
+		response, output, handlerErr = s.handlerV2.HandleBridgeV2(runCtx, q2, input)
+	} else {
+		response, output, handlerErr = s.handler.HandleBridge(runCtx, q, input)
+	}
 	if output != nil {
 		defer output.Close()
 	}
@@ -295,7 +340,13 @@ func (s *BridgeUnixServer) serveConnection(parent context.Context, conn *net.Uni
 		s.writeError(conn, "artifact_bridge_handler_failed")
 		return
 	}
-	if validateBridgeResponse(q, response) != nil {
+	var responseErr error
+	if s.version == 2 {
+		responseErr = validateBridgeResponseV2(q2, response)
+	} else {
+		responseErr = validateBridgeResponse(q, response)
+	}
+	if responseErr != nil {
 		s.writeError(conn, "artifact_bridge_response_invalid")
 		return
 	}
@@ -329,7 +380,15 @@ func (s *BridgeUnixServer) serveConnection(parent context.Context, conn *net.Uni
 		}
 		return bridgeWriteFrame(conn, encoded, send)
 	}
-	if acknowledger, ok := s.handler.(BridgeAcknowledger); ok {
+	var acknowledge func(context.Context, func() error) error
+	if s.version == 2 {
+		if a, ok := s.handlerV2.(BridgeAcknowledgerV2); ok {
+			acknowledge = func(ctx context.Context, w func() error) error { return a.AcknowledgeBridgeV2(ctx, q2, w) }
+		}
+	} else if a, ok := s.handler.(BridgeAcknowledger); ok {
+		acknowledge = func(ctx context.Context, w func() error) error { return a.AcknowledgeBridge(ctx, q, w) }
+	}
+	if acknowledge != nil {
 		var callbackMu sync.Mutex
 		active, called := true, false
 		callback := func() error {
@@ -341,7 +400,7 @@ func (s *BridgeUnixServer) serveConnection(parent context.Context, conn *net.Uni
 			called = true
 			return write()
 		}
-		acknowledger.AcknowledgeBridge(runCtx, q, callback)
+		acknowledge(runCtx, callback)
 		callbackMu.Lock()
 		active = false
 		callbackMu.Unlock()
@@ -354,6 +413,21 @@ func (s *BridgeUnixServer) serveConnection(parent context.Context, conn *net.Uni
 // complete response, EOF, private metadata and bounded receipt hash agree. The
 // caller closes that FD. No plaintext or receipt paths travel over this protocol.
 func CallBridgeUnix(ctx context.Context, socket string, q BridgeRequest, input *os.File) (BridgeResponse, *os.File, error) {
+	if validateBridgeRequest(q) != nil {
+		return BridgeResponse{}, nil, fail("artifact_bridge_request_invalid")
+	}
+	return callBridgeUnix(ctx, socket, q, input, nil)
+}
+
+// CallBridgeUnixV2 requires an explicitly selected v2 listener and validates a v2
+// response. The input and retained-receipt FD guarantees match the v1 client.
+func CallBridgeUnixV2(ctx context.Context, socket string, q BridgeRequestV2, input *os.File) (BridgeResponse, *os.File, error) {
+	if validateBridgeRequestV2(q) != nil {
+		return BridgeResponse{}, nil, fail("artifact_bridge_request_invalid")
+	}
+	return callBridgeUnix(ctx, socket, q.legacy(), input, &q)
+}
+func callBridgeUnix(ctx context.Context, socket string, q BridgeRequest, input *os.File, q2 *BridgeRequestV2) (BridgeResponse, *os.File, error) {
 	var response BridgeResponse
 	if ctx == nil || validateBridgeRequest(q) != nil {
 		return response, nil, fail("artifact_bridge_request_invalid")
@@ -389,13 +463,25 @@ func CallBridgeUnix(ctx context.Context, socket string, q BridgeRequest, input *
 	if !privateSocket(stat) {
 		return response, nil, fail("artifact_socket_unsafe")
 	}
-	raw, err := json.Marshal(q)
+	var raw []byte
+	if q2 != nil {
+		raw, err = json.Marshal(*q2)
+	} else {
+		raw, err = json.Marshal(q)
+	}
 	if err != nil || len(raw) > MaxFrameBytes {
 		return response, nil, fail("artifact_bridge_request_invalid")
 	}
 	// Validate our emitted bytes against the same strict wire parser too.
-	var check BridgeRequest
-	if strictJSON(raw, &check) != nil {
+	var codecErr error
+	if q2 != nil {
+		var check BridgeRequestV2
+		codecErr = strictJSON(raw, &check)
+	} else {
+		var check BridgeRequest
+		codecErr = strictJSON(raw, &check)
+	}
+	if codecErr != nil {
 		return response, nil, fail("artifact_bridge_request_invalid")
 	}
 	bounded, stop := context.WithTimeout(ctx, time.Hour)
@@ -433,7 +519,15 @@ func CallBridgeUnix(ctx context.Context, socket string, q BridgeRequest, input *
 	if err != nil {
 		return response, nil, err
 	}
-	if strictJSON(data, &response) != nil || validateBridgeResponse(q, response) != nil {
+	responseErr := strictJSON(data, &response)
+	if responseErr == nil {
+		if q2 != nil {
+			responseErr = validateBridgeResponseV2(*q2, response)
+		} else {
+			responseErr = validateBridgeResponse(q, response)
+		}
+	}
+	if responseErr != nil {
 		return response, nil, fail("artifact_bridge_response_invalid")
 	}
 	if err = bridgeReadEnd(conn); err != nil {

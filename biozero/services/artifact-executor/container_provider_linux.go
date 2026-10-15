@@ -29,6 +29,7 @@ type ContainerProviderConfig struct {
 	Helper, NativeHelper, Pipeline, Reference, Evaluator, Truth PinnedAsset
 	ResourceBudgetSHA256                                        string
 	TimeoutSeconds                                              int
+	Analysis                                                    *CapsuleAnalysisConfig
 }
 
 type ContainerProvider struct {
@@ -158,7 +159,7 @@ func (p *ContainerProvider) verifyAssets(ctx context.Context) error {
 		}
 		f.Close()
 	}
-	return nil
+	return verifyCapsuleAnalysis(ctx, p.config.Analysis, p.config.WorkspaceRoot, true)
 }
 
 func NewContainerProvider(ctx context.Context, cfg ContainerProviderConfig) (*ContainerProvider, error) {
@@ -182,6 +183,7 @@ func NewContainerProvider(ctx context.Context, cfg ContainerProviderConfig) (*Co
 		}
 	}
 	cfg.DockerCommand = append([]string{}, cfg.DockerCommand...)
+	cfg.Analysis = copyCapsuleAnalysis(cfg.Analysis)
 	p := &ContainerProvider{config: cfg}
 	if err := p.verifyAssets(ctx); err != nil {
 		return nil, err
@@ -274,6 +276,12 @@ func (p *ContainerProvider) mounts(control string) []containerMount {
 	for _, x := range []struct{ path, dest string }{{p.config.Reference.Path, "/run/biozero/reference.fa"}, {p.config.Truth.Path, "/run/biozero/truth.vcf"}, {p.config.Evaluator.Path, "/run/biozero/evaluator/evaluate_variants.py"}} {
 		if x.path != "" {
 			m = append(m, containerMount{x.path, x.dest, "bind", false, "rprivate"})
+		}
+	}
+	if p.config.Analysis != nil {
+		m = append(m, containerMount{p.config.Analysis.Executable.Path, "/run/biozero/analysis/capsule-analysis", "bind", false, "rprivate"}, containerMount{p.config.Analysis.Rules.Path, "/run/biozero/analysis/rules.json", "bind", false, "rprivate"})
+		if p.config.Analysis.Panel.Path != "" {
+			m = append(m, containerMount{p.config.Analysis.Panel.Path, "/run/biozero/analysis/panel.fa", "bind", false, "rprivate"})
 		}
 	}
 	return m
@@ -394,11 +402,20 @@ func (p *ContainerProvider) Execute(parent context.Context, input *ScopedInput, 
 	input.mu.Lock()
 	file, err := duplicateReadOnly(input.file)
 	size, sha := input.Bytes, input.ProcessedSHA256
+	var facts *AnalysisContext
+	if input.AnalysisContext != nil {
+		copy := *input.AnalysisContext
+		facts = &copy
+	}
 	input.mu.Unlock()
 	if err != nil {
 		return nativeFailure("artifact_container_input_unavailable", true)
 	}
 	defer file.Close()
+	analysis, err := analysisForInput(p.config.Analysis, facts, size, true)
+	if err != nil {
+		return nativeFailure("artifact_analysis_context_invalid", true)
+	}
 	exporter.store.mu.Lock()
 	store := exporter.store.data.StoreID
 	allowed := false
@@ -476,7 +493,10 @@ func (p *ContainerProvider) Execute(parent context.Context, input *ScopedInput, 
 	if err != nil || !p.validInspection(v, id, nonce, store, exporter.lease, control) || v.Status != "created" || v.Running || v.PID != 0 {
 		return nativeFailure("artifact_container_identity_unproven", false)
 	}
-	execution := nativeSpec{1, "/workspace", size, sha, p.config.Mode, "/run/biozero/pipeline/pipeline.py", p.config.Pipeline.SHA256, p.config.ResourceBudgetSHA256, "", "", "", "", "", "", "/usr/bin/python3.12", "/usr/bin", p.config.TimeoutSeconds}
+	execution := nativeSpec{SchemaVersion: 1, Workspace: "/workspace", InputBytes: size, InputSHA256: sha, Mode: p.config.Mode, PipelinePath: "/run/biozero/pipeline/pipeline.py", PipelineSHA256: p.config.Pipeline.SHA256, ResourceBudgetSHA256: p.config.ResourceBudgetSHA256, PythonPath: "/usr/bin/python3.12", ToolPath: "/usr/bin", TimeoutSeconds: p.config.TimeoutSeconds, Analysis: analysis}
+	if analysis != nil {
+		execution.SchemaVersion = 2
+	}
 	if p.config.Reference.Path != "" {
 		execution.ReferencePath = "/run/biozero/reference.fa"
 		execution.ReferenceSHA256 = p.config.Reference.SHA256

@@ -3,9 +3,11 @@
 
 Kernel predicates receive fabricated observations. Actual Docker mount/resource,
 peerPID/keeper lifecycle and quota acceptance require the host provider separately.
-The native module is imported unchanged; none of its guards are monkeypatched.
+The native module is reused by pin; synthetic execution mocks do not establish
+kernel, source-ownership or namespace acceptance.
 """
 import array
+import contextlib
 import copy
 import hashlib
 import importlib.util
@@ -20,6 +22,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 
 
 def import_file(name, filename):
@@ -50,6 +53,15 @@ def wrapper_fixture():
     return {"schema_version": 1, "native_helper_sha256": "a" * 64, "execution": execution_fixture()}
 
 
+def analysis_execution_fixture():
+    config = execution_fixture()
+    config.update(schema_version=2, analysis={**container.ANALYSIS_PATHS, "executable_sha256": "1" * 64,
+        "rules_sha256": "2" * 64, "panel_sha256": "3" * 64,
+        "context": {"original_name": "private-synthetic.fastq", "processed_size_bytes": config["input_bytes"],
+                    "decrypted": True, "decryption_error": "", "signature_valid": True, "signature_error": ""}})
+    return config
+
+
 def kernel_fixture():
     return {"pid": 1, "uid": 1000, "euid": 1000, "gid": 1000, "egid": 1000,
             "CapInh": "0", "CapPrm": "0", "CapEff": "0", "CapBnd": "0", "CapAmb": "0",
@@ -71,6 +83,74 @@ def kernel_fixture():
 
 
 class ContainerCapsuleTests(unittest.TestCase):
+    def test_v2_inner_execution_outer_v1_and_fixed_analysis_paths(self):
+        wrapper = wrapper_fixture()
+        wrapper["execution"] = analysis_execution_fixture()
+        parsed = container.bootstrap_json(native.json_bytes(wrapper))
+        self.assertEqual(container.validate_execution(native, parsed), wrapper["execution"])
+        self.assertEqual(container.validate_kernel(kernel_fixture(), wrapper["execution"]), "pid:[12345]")
+        for key in container.ANALYSIS_PATHS:
+            wrong = copy.deepcopy(wrapper)
+            wrong["execution"]["analysis"][key] = "/different/analysis/asset"
+            with self.assertRaises(container.ContainerError): container.validate_execution(native, wrong)
+        wrong = copy.deepcopy(wrapper); wrong["schema_version"] = 2
+        with self.assertRaises(container.ContainerError): container.bootstrap_json(native.json_bytes(wrong))
+        wrong = copy.deepcopy(wrapper); wrong["execution"]["schema_version"] = 1
+        with self.assertRaises(native.CapsuleError): container.validate_execution(native, wrong)
+        wrong = copy.deepcopy(wrapper); wrong["execution"]["analysis"]["context"]["processed_size_bytes"] = True
+        with self.assertRaises(native.CapsuleError): container.validate_execution(native, wrong)
+        for name in ("executable_path", "rules_path", "panel_path"):
+            state = kernel_fixture()
+            state["mounts"].append({"mountpoint": container.ANALYSIS_PATHS[name], "filesystem": "ext4",
+                                    "options": ["rw"], "super_options": ["rw"], "optional": []})
+            with self.assertRaises(container.ContainerError): container.validate_kernel(state, wrapper["execution"])
+
+    def test_v2_execute_retains_analysis_receipt_and_never_promotes_failed_status(self):
+        for pipeline_status, analysis_failed in (("succeeded", False), ("failed", False), ("succeeded", True)):
+            with self.subTest(pipeline=pipeline_status, analysis_failed=analysis_failed), tempfile.TemporaryDirectory() as root:
+                config = analysis_execution_fixture()
+                work = Path(root) / "work"; work.mkdir(mode=0o700)
+                config.update(workspace=str(work), mode="stats", reference_path="", reference_sha256="",
+                              evaluator_path="", evaluator_sha256="", truth_path="", truth_sha256="")
+                source = Path(root) / "input"; source.write_bytes(b"synthetic!")
+                config.update(input_bytes=10, input_sha256=digest(source.read_bytes()))
+                pipeline = {"returncode": 0 if pipeline_status == "succeeded" else 1,
+                            "payload": {"schema_version": 1, "mode": "stats", "pipeline_status": pipeline_status}}
+                captured = {"returncode": 1 if analysis_failed else 0, "payload": {"private-capture": True},
+                            "raw_stdout": "private raw capture", "raw_stderr": "private stderr"}
+                deadline = time.monotonic() + 10
+                def export(_, path):
+                    fd = os.open(path, os.O_RDONLY)
+                    raw = Path(path).read_bytes()
+                    return fd, {"sha256": digest(raw), "bytes": len(raw)}
+                fd = os.open(source, os.O_RDONLY)
+                previous_umask = os.umask(0o077)
+                try:
+                    with mock.patch.object(native, "verify_sources", return_value={"analysis_executable": {"sha256": "1" * 64}}), \
+                            mock.patch.object(native, "capture_command", return_value=pipeline), \
+                            mock.patch.object(native, "run_analysis", return_value=(captured, "capsule_analysis_failed" if analysis_failed else "")) as analysis, \
+                            mock.patch.object(container, "stop_children"), mock.patch.object(container.os, "chdir"), \
+                            mock.patch.object(container, "export_file", side_effect=export):
+                        outcome, files = container.execute(native, config, fd, {"fabricated": True}, "pid:[12345]", deadline, "a" * 64)
+                    try:
+                        receipt = json.loads(os.read(files[0][1], files[0][2]["bytes"]))
+                        self.assertEqual(receipt["schema_version"], 2)
+                        self.assertEqual(receipt["analysis_capture"], captured)
+                        self.assertEqual(receipt["analysis_context"], config["analysis"]["context"])
+                        self.assertEqual([name for name, _, _ in files], ["execution_receipt"])
+                        self.assertEqual(analysis.call_args.args[1], pipeline)
+                        self.assertEqual(analysis.call_args.args[-1], deadline)
+                        if analysis_failed or pipeline_status == "failed":
+                            self.assertEqual(outcome["execution_status"], "failed")
+                            self.assertEqual(outcome["release_status"], "withheld")
+                        else:
+                            self.assertEqual(outcome["release_status"], "unassessed")
+                    finally:
+                        for _, exported_fd, _ in files: os.close(exported_fd)
+                finally:
+                    os.umask(previous_umask)
+                    os.close(fd)
+
     def test_strict_wrapper_rejects_alias_duplicate_nonfinite_and_oversize(self):
         raw = native.json_bytes(wrapper_fixture())
         self.assertEqual(container.bootstrap_json(raw), wrapper_fixture())

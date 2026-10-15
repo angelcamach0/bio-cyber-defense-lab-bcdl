@@ -3,7 +3,9 @@
 Observed locally on2026-10-14, host UID/GID1000 and Linux ARM64. NativeProvider is
 implemented in this standalone module and has one actual synthetic pipeline/store
 acceptance. It is not installed in enclave-runner or the container worker. The
-container provider and installed-worker integration remain pending. The subsequent
+installed-worker integration remains pending. The Docker provider now has its own
+acceptance, and subsequent [complete analysis](README-analysis-integration.md)
+covers both profiles through v2 broker and host service. The subsequent
 [actual native recovery tests](README-native-recovery.md) and
 [Unix composition acceptance](README-native-unix.md) have their own source/evidence scope.
 

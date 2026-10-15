@@ -146,3 +146,47 @@ func validateBridgeResponse(q BridgeRequest, r BridgeResponse) error {
 	}
 	return nil
 }
+
+// BridgeRequestV2 adds fixed verifier facts to the separately selected v2
+// protocol. All fields, including every AnalysisContext field, are required.
+// Queries carry a complete zero-valued context; they cannot replace job facts.
+type BridgeRequestV2 struct {
+	SchemaVersion         int             `json:"schema_version"`
+	Operation             string          `json:"operation"`
+	JobID                 string          `json:"job_id"`
+	UploadSHA256          string          `json:"upload_sha256"`
+	ExpectedProfileSHA256 string          `json:"expected_profile_sha256"`
+	ProcessedSHA256       string          `json:"processed_sha256"`
+	ProcessedBytes        int64           `json:"processed_bytes"`
+	OriginalName          string          `json:"original_name"`
+	AnalysisContext       AnalysisContext `json:"analysis_context"`
+}
+
+func (q BridgeRequestV2) legacy() BridgeRequest {
+	return BridgeRequest{1, q.Operation, q.JobID, q.UploadSHA256, q.ExpectedProfileSHA256, q.ProcessedSHA256, q.ProcessedBytes, q.OriginalName}
+}
+func validateBridgeRequestV2(q BridgeRequestV2) error {
+	if q.SchemaVersion != 2 || validateBridgeRequest(q.legacy()) != nil {
+		return fail("artifact_bridge_request_invalid")
+	}
+	if q.Operation == "submit" {
+		if validateAnalysisContext(q.AnalysisContext, q.ProcessedBytes) != nil || q.AnalysisContext.OriginalName != q.OriginalName {
+			return fail("artifact_bridge_request_invalid")
+		}
+	} else if q.AnalysisContext != (AnalysisContext{}) {
+		return fail("artifact_bridge_request_invalid")
+	}
+	return nil
+}
+func bridgeErrorResponseV2(code string) BridgeResponse {
+	r := bridgeErrorResponse(code)
+	r.SchemaVersion = 2
+	return r
+}
+func validateBridgeResponseV2(q BridgeRequestV2, r BridgeResponse) error {
+	if validateBridgeRequestV2(q) != nil || r.SchemaVersion != 2 {
+		return fail("artifact_bridge_response_invalid")
+	}
+	r.SchemaVersion = 1
+	return validateBridgeResponse(q.legacy(), r)
+}

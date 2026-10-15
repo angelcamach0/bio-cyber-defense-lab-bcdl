@@ -8,7 +8,7 @@ the CLI does not attest those pins itself.
 Exact trusted argv order:
 
 ```text
-capsule-analysis --rules /run/biozero/rules.json --panel /run/biozero/panel.fa --content /workspace/input.fastq
+capsule-analysis --rules /run/biozero/analysis/rules.json --panel /run/biozero/analysis/panel.fa --content /workspace/input.fastq
 ```
 
 All three pairs are required. Paths must be absolute and clean. Panel presence
@@ -106,4 +106,9 @@ No target names, raw alignment output or FASTQ are exported here. SAM counts do
 not establish unique-read counts or biological accuracy. This acceptance did not
 exercise broker/capsule/worker integration, TLS or real crypto verification, and
 did not build an image or execute a model. The binary now has a measured local
-pin; integration and its own acceptance remain next steps.
+pin. Subsequent [actual capsule integration](../../../artifact-executor/README-analysis-integration.md)
+now runs it with pinned rules/panel inside both providers through the v2 broker
+and compiled host service. Those separate receipts demonstrate science/detection,
+rules failure withholding, committed restart and visible socket-cleanup failure.
+Connecting the protected worker's authenticated crypto facts remains required;
+the earlier standalone receipt is not presented as that newer acceptance.

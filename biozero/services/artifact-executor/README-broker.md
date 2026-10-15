@@ -1,10 +1,11 @@
 # Trusted worker descriptor broker
 
 This Linux broker composes the existing Store, registry, coordinator and configured
-provider with a separate FD-aware Unix transport. It is a standalone component:
-the protected worker does not call it yet, and no host service is installed.
-The extracted worker analysis CLI is also a separate component awaiting capsule
-integration. These additions do not establish a protected end-to-end acceptance.
+provider with a separate FD-aware Unix transport. The protected worker does not
+call it yet. The [fixed host service](README-service.md) and
+[actual complete analysis](README-analysis-integration.md) now combine v2 broker,
+native/Docker capsules, pipeline, evaluator and pinned analysis. Their crypto facts
+are synthetic; a persistent deployment and protected end-to-end entry remain pending.
 
 ## Authority and bounded protocol
 
@@ -33,6 +34,33 @@ exports and Store health under Store's lock; the client checks received size/has
 before returning ownership to its caller. No arbitrary artifact name/path is
 accepted. Missing receipts from genuine empty failed commits remain unavailable;
 the committed failed/withheld manifest is still visible through status.
+
+## Explicit analysis protocol v2
+
+`NewBrokerV2` selects a separate journal schema and must be paired with
+`ListenBridgeUnixV2` and `CallBridgeUnixV2`. There is no automatic negotiation,
+fallback or adoption of a v1 journal, including an empty v1 journal. V1 constructors,
+request shape and journal serialization remain separate and unchanged.
+
+`BridgeRequestV2` adds the required `analysis_context` object with all six fields:
+`original_name`, `processed_size_bytes`, `decrypted`, `decryption_error`,
+`signature_valid` and `signature_error`. Submit's name and processed size must
+match the outer request. Queries carry a complete zero-valued context. These are
+bounded facts asserted by the trusted caller, not evidence of cryptographic
+verification. They cannot select commands, reference assets or configuration.
+
+V2 journals include `analysis_contexts` with exactly the same keys as `records`.
+Each context must match its binding's name and size. Intent and context are
+published together before Reserve, and `BindWithAnalysis` copies the same value
+into the one-shot input registry after durable lease linkage. Exact duplicates
+reuse custody; changing any context value conflicts, including in the ACK gate.
+Version and fixed profile checks also apply to status/cancel/receipt. Recovery
+requires that exact v2 history; no missing context is invented from a baseline.
+
+V2 uses the same FD constraints, receipt validation, locks and causal commit/ACK
+barriers as v1. Responses and error envelopes use schema version2 on its listener.
+The new source requires its own validation; the earlier receipts below retain
+only their recorded pre-v2 scope.
 
 ## Durable binding and acknowledgement
 
@@ -144,3 +172,22 @@ caps-zero, no network and no worker Docker socket/Store mount. Fresh protected
 native/Compose authorization/crypto/science/cancel/restart tests must follow.
 Full ownership TM02, principal quotas, operator reconciliation, retention,
 image reproducibility, queue/leases, SOC/cloud and delivery gates remain open.
+
+## Analysis protocol v2 checks
+
+The new v2 broker/context tests passed10top-level functions and their subcases
+with ordinary execution (0.988s) and the race detector (2.564s); `go vet ./...`
+exited0. They use real private Store/journal files and Unix FD sockets with
+synthetic providers. They cover fixed v2/error envelopes, complete strict context,
+registry propagation, changed-context/profile conflicts, duplicate custody,
+lost-ACK committed-only restart, missing/mismatched context history, bilateral
+version refusal, durable context before Reserve, storage/crash gaps and both
+causal journal/Store ACK barriers. No kernel provider, worker crypto or scientific
+pipeline is exercised by this narrow command.
+
+An initial run failed three crash-test subcases because its fixture attempted to
+create a registry from correctly unavailable pending Store history. The fixture
+now asserts that refusal and unchanged ledger/journal bytes. The failed log is
+preserved alongside the corrected ordinary/race/vet logs under the private
+`.biozero/bridge-v2-checks-20261015T005815.199358Z/` evidence root. No production
+guard was weakened. The earlier v1 receipts above remain scoped to their source.

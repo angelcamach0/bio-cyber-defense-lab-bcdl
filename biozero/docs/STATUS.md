@@ -23,7 +23,9 @@ at commit0dd7384 remains preserved: unit/PKI and scientific repeat passed, but
 protected-service startup was never reached. After the selector correction, fresh
 local protected native acceptance passed all78assertions. Its private receipt is
 `.biozero/bridge-buildfix-native-20261015T003540.421150Z/`; source pins and cleanup
-remain scoped to that run. The correction awaits its own published CI.
+remain scoped to that run. The correction's own
+[CI38661813114](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38661813114)
+passed at98f2f89. Subsequent source needs its own CI; that result is not reused.
 
 Earlier exact-source evidence remains under docs/evidence and in Git history:
 protected native78checks, four-service Compose30checks, Firefox23UI/TLS/session
@@ -57,24 +59,50 @@ partial metrics. Rules and argv must agree on panel presence. Input/output are
 bounded64KiB; future pipeline projection must fit without truncating accepted
 results. Targets and raw results remain private.
 
-These components are not yet connected to the protected worker or installed as a
-service. Both evaluation and optional alignment/detection must run inside the
-same bounded capsule before integrated acceptance is claimed. The host retains
-Docker authority; the worker receives no Docker socket or writable Store mount.
+Both providers now install pinned analysis/rules/panel and per-job context using
+execution/receipt schema2. V2 FD broker history persists the exact context before
+Reserve and rejects changed facts on duplicate submit/ACK. V1 remains separately
+selected with unchanged request/history shapes. Actual native and Docker tests
+combine broker, pipeline, evaluator and detection within the same bounded capsule:
+three-SNP truth passes; rules failure revokes approval while preserving custody.
+
+`cmd/artifact-broker` now provides the fixed-profile host service. Private strict
+configuration, source pins and its own executable SHA determine the profile;
+print-profile creates no state/socket/provider. Actual compiled-service acceptance
+covered both providers, clean SIGTERM exit0, committed restart/readback without
+reexecution, and deliberate socket replacement causing exit1 with marker and
+accounting preserved. A cached first-close error cannot disappear behind a later
+successful Close. Provider Wait and healthy Store remain required before release.
+
+The protected worker is not connected yet. This acceptance supplied synthetic
+crypto facts and public fixture input; no persistent deployed service is claimed.
+The host retains Docker authority; the worker receives no Docker socket or
+writable Store mount. Complete protected integration still requires verifier-only
+submission, bounded tmpfs plaintext staging, committed-receipt result projection
+and durable recovery, followed by native/Compose authorization/lifecycle acceptance.
 See [broker](../services/artifact-executor/README-broker.md),
 [capsule](../services/artifact-executor/README-container.md),
 [analysis](../services/enclave-runner/analysis/README.md) and
-[workspace contract](security/artifact-workspace-contract.md).
+[workspace contract](security/artifact-workspace-contract.md). See
+[complete analysis acceptance](../services/artifact-executor/README-analysis-integration.md)
+and [host service](../services/artifact-executor/README-service.md) for current commands.
 
 ## Verification and reproduction scope
 
-- Final component `make test`:252Python cases,250passed/two helper kernel skips;
+- Final component `make test`:263Python cases,261passed/two helper kernel skips;
   test/vet in eight Go modules. simulated-adversary has no Go tests.
-- Complete artifact-module race suite with six native/Docker opt-ins:90top-level
-  functions plus subcases passed in23.847s, no failures. Two internal keeper
-  entries skip in the parent and run in spawned subprocesses. Nine broker and
-  eight bridge functions use synthetic trusted providers; real provider opt-ins
-  have their separate scope.
+- Combined eight-opt-in artifact race snapshot:121top-level functions and302
+  subcases passed in33.118s; only two internal parent keeper entries skipped and
+  execute in child processes. This preceded the host-service socket-close fix;
+  helper/provider/broker pins remain identical in final source. The first combined
+  attempt's two quota fixture initialization failures remain preserved.
+- Final source after that fix:114top-level functions and295subcases passed with
+  race detection in11.788s, including actual compiled-service native/Docker
+  acceptance and cleanup failure/restart. Eleven other explicit kernel tests
+  skipped; those were not reexecuted for a service-only change. Their earlier
+  complete snapshot retains its recorded source and scope.
+- Helper unit suite:53cases,51passed/two namespace opt-ins skipped. EPIPE handling
+  preserves complete failed CLI responses and rejects incomplete-input success.
 - Analysis/CLI:15functions and36subcases passed ordinary/race/vet. Independent
   review checked source, persistence, ACK barriers, limits and panel configuration.
 - Two ARM64 builds with separate empty caches produced identical3,565,542-byte
@@ -83,6 +111,12 @@ See [broker](../services/artifact-executor/README-broker.md),
   records, one private target and configured0.9/high. Caller crypto facts were
   synthetic. This is standalone analysis and same-host/toolchain repeatability,
   not integrated protected entry, cross-host or OCI reproduction.
+
+Final host binary:5,128,722 bytes, SHA256
+`c6cea629b14cafc4abc4cda69a4d8db60f5de569cf89036e4460e2f156f57194`.
+Final source inventory was unchanged throughout build/make/race acceptance.
+Private receipts: `.biozero/broker-service-final-checks-20261015T011527.352455Z/`.
+No actual acceptance service remains running after its authoritative process Wait.
 
 The earlier [CI38657120252](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38657120252)
 passed for bba2637. It does not approve later source. Hosted CI skips provider
@@ -102,8 +136,8 @@ hashes, without DNA, rows, case IDs, vectors or weights. See
 
 ## Remaining requirements
 
-1. Install pinned analysis/context in both providers and connect protected worker
-   crypto, result projection and durable recovery through the broker. Repeat
+1. Connect protected worker crypto, verified bounded tmpfs staging, committed
+   receipt projection and durable recovery through the fixed-profile v2 service. Repeat
    protected native/Compose science, A/B authorization, cancellation and restart.
 2. Pin and verify the image dependency closure, build/distribution and licences;
    cached-image acceptance alone does not establish image reproducibility.

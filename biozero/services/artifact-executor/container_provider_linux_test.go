@@ -257,3 +257,101 @@ func TestContainerProviderActualSyntheticUnix(t *testing.T) {
 	}
 	t.Log("actual pinned Docker capsule, readonly FD handoff, wait/inspect then export, exact three-SNP receipt and commit-before-Unix-reply; worker TLS/crypto integration remains pending")
 }
+
+func TestContainerAnalysisMountsAreIndividualROAndInspected(t *testing.T) {
+	for _, panel := range []bool{false, true} {
+		t.Run(map[bool]string{false: "without_panel", true: "with_panel"}[panel], func(t *testing.T) {
+			p, v := containerGolden()
+			baseline := len(v.Mounts)
+			cfg := &CapsuleAnalysisConfig{Executable: PinnedAsset{Path: "/private/analysis/executable"}, Rules: PinnedAsset{Path: "/private/analysis/rules.json"}}
+			if panel {
+				cfg.Panel = PinnedAsset{Path: "/private/panel.fa"}
+			}
+			p.config.Analysis = cfg
+			v.Mounts = p.mounts("/private/control")
+			added := 2
+			if panel {
+				added++
+			}
+			if len(v.Mounts) != baseline+added || !p.validInspection(v, v.ID, v.Nonce, v.Store, v.Lease, "/private/control") {
+				t.Fatal("analysis inspection rejected")
+			}
+			want := map[string]string{"/run/biozero/analysis/capsule-analysis": cfg.Executable.Path, "/run/biozero/analysis/rules.json": cfg.Rules.Path}
+			if panel {
+				want["/run/biozero/analysis/panel.fa"] = cfg.Panel.Path
+			}
+			for _, m := range v.Mounts[baseline:] {
+				if want[m.Destination] != m.Source || m.RW || m.Type != "bind" || m.Propagation != "rprivate" {
+					t.Fatal("analysis mount grants extra authority")
+				}
+				delete(want, m.Destination)
+			}
+			if len(want) != 0 {
+				t.Fatal("missing analysis mount")
+			}
+			for _, name := range []string{"writable", "missing", "wrong_source", "extra_sibling"} {
+				t.Run(name, func(t *testing.T) {
+					candidate := v
+					candidate.Mounts = append([]containerMount{}, v.Mounts...)
+					switch name {
+					case "writable":
+						candidate.Mounts[baseline].RW = true
+					case "missing":
+						candidate.Mounts = candidate.Mounts[:baseline]
+					case "wrong_source":
+						candidate.Mounts[baseline].Source = "/private/other/executable"
+					case "extra_sibling":
+						candidate.Mounts = append(candidate.Mounts, containerMount{"/private/analysis", "/run/biozero/siblings", "bind", false, "rprivate"})
+					}
+					if p.validInspection(candidate, v.ID, v.Nonce, v.Store, v.Lease, "/private/control") {
+						t.Fatal("unsafe analysis mounts accepted")
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestContainerAnalysisRejectsBeforeJournalDockerOrWorkspace(t *testing.T) {
+	for _, enabled := range []bool{false, true} {
+		t.Run(map[bool]string{false: "context_without_config", true: "config_without_context"}[enabled], func(t *testing.T) {
+			analysis, root := analysisPinnedFixture(t, `{}`)
+			base := filepath.Dir(analysis.Rules.Path)
+			write := func(name string) PinnedAsset {
+				raw := []byte("synthetic source\n")
+				p := filepath.Join(base, name)
+				if err := os.WriteFile(p, raw, 0600); err != nil {
+					t.Fatal(err)
+				}
+				return PinnedAsset{p, digest(raw)}
+			}
+			helper, native, pipeline, budget := write("helper.py"), write("native.py"), write("pipeline.py"), write("resource_budget.py")
+			a := write("input.fastq")
+			f, err := os.Open(a.Path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+			info, err := f.Stat()
+			if err != nil {
+				t.Fatal(err)
+			}
+			input := &ScopedInput{file: f, Bytes: info.Size(), ProcessedSHA256: a.SHA256}
+			cfg := ContainerProviderConfig{WorkspaceRoot: root, Helper: helper, NativeHelper: native, Pipeline: pipeline, ResourceBudgetSHA256: budget.SHA256}
+			if enabled {
+				cfg.Analysis = analysis
+			} else {
+				input.AnalysisContext = &AnalysisContext{ProcessedSizeBytes: info.Size()}
+			}
+			// Deliberately absent root FD and DockerCommand: only early validation may run.
+			provider := &ContainerProvider{config: cfg}
+			done := provider.Execute(context.Background(), input, &Exporter{})
+			if done.Err == nil || done.Outcome.ErrorCode != "artifact_analysis_context_invalid" || !done.Quiescent || done.Outcome.ReleaseStatus != "withheld" || provider.uncertain {
+				t.Fatal("invalid context reached producer", done)
+			}
+			if _, err := os.Lstat(root); !os.IsNotExist(err) {
+				t.Fatal("workspace/history created before validation")
+			}
+		})
+	}
+}

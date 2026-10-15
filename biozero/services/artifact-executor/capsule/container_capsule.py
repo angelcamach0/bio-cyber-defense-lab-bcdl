@@ -43,6 +43,9 @@ FIXED_PATHS = {"workspace": WORKSPACE, "pipeline_path": "/run/biozero/pipeline/p
                "evaluator_path": "/run/biozero/evaluator/evaluate_variants.py",
                "truth_path": "/run/biozero/truth.vcf",
                "python_path": "/usr/bin/python3.12", "tool_path": "/usr/bin"}
+ANALYSIS_PATHS = {"executable_path": "/run/biozero/analysis/capsule-analysis",
+                  "rules_path": "/run/biozero/analysis/rules.json",
+                  "panel_path": "/run/biozero/analysis/panel.fa"}
 HASH = re.compile(r"[0-9a-f]{64}\Z")
 CODE = re.compile(r"[a-z][a-z0-9_]{0,63}\Z")
 
@@ -177,6 +180,12 @@ def validate_execution(native, wrapper):
             continue  # Native optional/pairing rules remain intact.
         if config[key] != expected:
             fail("capsule_container_path_invalid")
+    if config["schema_version"] == 2:
+        for key, expected in ANALYSIS_PATHS.items():
+            if key == "panel_path" and config["analysis"][key] == "":
+                continue
+            if config["analysis"][key] != expected:
+                fail("capsule_container_path_invalid")
     return config
 
 
@@ -327,6 +336,8 @@ def validate_kernel(state, config):
              "/run/biozero/pipeline/resource_budget.py", config["python_path"]]
     paths += [config[key] for key in ("reference_path", "evaluator_path", "truth_path") if config[key]]
     paths += config["tool_path"].split(":")
+    if config["schema_version"] == 2:
+        paths += [config["analysis"][key] for key in ANALYSIS_PATHS if config["analysis"][key]]
     if any("ro" not in covering_mount(mounts, path)["options"] for path in paths):
         fail("capsule_container_source_not_readonly")
     namespace = state.get("namespaces", {}).get("pid", "")
@@ -553,8 +564,14 @@ def execute(native, config, input_fd, state, namespace, deadline, native_pin):
                     outcome["release_status"] = "evaluated_passed"
                 else:
                     outcome["release_status"], outcome["error_code"] = "withheld", "capsule_science_failed"
+        analysis_capture = None
+        if config["schema_version"] == 2:
+            analysis_capture, analysis_error = native.run_analysis(config, pipeline, input_path, env, work, deadline)
+            stop_children(namespace)
+            if analysis_error:
+                outcome.update(execution_status="failed", release_status="withheld", error_code=analysis_error)
         stop_children(namespace)
-        receipt = {"schema_version": 1, "capsule_kind": "docker", "input_sha256": input_sha,
+        receipt = {"schema_version": config["schema_version"], "capsule_kind": "docker", "input_sha256": input_sha,
                    "input_bytes": input_bytes, "native_helper_sha256": native_pin, "source_pins": sources,
                    "mode": config["mode"], "capsule_state": state, "outcome": outcome,
                    "workspace_policy": {"filesystem": "tmpfs", "bytes": WORKSPACE_LIMIT,
@@ -562,6 +579,8 @@ def execute(native, config, input_fd, state, namespace, deadline, native_pin):
                    "pipeline": pipeline, "evaluation": evaluated,
                    "keeper_monitor": "active; EOF/error is cancellation, never proof",
                    "scope": "synthetic normalized allele presence; no biological accuracy claim"}
+        if config["schema_version"] == 2:
+            receipt.update(analysis_capture=analysis_capture, analysis_context=config["analysis"]["context"])
         fd, metadata = export_file(native, native.write_receipt(work, receipt))
         files.append(("execution_receipt", fd, metadata))
         if directory:
