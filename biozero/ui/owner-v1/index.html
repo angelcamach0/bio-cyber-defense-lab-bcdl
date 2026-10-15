@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>BioZero · Revisión</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header><a class="brand" href="/">BioZero</a><span class="subtitle">Revisión de experimentos</span><button id="sign-out" type="button" hidden>Cerrar sesión</button></header>
+  <main>
+    <p class="scope">Experimentos sintéticos preparados. La validación de estos resultados no establece precisión clínica.</p>
+    <section id="login" aria-labelledby="login-title">
+      <h1 id="login-title">Inicia sesión</h1>
+      <form id="login-form">
+        <label for="reviewer">Identificador</label><input id="reviewer" name="reviewer" autocomplete="username" maxlength="64" required>
+        <label for="access-code">Código de acceso</label><input id="access-code" name="access-code" type="password" autocomplete="current-password" maxlength="128" required>
+        <button id="sign-in" type="submit">Entrar</button>
+      </form>
+    </section>
+    <section id="workspace" hidden>
+      <div class="section-heading"><h1 id="greeting">Tus experimentos</h1><button id="refresh" type="button">Actualizar historial</button></div>
+      <div id="catalog" class="catalog"></div>
+      <h2>Historial</h2>
+      <p class="muted">Actualizar consulta lo que ya existe. No vuelve a enviar un experimento.</p>
+      <div id="history" class="history"></div>
+      <section id="result" class="result" aria-labelledby="result-title" hidden><h2 id="result-title">Resultado</h2><div id="result-content"></div></section>
+    </section>
+    <p id="message" role="status" aria-live="polite"></p>
+  </main>
+  <footer>La ejecución y la aprobación científica se muestran por separado. Una operación pendiente requiere conservar su historial.</footer>
+</body>
+</html>

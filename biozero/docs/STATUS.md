@@ -5,7 +5,7 @@ the `biozero/container-capsule-provider` milestone at 77a4e03.
 [PR22](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/22) is a draft
 above [merged PR21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
 No production deployment is established.
-Latest increment: [owner-v1 receipt-based Results and dedicated reader](#owner-v1-receipt-based-results-and-dedicated-reader).
+Latest increment: [owner-v1 Gateway and actual Firefox UI](#owner-v1-gateway-and-actual-firefox-ui).
 
 ## Protected synthetic experiment
 
@@ -660,7 +660,45 @@ as the retained native run or as integrated active-job fault acceptance.
 
 See [public evidence](evidence/20261015-owner-results/public/README.md) and the
 [Results contract](security/ownership-results-contract.md). Same-UID native host
-trust remains. Gateway/UI, deployed UID/key/mount/network separation, full V3
-fault/operator reconciliation, maximum-load/active-job fault acceptance and the
-rest of TM02/requirements remain open. No image build, model inference, dataset
+trust remains. At this Results milestone, Gateway/UI was still pending; see
+the later Gateway section below. Deployed UID/key/mount/network separation, full
+V3 fault/operator reconciliation, maximum-load/active-job fault acceptance and
+the rest of TM02/requirements remain open. No image build, model inference, dataset
 acquisition, regulatory recomputation or deployment ran in this increment.
+
+## Owner-v1 Gateway and actual Firefox UI
+
+The explicitly selected Gateway now binds browser sessions to individual pinned
+TLS reviewer leaves and durable signed authority operations. Closed private
+configuration, intent-before-network idempotency, retained logical promises,
+session epoch guards at the final write, typed Results projection and cold
+query-only startup keep transport state separate from scientific commit/release.
+Logout or a lost browser response neither refunds nor automatically retries work.
+Nonblocking custody checks distinguish busy from healthy or corrupted state.
+
+Actual Firefox/native variants passed116/116 controls; separate stats passed67/67.
+Independent offline retained-evidence review passed824/824. Two valid variants
+each had TP3/FP0/FN0 and1,171mapped SAM records; invalid FASTQ remained
+failed/withheld. Stats showed succeeded/unassessed, no variant assessment and no
+scientific metric cards. Both modes compared retained receipt, dedicated reader,
+direct Results, typed Gateway and actual renderer/DOM, with A/B denial,
+copied-ciphertext rejection, signed-inbox/cache negatives and restart/relogin.
+Each run retained all history and charges after seven service instances Wait0.
+
+Runtime snapshots have548sources/188Go-module inputs and identical ten binary
+bytes; only the stats fixture Python rules derivation differs. Nine executables
+were reused under checked dependency closures and one Gateway rebuilt after the
+foreign-operation404 correction. Historical complete GOROOT/FIPS-tree immutability
+was not measured. Public documents were added after native acceptance. Original
+failed native, stats-setup, verifier and auditor receipts remain preserved.
+Separate full Gateway race passed145 test/subtest events; authority race528.
+Final publication/CI must be checked on the new published tree, not inherited
+from the earlier Results milestone.
+
+See [reviewed aggregate/source pins](evidence/20261015-owner-gateway/public/README.md),
+[Gateway contract](security/ownership-gateway-contract.md) and the
+[runbook](runbooks/reproduce.md). Same-UID host trust and fixture provisioning of
+the Results authorization inbox remain explicit. Deployed authorization publisher,
+role/key/mount/network isolation, maximum-load/physical/principal quotas, active
+V3 fault/operator reconciliation, legacy decommissioning and the complete TM02
+and project requirements remain open. No model inference or deployment ran.

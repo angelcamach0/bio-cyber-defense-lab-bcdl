@@ -255,7 +255,9 @@ passed53native controls and96independent readback controls; final local make has
 one test-only keyed-literal delta from the runtime snapshot. This is same-host
 synthetic SNP presence, not owner Compose/browser/cloud/image reproduction or
 clinical accuracy. Old interrupted/failed acceptance directories stay preserved.
-V3 lifecycle faults and full Results/Gateway/deployed isolation remain pending.
+That receipt excludes Results/Gateway. The separate sections below record their
+later measured scope; complete V3 active-failure/recovery and deployed isolation
+remain pending.
 
 
 ## Owner-v1 HTTPS Results acceptance
@@ -286,5 +288,89 @@ No fallback compilation, history adoption/reset/refund or deletion is permitted.
 The [retained Results evidence](../evidence/20261015-owner-results/public/README.md)
 records83 native controls, separate independent/race/make checks, exact source
 attribution and original failed attempts. Native same-UID acceptance is separate
-from component RST/EIO/stale-guard fixtures, maximum load, deployed isolation,
-Gateway/UI and complete V3 lifecycle/reconciliation acceptance.
+from component RST/EIO/stale-guard fixtures, maximum load, deployed isolation and
+complete V3 lifecycle/reconciliation acceptance. The later Gateway/UI and stats
+acceptance below has its own source snapshots and evidence.
+
+
+## Owner-v1 Gateway, Firefox and separate stats acceptance
+
+Use the [Gateway configuration](../../services/reviewer-gateway/README.md),
+[UI](../../ui/README.md) and
+[Gateway contract](../security/ownership-gateway-contract.md). The native opt-in
+requires the existing Linux ARM64 environment with UID/GID1000, protected worker
+namespace prerequisites and verified cached tools. Browser mode uses the existing
+`/tmp/biozero-browser/bin/python`, cached Playwright Firefox1555 and `certutil`;
+it does not install them. Keep each run directory new, absolute and private.
+
+```sh
+/tmp/biozero-browser/bin/python -B biozero/infra/native/run_owner_worker.py \
+  --gateway --browser --mode variants \
+  --run-dir /absolute/private/new-owner-gateway-variants \
+  --tools-prefix /tmp/biozero-bio-tools-locked
+
+/tmp/biozero-browser/bin/python -B biozero/infra/native/run_owner_worker.py \
+  --gateway --browser --mode stats \
+  --run-dir /absolute/private/new-owner-gateway-stats \
+  --tools-prefix /tmp/biozero-bio-tools-locked
+```
+
+`--gateway` implies Results; `--browser` requires Gateway. Stats requires Results
+or Gateway. Without `--browser`, the Gateway helper exercises actual HTTPS
+browser-protocol requests but does not establish rendered-UI evidence. Historical
+default worker and nine-binary Results modes remain separate.
+
+Fresh Gateway mode builds ten executable targets offline, including the Gateway,
+Results, dedicated broker reader and independent payload inspector. No Docker,
+model, dataset or tool download is performed. Private receipts retain source
+copies, exact pins, logs, PKI, workspaces, stores and failed attempts. Short private
+runtime roots avoid Unix socket path overflow. Only fixture-owned processes
+receive signals and Wait; Firefox profiles and screenshots also stay private.
+
+The optional `--reuse-build-report /absolute/private/verified-report.json`
+verifies/copies exactly the ten expected binaries, current complete initial/final
+Go/module inventories, private single-link metadata, exact hash/bytes and stable
+source/copy measurements. It preserves original build logs/provenance. An eight-
+or nine-binary receipt or a mismatch rejects without fallback compilation. Reuse
+never adopts old stores, profiles/genesis, journals, stages or history: each run
+creates fresh state.
+
+The producer profile precedes authority genesis; its returned scope is then
+configured externally. The fixture provisions only already-signed acceptance for
+the exact Gateway run into the separate Results inbox. Automated deployment of
+that publisher and role/key/mount/network isolation remain unverified.
+
+The [public evidence](../evidence/20261015-owner-gateway/public/README.md) records
+separate Firefox variants 116/116 and stats 67/67 runs, with seven own service
+instances Wait0 each, and an independent retained-evidence audit of 824 controls.
+Variants covers two distinct jobs/leases with the same synthetic three-SNP result
+and invalid FASTQ failed/withheld. It compares the retained receipt, dedicated
+reader FD, direct Results, typed Gateway projection and actual renderer/DOM.
+Stats uses a fresh profile/genesis and a pinned fixture-derived rules file with
+only `threat_panel_fasta` emptied; no production validation is relaxed. It
+succeeds/unassessed without panel alignment, variant artifacts, evaluation or
+scientific count cards.
+
+Both modes cover measured owner denials, copied-ciphertext B acceptance followed
+by actual GCM rejection before Stage/Reserve, signed authorization/cache negatives,
+Gateway restart/relogin/read-only readback and unchanged histories/charges. Cache
+substitution occurs only after the worker's clean Wait. Browser delayed-response
+checks use a real verified Firefox Response, never fabricated response bodies or
+ignored TLS errors. These counts are not maximum-load or complete active-job
+lifecycle coverage.
+
+The two successful runs share ten executable byte pins and 188 Go/module inputs,
+but differ by one Python fixture file. Provenance is nine verified original bins
+plus one Gateway rebuilt after the foreign-operation HTTP status fix, not ten
+fresh final-snapshot compilations. The original receipt did not hash the full
+historical GOROOT/compiler or external certified FIPS source tree. Current closure
+measurements and exact selected FIPS version checks do not fill that historical
+gap, prove cross-host/image reproducibility or certify BioZero under FIPS.
+
+Preserve the original variants failure (36/37, foreign operation503 rather than
+404), stats setup failure (9/9 checks before profile/config rejection; no science)
+and build-only closure failure before the replacement compile. Their later
+successful attempts do not relabel them. Final checks and hosted CI are recorded
+separately in [STATUS](../STATUS.md). Same-UID trusted-host synthetic acceptance
+does not establish production/clinical readiness, close TM-02 globally or complete
+the project requirements.

@@ -237,7 +237,8 @@ services:
         max-size: 5m
         max-file: '2'
     build:
-      context: ../../services/reviewer-gateway
+      context: ../../services
+      dockerfile: reviewer-gateway/Dockerfile
     environment:
       BIOZERO_REVIEWER_CONFIG: /config/config.json
     ports:

@@ -8,12 +8,15 @@ worker or nine Results pinned binaries
 without compilation, retaining their original provenance. Retains all private
 attempts, keys, workspaces and logs. --results additionally verifies the dedicated
 reader and owner-v1 HTTPS Results with fresh producer profile and genesis. No
-gateway, Docker, download or biological model is run.
+Docker, download or biological model is run. --gateway adds the actual owner-v1
+Gateway, --browser uses the installed Firefox with private NSS trust, and --mode
+stats has fresh profile/genesis/state and its own unassessed-success checks.
 The private worker cache is observability, never result authorization. This is
 same-host synthetic acceptance, not deployment isolation or clinical accuracy.
 """
 
 import argparse
+from contextlib import ExitStack
 import array
 import ctypes
 from datetime import datetime, timezone
@@ -374,9 +377,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", required=True, type=Path, help="new private retained evidence root")
     parser.add_argument("--tools-prefix", required=True, type=Path, help="existing ARM tool installation; never installs")
-    parser.add_argument("--reuse-build-report", type=Path, help="explicit private original build receipt; verify/copy the exact eight worker or nine Results binaries without rebuilding")
+    parser.add_argument("--reuse-build-report", type=Path, help="explicit private original build receipt; verify/copy the exact eight worker, nine Results or ten Gateway binaries without rebuilding")
     parser.add_argument("--results", action="store_true", help="also verify owner Results and dedicated read-only broker; own producer binary and fresh profile/genesis/state")
+    parser.add_argument("--gateway", action="store_true", help="also verify real owner browser protocol, Gateway admission and typed Results; implies --results")
+    parser.add_argument("--browser", action="store_true", help="use installed CA-validated Firefox UI for Gateway submissions; requires --gateway")
+    parser.add_argument("--mode", choices=("variants", "stats"), default="variants", help="separate fresh producer mode/profile; stats requires --results")
     args = parser.parse_args()
+    if args.browser and not args.gateway:
+        parser.error("--browser requires --gateway")
+    if args.gateway:
+        args.results = True
+    if args.mode == "stats" and not args.results:
+        parser.error("stats requires --results or --gateway")
     if os.getuid() != 1000 or os.getgid() != 1000:
         parser.error("native worker scope requires UID/GID1000")
     if platform.machine() != "aarch64":
@@ -406,7 +418,14 @@ def main():
               "runtime_root": str(runtime), "cases": [], "commands": [], "processes": []}
     if args.results:
         report["scope"] = "native synthetic owner authority/upload/worker-v3/dedicated-reader/HTTPS-Results/capsule; same UID; no gateway/deployment/clinical claim"
+    if args.gateway:
+        report["scope"] = "native synthetic owner-v1 Gateway/authority/upload/worker/dedicated-reader/HTTPS-Results/capsule; " + args.mode + "; same UID; no deployment/clinical claim"
+    report["pipeline_mode"] = args.mode
+    report["browser_requested"] = args.browser
     children, handles, watch = [], [], None
+    sessions = ExitStack()
+    retired = set()
+    gateway_state = None
     counter, api_counter = 0, 0
     stable_history = None
     stable_results_history = None
@@ -458,14 +477,14 @@ def main():
         children.append(proc); report["processes"].append({"name": name, "pid": proc.pid, "returncode": None}); save()
         return proc
 
-    def wait_for(test, timeout=20):
+    def wait_for(test, timeout=20, interval=0.05):
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
-            if any(proc.poll() is not None for proc in children):
+            if any(proc.pid not in retired and proc.poll() is not None for proc in children):
                 raise RuntimeError("owned service exited before fixture completion")
             if test():
                 return
-            time.sleep(0.05)
+            time.sleep(interval)
         raise RuntimeError("fixture observation deadline expired")
 
     def inventory():
@@ -481,6 +500,15 @@ def main():
 
     def readonly_state():
         return {**retained(), "authority": tree_hashes(runtime / "authority"), "upload": tree_hashes(runtime / "upload")}
+
+    def gateway_api(name, session, method, route, body=None, headers=None):
+        nonlocal api_counter
+        code, raw = session.call(method, route, body, headers)
+        prefix = "%03d-gateway-%s" % (api_counter, name); api_counter += 1
+        private_bytes(evidence / (prefix + ".body"), raw)
+        private_json(evidence / (prefix + ".json"), {"method": method, "route": route, "status": code,
+                     "response_sha256": digest(raw), "request_sha256": digest(compact(body) if body is not None else b"")})
+        return code, raw
 
     def verify_signed(label, signed, public, field):
         private_bytes(evidence / (label + ".signed"), compact(signed[field]))
@@ -516,6 +544,8 @@ def main():
         if args.reuse_build_report is not None:
             report["build_mode"] = "explicit_verified_reuse"
             expected_names = (BUILD_NAMES - {"artifact-owner-broker"}) | {"artifact-owner-read-broker", "results-api"} if args.results else BUILD_NAMES
+            if args.gateway:
+                expected_names = expected_names | {"reviewer-gateway"}
             report["reused_builds"] = reuse_builds(args.reuse_build_report, report["go_module_inputs"], bins, evidence, expected_names=expected_names)
         else:
             report["build_mode"] = "fresh_compile"
@@ -526,6 +556,8 @@ def main():
                 command("build-" + name, ["go", "build", "-o", bins / name, package], cwd=services / module)
             if args.results:
                 command("build-results-api", ["go", "build", "-o", bins / "results-api", "."], cwd=services / "results-api")
+            if args.gateway:
+                command("build-reviewer-gateway", ["go", "build", "-o", bins / "reviewer-gateway", "."], cwd=services / "reviewer-gateway")
             command("build-payload-inspector", ["go", "build", "-o", bins / "payload-inspector", ROOT / "biozero/infra/native/owner_upload_verify/main.go"])
         report["binary_pins"] = {path.name: {"sha256": sha(path), "bytes": path.stat().st_size} for path in bins.iterdir()}
         for path in bins.iterdir():
@@ -534,8 +566,8 @@ def main():
 
         openssl("ca-key", "genpkey", "-algorithm", "RSA", "-pkeyopt", "rsa_keygen_bits:2048", "-out", pki / "ca.key")
         openssl("ca-cert", "req", "-new", "-x509", "-sha256", "-key", pki / "ca.key", "-out", pki / "ca.crt", "-days", "2", "-subj", "/CN=owner-worker-fixture-ca", "-addext", "basicConstraints=critical,CA:TRUE", "-addext", "keyUsage=critical,keyCertSign,cRLSign")
-        for serial, role in enumerate(("authority", "upload", "owner-a", "owner-b") + (("results",) if args.results else ()), 2):
-            server = role in ("authority", "upload", "results")
+        for serial, role in enumerate(("authority", "upload", "owner-a", "owner-b") + (("results",) if args.results else ()) + (("gateway",) if args.gateway else ()), 2):
+            server = role in ("authority", "upload", "results", "gateway")
             subject_role = "owner-a" if args.results and role == "owner-b" else role
             cert_serial = 4 if args.results and role == "owner-b" else serial
             openssl(role + "-key", "genpkey", "-algorithm", "RSA", "-pkeyopt", "rsa_keygen_bits:2048", "-out", pki / (role + ".key"))
@@ -563,7 +595,21 @@ def main():
         authority_id = secrets.token_hex(16)
         capsule = services / "artifact-executor/capsule"
         assets = {"native_helper": capsule / "native_capsule.py", "pipeline": ROOT / "biozero/bio/pipeline/pipeline.py", "resource_budget": ROOT / "biozero/bio/pipeline/resource_budget.py", "reference": FIXTURE / "reference.fa", "evaluator": ROOT / "biozero/bio/benchmarks/evaluate_variants.py", "truth": FIXTURE / "expected.vcf", "analysis_executable": bins / "capsule-analysis", "analysis_rules": ROOT / "biozero/bio/reference-db/rules.json", "analysis_panel": FIXTURE / "reference.fa"}
-        execution = {"schema_version": 1, "provider": "native", "mode": "variants", "store_root": str(host / "s"), "journal_root": str(host / "j"), "workspace_root": str(host / "w"), "socket_path": str(host / "c/b.sock"), "allowed_uid": os.getuid(), "timeout_seconds": 60, "python_path": str(Path("/usr/bin/python3").resolve()), "tool_path": str(tools / "bin") + ":/usr/bin", "docker_command": [], "image_id": "", "container_helper": {"path": "", "sha256": ""}, **{name: asset(path) for name, path in assets.items()}}
+        if args.mode == "stats":
+            # Stats intentionally has no alignment/panel. Keep every other
+            # operator rule unchanged and pin the explicitly derived rules.
+            base_rules = assets["analysis_rules"]
+            stats_rules = exact_json(base_rules.read_bytes())
+            stats_rules["threat_panel_fasta"] = ""
+            stats_rules_path = runtime / "config/analysis-stats-rules.json"
+            private_json(stats_rules_path, stats_rules)
+            assets["analysis_rules"] = stats_rules_path
+            report["stats_rules_derivation"] = {"base_source_sha256": sha(base_rules),
+                "derived_sha256": sha(stats_rules_path), "changed_field": "threat_panel_fasta", "value": ""}
+        execution = {"schema_version": 1, "provider": "native", "mode": args.mode, "store_root": str(host / "s"), "journal_root": str(host / "j"), "workspace_root": str(host / "w"), "socket_path": str(host / "c/b.sock"), "allowed_uid": os.getuid(), "timeout_seconds": 60, "python_path": str(Path("/usr/bin/python3").resolve()), "tool_path": str(tools / "bin") + ":/usr/bin", "docker_command": [], "image_id": "", "container_helper": {"path": "", "sha256": ""}, **{name: asset(path) for name, path in assets.items()}}
+        if args.mode == "stats":
+            for unused in ("evaluator", "truth", "analysis_panel"):
+                execution[unused] = {"path": "", "sha256": ""}
         broker_config = {"schema_version": 1, "execution": execution, "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "expected_scope": {"store_id": "", "policy_sha256": ""}}
         owner_broker_config = broker_config
         reader_socket = host / "r/read.sock"
@@ -580,7 +626,7 @@ def main():
             upload_port = free_port()
         policy = {"max_jobs": 64, "max_principal_jobs": 16, "max_bytes": 512 << 20, "max_principal_bytes": 128 << 20, "max_active": 2, "max_principal_active": 1, "max_body_bytes": 25 << 20, "free_space_floor_bytes": 0, "challenge_ttl_seconds": 300}
         authority_store, upload_store = runtime / "authority", runtime / "upload"
-        authority_config = {"schema_version": 1, "listen_address": "127.0.0.1:" + str(authority_port), "store_root": str(authority_store), "namespace": "owner-worker-authority", "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": "variants", "execution_profile_sha256": profile, "signing_key": asset(pki / "signing.raw"), "tls_certificate": asset(pki / "authority.crt"), "tls_private_key": asset(pki / "authority.key"), "client_ca": asset(pki / "ca.crt"), "policy": policy, "expected_scope": {"store_id": "", "policy_sha256": ""}}
+        authority_config = {"schema_version": 1, "listen_address": "127.0.0.1:" + str(authority_port), "store_root": str(authority_store), "namespace": "owner-worker-authority", "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": args.mode, "execution_profile_sha256": profile, "signing_key": asset(pki / "signing.raw"), "tls_certificate": asset(pki / "authority.crt"), "tls_private_key": asset(pki / "authority.key"), "client_ca": asset(pki / "ca.crt"), "policy": policy, "expected_scope": {"store_id": "", "policy_sha256": ""}}
         authority_path = runtime / "config/authority.json"; private_json(authority_path, authority_config)
         _, raw = command("authority-genesis", [bins / "ownership-authority", "--config", authority_path, "--init-store"])
         scope = exact_json(raw); private_bytes(evidence / "genesis-scope.json", raw)
@@ -590,14 +636,17 @@ def main():
         _, raw = command("owner-profile-after-scope", [bins / broker_name, "--config", broker_path, "--print-profile"])
         check("scope_does_not_change_execution_profile", raw == (profile + "\n").encode())
         command("broker-genesis", [bins / broker_name, "--config", broker_path, "--init-owner-broker"])
-        upload_config = {"schema_version": 1, "listen_address": "127.0.0.1:" + str(upload_port), "store_root": str(upload_store), "namespace": "owner-worker-transport", "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": "variants", "execution_profile_sha256": profile, "expected_scope": scope, "policy": {name: value for name, value in policy.items() if name != "challenge_ttl_seconds"}, "tls_certificate": asset(pki / "upload.crt"), "tls_private_key": asset(pki / "upload.key"), "client_ca": asset(pki / "ca.crt")}
+        upload_config = {"schema_version": 1, "listen_address": "127.0.0.1:" + str(upload_port), "store_root": str(upload_store), "namespace": "owner-worker-transport", "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": args.mode, "execution_profile_sha256": profile, "expected_scope": scope, "policy": {name: value for name, value in policy.items() if name != "challenge_ttl_seconds"}, "tls_certificate": asset(pki / "upload.crt"), "tls_private_key": asset(pki / "upload.key"), "client_ca": asset(pki / "ca.crt")}
         upload_path = runtime / "config/upload.json"; private_json(upload_path, upload_config)
         upload_env = {"BIOZERO_UPLOAD_PROTOCOL": "owner-v1", "BIOZERO_OWNER_UPLOAD_CONFIG": str(upload_path)}
         command("upload-genesis", [bins / "upload-api", "--init-owner-ingress"], settings=upload_env)
         (worker_root / "results").mkdir(mode=0o700); (worker_root / "stage").mkdir(mode=0o700)
         pins = {name: {"sha256": sha(path), "bytes": path.stat().st_size} for name, path in assets.items() if name != "native_helper"}
-        projection_path = runtime / "config/projection.json"; private_json(projection_path, {"schema_version": 1, "profile_sha256": profile, "pipeline_mode": "variants", "capsule_kind": "native", "source_pins": pins})
-        worker_config = {"schema_version": 1, "protocol": "owner-v1", "socket": execution["socket_path"], "jobs_directory": str(upload_store / "jobs"), "uploads_directory": str(upload_store / "uploads"), "acceptances_directory": str(upload_store / "acceptances"), "results_directory": str(worker_root / "results"), "stage_directory": str(worker_root / "stage"), "custody_directory": str(worker_root / "custody"), "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": "variants", "execution_profile_sha256": profile, "expected_scope": scope, "decryption_key": asset(pki / "recipient.key"), "projection_policy": asset(projection_path), "poll_milliseconds": 100, "timeout_seconds": 90}
+        if args.mode == "stats":
+            for unused in ("evaluator", "truth", "analysis_panel"):
+                pins.pop(unused)
+        projection_path = runtime / "config/projection.json"; private_json(projection_path, {"schema_version": 1, "profile_sha256": profile, "pipeline_mode": args.mode, "capsule_kind": "native", "source_pins": pins})
+        worker_config = {"schema_version": 1, "protocol": "owner-v1", "socket": execution["socket_path"], "jobs_directory": str(upload_store / "jobs"), "uploads_directory": str(upload_store / "uploads"), "acceptances_directory": str(upload_store / "acceptances"), "results_directory": str(worker_root / "results"), "stage_directory": str(worker_root / "stage"), "custody_directory": str(worker_root / "custody"), "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": args.mode, "execution_profile_sha256": profile, "expected_scope": scope, "decryption_key": asset(pki / "recipient.key"), "projection_policy": asset(projection_path), "poll_milliseconds": 100, "timeout_seconds": 90}
         worker_path = runtime / "config/worker.json"; private_json(worker_path, worker_config)
         worker_env = {"BIOZERO_WORKER_PROTOCOL": "owner-v1", "BIOZERO_OWNER_WORKER_CONFIG": str(worker_path), "BIOZERO_SECURITY_MODE": "protected", "BIOZERO_EXECUTION_BACKEND": "capsule"}
         command("worker-genesis", [bins / "enclave-runner", "--init-owner-worker"], settings=worker_env)
@@ -614,7 +663,7 @@ def main():
             results_config = {"schema_version": 1, "protocol": "owner-v1", "address": "127.0.0.1:" + str(results_port),
                               "acceptances_directory": str(results_inbox), "expected_acceptances_uid": os.geteuid(),
                               "reader_socket": str(reader_socket), "expected_broker_uid": os.geteuid(),
-                              "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": "variants",
+                              "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": args.mode,
                               "execution_profile_sha256": profile, "expected_scope": scope,
                               "tls_certificate": asset(pki / "results.crt"), "tls_private_key": asset(pki / "results.key"),
                               "client_ca": asset(pki / "ca.crt"), "projection_policy": asset(projection_path)}
@@ -664,18 +713,98 @@ def main():
                                                "stat": {"device": stage_stat.st_dev, "inode": stage_stat.st_ino, "mode": stage_stat.st_mode, "uid": stage_stat.st_uid, "gid": stage_stat.st_gid},
                                                "namespace_ids": {name: os.readlink("/proc/%d/ns/%s" % (worker_pid, name)) for name in ("user", "mnt", "net")}}
         watch = StageWatch(stage_view)
-        client_config = {"schema_version": 1, "authority_url": "https://127.0.0.1:" + str(authority_port), "authority_server_name": "127.0.0.1", "upload_url": "https://127.0.0.1:" + str(upload_port), "upload_server_name": "127.0.0.1", "tls_certificate": asset(pki / "owner-a.crt"), "tls_private_key": asset(pki / "owner-a.key"), "authority_ca": asset(pki / "ca.crt"), "upload_ca": asset(pki / "ca.crt"), "encryption_public_key": asset(pki / "recipient.pub"), "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": "variants", "execution_profile_sha256": profile, "expected_scope": scope, "original_name": "synthetic.fastq"}
+        client_config = {"schema_version": 1, "authority_url": "https://127.0.0.1:" + str(authority_port), "authority_server_name": "127.0.0.1", "upload_url": "https://127.0.0.1:" + str(upload_port), "upload_server_name": "127.0.0.1", "tls_certificate": asset(pki / "owner-a.crt"), "tls_private_key": asset(pki / "owner-a.key"), "authority_ca": asset(pki / "ca.crt"), "upload_ca": asset(pki / "ca.crt"), "encryption_public_key": asset(pki / "recipient.pub"), "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": args.mode, "execution_profile_sha256": profile, "expected_scope": scope, "original_name": "synthetic.fastq"}
         client_path = runtime / "config/client.json"; private_json(client_path, client_config)
+        if args.gateway:
+            from owner_gateway_native import GatewayHTTPSession, gateway_projection_matches
+            session_type = GatewayHTTPSession
+            if args.browser:
+                from owner_gateway_browser import OwnerGatewayBrowser
+                session_type = OwnerGatewayBrowser
+            gateway_assets = runtime / "gateway-assets"; gateway_assets.mkdir(mode=0o700)
+            for filename in ("index.html", "app.js", "styles.css"):
+                private_bytes(gateway_assets / filename, (ROOT / "biozero/ui/owner-v1" / filename).read_bytes())
+            for filename in ("reads.fastq", "invalid.fastq", "reference.fa"):
+                private_bytes(gateway_assets / filename, (FIXTURE / filename).read_bytes())
+            gateway_port = free_port()
+            while gateway_port in service_ports:
+                gateway_port = free_port()
+            gateway_origin = "https://127.0.0.1:" + str(gateway_port)
+            gateway_state = runtime / "gateway-state"
+            reviewers = {"a": {"access_code": secrets.token_urlsafe(32), "label": "Synthetic reviewer A"},
+                         "b": {"access_code": secrets.token_urlsafe(32), "label": "Synthetic reviewer B"}}
+            gateway_config = {"schema_version": 1, "protocol": "owner-v1", "listen_address": "127.0.0.1:" + str(gateway_port),
+                "public_origin": gateway_origin, "state_directory": str(gateway_state), "expected_uid": os.geteuid(),
+                "authority_url": "https://127.0.0.1:" + str(authority_port), "upload_url": "https://127.0.0.1:" + str(upload_port),
+                "results_url": "https://127.0.0.1:" + str(results_port), "authority_server_name": "127.0.0.1",
+                "upload_server_name": "127.0.0.1", "results_server_name": "127.0.0.1", "authority_id": authority_id,
+                "public_key_hex": public_der[-32:].hex(), "pipeline_mode": args.mode, "execution_profile_sha256": profile,
+                "expected_scope": scope, "browser_tls_certificate": asset(pki / "gateway.crt"), "browser_tls_private_key": asset(pki / "gateway.key"),
+                "authority_ca": asset(pki / "ca.crt"), "upload_ca": asset(pki / "ca.crt"), "results_ca": asset(pki / "ca.crt"),
+                "worker_encryption_public_key": asset(pki / "recipient.pub"), "projection_policy": asset(projection_path),
+                "ui_assets": {name: asset(gateway_assets / name) for name in ("index.html", "app.js", "styles.css")},
+                "reviewers": [{"id": identity, "label": invitation["label"], "enabled": True,
+                    "access_code_sha256": digest(invitation["access_code"].encode()),
+                    "credential_sha256": digest(ssl.PEM_cert_to_DER_cert((pki / ("owner-" + identity + ".crt")).read_text())),
+                    "tls_certificate": asset(pki / ("owner-" + identity + ".crt")),
+                    "tls_private_key": asset(pki / ("owner-" + identity + ".key"))} for identity, invitation in reviewers.items()],
+                "experiments": [{"id": identity, "label": "Synthetic " + identity, "scope": "synthetic", "original_name": "synthetic.fastq",
+                    "input": asset(gateway_assets / filename), "reference": asset(gateway_assets / "reference.fa")}
+                    for identity, filename in (("valid", "reads.fastq"), ("invalid", "invalid.fastq"))]}
+            gateway_path = runtime / "config/gateway.json"; private_json(gateway_path, gateway_config)
+            gateway_env = {"BIOZERO_REVIEWER_PROTOCOL": "owner-v1", "BIOZERO_OWNER_REVIEWER_CONFIG": str(gateway_path)}
+            if "BIOZERO_REVIEWER_CONFIG" in env:
+                raise RuntimeError("mixed inherited legacy Gateway selector")
+            _, raw = command("gateway-genesis", [bins / "reviewer-gateway", "--init-owner-gateway"], settings=gateway_env)
+            check("gateway_explicit_fresh_genesis", exact_json(raw) == {"schema_version": 1, "state": "initialized"})
+            gateway = start("gateway", [bins / "reviewer-gateway"], gateway_env)
+            probe_context = ssl.create_default_context(cafile=str(pki / "ca.crt")); probe_context.minimum_version = probe_context.maximum_version = ssl.TLSVersion.TLSv1_3
+            wait_for(lambda: b'"state":"owner_gateway_ready"' in (logs / "gateway.stdout").read_bytes())
+            code, raw = api("gateway-health", gateway_port, probe_context, "GET", "/health")
+            check("gateway_health_is_liveness_not_scientific_approval", code == 200 and exact_json(raw).get("scientific_readiness") == "unverified")
+            gateway_a = sessions.enter_context(session_type(gateway_origin, pki / "ca.crt", evidence / "gateway-session-a", reviewers))
+            gateway_b = sessions.enter_context(session_type(gateway_origin, pki / "ca.crt", evidence / "gateway-session-b", reviewers))
+            gateway_a.login("a"); gateway_b.login("b")
+            check("gateway_individual_browser_sessions", gateway_api("a-session", gateway_a, "GET", "/api/session")[0] == 200
+                  and gateway_api("b-session", gateway_b, "GET", "/api/session")[0] == 200)
+            report["gateway_authorization_provisioning"] = "Fixture explicitly copies exact already-signed Gateway acceptance to separate configured Results inbox; automated deployed publisher remains unverified"
         original = {}
-        for label, fixture_name in (("valid", "reads.fastq"), ("repeat", "reads.fastq"), ("invalid", "invalid.fastq")):
+        fixtures = (("valid", "reads.fastq"), ("repeat", "reads.fastq"), ("invalid", "invalid.fastq")) if args.mode == "variants" else (("valid", "reads.fastq"),)
+        for label, fixture_name in fixtures:
             plaintext = runtime / "plaintext" / (label + ".fastq"); private_bytes(plaintext, (FIXTURE / fixture_name).read_bytes())
             client_run = runtime / "client" / label
-            _, raw = command("cli-" + label, [bins / "uploader-cli", "--protocol", "owner-v1", "--config", client_path, "--run-dir", client_run, "--action", "submit", "--file", plaintext])
-            delivered = exact_json(raw); job = delivered["job_id"]
-            op = exact_json((client_run / "operation/04-accepted.json").read_bytes()); accepted = exact_json(op["acceptance_json"])
+            gateway_run_id = None
+            if args.gateway:
+                experiment_id = "invalid" if label == "invalid" else "valid"
+                begun = gateway_a.start(experiment_id); gateway_run_id = begun["run_id"]
+                private_json(evidence / (label + "-gateway-intent-response.json"), begun)
+                operation_path = gateway_state / "operations" / gateway_run_id / "authority"
+                intent_path = gateway_state / "operations" / gateway_run_id / "intent.json"
+                initial_intent = exact_json(intent_path.read_bytes())
+                check(label + "_gateway_retained_intent_matches_browser_response", initial_intent["phase"] == "intent"
+                      and initial_intent["request_id"] == gateway_a.last_request_id and initial_intent["reviewer_id"] == "a"
+                      and initial_intent["input_sha256"] == sha(plaintext) and initial_intent["job_id"] == "")
+                # Provision only an already-signed acceptance for this exact new
+                # operation. This fixture never infers authorization from cache.
+                wait_for(lambda: (operation_path / "04-accepted.json").is_file(), 150)
+                op = exact_json((operation_path / "04-accepted.json").read_bytes()); accepted = exact_json(op["acceptance_json"])
+                job = accepted["record"]["binding"]["job_id"]
+                private_bytes(results_inbox / (job + ".json"), compact(accepted))
+                def gateway_delivered():
+                    nonlocal delivered
+                    status, body = gateway_api(label + "-operation", gateway_a, "GET", "/api/operations/" + gateway_run_id)
+                    delivered = exact_json(body)
+                    return status == 200 and delivered.get("phase") == "delivered" and delivered.get("job_id") == job
+                delivered = {}
+                wait_for(gateway_delivered, 150, interval=2)
+            else:
+                _, raw = command("cli-" + label, [bins / "uploader-cli", "--protocol", "owner-v1", "--config", client_path, "--run-dir", client_run, "--action", "submit", "--file", plaintext])
+                delivered = exact_json(raw); job = delivered["job_id"]
+                operation_path = client_run / "operation"
+                op = exact_json((operation_path / "04-accepted.json").read_bytes()); accepted = exact_json(op["acceptance_json"])
             verify_signed(label + "-acceptance", accepted, pki / "signing.pub", "record")
             binding = accepted["record"]["binding"]; acceptance_sha = digest(compact(accepted))
-            check(label + "_signed_job_and_delivery_preserved", delivered.get("phase") == "delivered" and delivered.get("acceptance_sha256") == acceptance_sha and binding["job_id"] == job and binding["execution_profile_sha256"] == profile and binding["credential_sha256"] == digest(ssl.PEM_cert_to_DER_cert((pki / "owner-a.crt").read_text())))
+            check(label + "_signed_job_and_delivery_preserved", delivered.get("phase") == "delivered" and (args.gateway or delivered.get("acceptance_sha256") == acceptance_sha) and binding["job_id"] == job and binding["execution_profile_sha256"] == profile and binding["credential_sha256"] == digest(ssl.PEM_cert_to_DER_cert((pki / "owner-a.crt").read_text())))
             cache_path = worker_root / "results" / (job + ".json")
             wait_for(cache_path.is_file, 120)
             cache = exact_json(cache_path.read_bytes()); private_json(evidence / (label + "-cache.json"), cache)
@@ -691,12 +820,19 @@ def main():
             check(label + "_actual_retained_artifacts_match", sha(objects / "manifest.json") == execution_result["manifest_sha256"] and exact_json((objects / "manifest.json").read_bytes()) == manifest and sha(objects / "execution_receipt") == digest(receipt_raw) and all(name in ARTIFACT_IDS and sha(objects / name) == entry["sha256"] and (objects / name).stat().st_size == entry["bytes"] and entry["state"] == "verified" for name, entry in manifest["files"].items()))
             proof = exact_json((objects / "proof.json").read_bytes())
             check(label + "_proof_input_and_source_pins", proof["capsule_wait_finished"] is True and proof["export_authority_closed"] is True and proof["manifest_sha256"] == execution_result["manifest_sha256"] and receipt["schema_version"] == 2 and receipt["input_sha256"] == sha(plaintext) and receipt["input_bytes"] == plaintext.stat().st_size and receipt["source_pins"] == pins and receipt["analysis_context"] == response["analysis_context"])
-            if label != "invalid":
+            if label != "invalid" and args.mode == "variants":
                 evaluation = receipt["evaluation"]["payload"]; detection = cache["detection"]; alignment = detection["signals"]["alignment"]
                 check(label + "_real_three_snp_scientific_release", cache["status"] == manifest["execution_status"] == "succeeded" and cache["release_status"] == manifest["release_status"] == "evaluated_passed" and set(manifest["files"]) == ARTIFACT_IDS and evaluation["evaluation_status"] == "passed" and evaluation["tp"] == 3 and evaluation["fp"] == 0 and evaluation["fn"] == 0 and evaluation["precision"] == evaluation["recall"] == 1 and snps((objects / "normalized_vcf").read_bytes()) == snps((FIXTURE / "expected.vcf").read_bytes()))
                 check(label + "_actual_detection_and_same_observed_evaluated_hash", alignment["mapped_reads"] == alignment["total_reads"] == 1171 and alignment["fraction"] == 1 and len(alignment["targets"]) == 1 and "threat_panel_hit" in detection["reasons"] and manifest["observed_sha256"] == manifest["evaluated_sha256"] == sha(objects / "normalized_vcf")
                       and receipt["analysis_capture"]["payload"]["detection"] == detection
                       and all(cache["scientific_evaluation"][key] == evaluation[key] for key in ("evaluation_status", "tp", "fp", "fn", "precision", "recall")))
+            elif label != "invalid":
+                check(label + "_real_stats_succeeded_unassessed", cache["status"] == manifest["execution_status"] == "succeeded"
+                      and cache["release_status"] == manifest["release_status"] == "unassessed"
+                      and set(manifest["files"]) == {"execution_receipt"} and cache["scientific_evaluation"] is None
+                      and cache["pipeline_output"]["mode"] == "stats" and cache["pipeline_output"]["read_count"] == 1171
+                      and cache["pipeline_output"]["sha256"] == sha(plaintext) and not manifest["observed_sha256"] and not manifest["evaluated_sha256"]
+                      and "alignment" not in cache["detection"]["signals"] and receipt["analysis_capture"]["payload"]["detection"] == cache["detection"])
             else:
                 check("real_invalid_fastq_failed_withheld", cache["status"] == manifest["execution_status"] == "failed" and cache["release_status"] == manifest["release_status"] == "withheld" and set(manifest["files"]) == {"execution_receipt"})
             events = watch.drain(); private_json(evidence / (label + "-stage-events.json"), events)
@@ -706,8 +842,18 @@ def main():
             check(label + "_transport_owner_a_allowed_b_denied", a_code == 200 and b_code == 403)
             if args.results:
                 signed_sidecar = (upload_store / "acceptances" / (job + ".json")).read_bytes()
-                private_bytes(results_inbox / (job + ".json"), signed_sidecar)
+                if not (results_inbox / (job + ".json")).exists():
+                    private_bytes(results_inbox / (job + ".json"), signed_sidecar)
+                else:
+                    check(label + "_provisioned_acceptance_equals_upload_sidecar", (results_inbox / (job + ".json")).read_bytes() == signed_sidecar)
                 check(label + "_results_inbox_exact_signed_authorization", exact_json(signed_sidecar) == accepted)
+                if args.gateway:
+                    status, gateway_raw = gateway_api(label + "-committed", gateway_a, "GET", "/api/results/" + job)
+                    gateway_result = exact_json(gateway_raw)
+                    check(label + "_gateway_terminal_same_signed_job", status == 200 and gateway_result["execution_state"] == "committed"
+                          and gateway_result["run_id"] == gateway_run_id and gateway_result["acceptance_sha256"] == acceptance_sha)
+                    if args.browser:
+                        private_json(evidence / (label + "-rendered.json"), gateway_a.wait_rendered(job, cache["status"], cache["release_status"]))
                 before_read = readonly_state()
                 reader_query = {"schema_version": 1, "domain": "biozero.artifact.owner-reader.request.v1", "operation": "status",
                                 "job_id": job, "acceptance_sha256": acceptance_sha, "credential_sha256": binding["credential_sha256"],
@@ -732,15 +878,61 @@ def main():
                       and result["job_id"] == job and result["acceptance_sha256"] == acceptance_sha
                       and result["processed_sha256"] == response["processed_sha256"] and result["upload_sha256"] == binding["ciphertext_sha256"]
                       and result["execution_state"] == "committed" and all(result[name] == value for name, value in expected_sections.items()))
+                if args.gateway:
+                    check(label + "_gateway_typed_same_receipt_projection", gateway_projection_matches(gateway_result, result, gateway_run_id, experiment_id))
+                    denied_gateway, _ = gateway_api(label + "-foreign-job", gateway_b, "GET", "/api/results/" + job,
+                        headers={"X-Client-ID": "owner-a", "X-Reviewer-ID": "a"})
+                    denied_run, _ = gateway_api(label + "-foreign-operation", gateway_b, "GET", "/api/operations/" + gateway_run_id)
+                    check(label + "_gateway_b_cannot_read_a_run_or_job", denied_gateway == denied_run == 404)
                 denied_code, _ = api(label + "-results-other-leaf", results_port, ctx_b, "GET", route,
                                      headers={"X-Client-ID": "owner-a", "X-Client-Cert": (pki / "owner-a.crt").read_text().replace("\n", " ")})
                 check(label + "_results_exact_leaf_not_labels_or_headers", denied_code == 403)
                 check(label + "_results_reads_preserve_all_history", before_read == readonly_state())
-            original[label] = {"job": job, "operation": op, "accepted": accepted, "plaintext": plaintext, "client_run": client_run,
-                               "http_result": result_raw if args.results else None, "lease_id": execution_result["lease_id"], "normalized_snps": snps((objects / "normalized_vcf").read_bytes()) if label != "invalid" else None}
-        check("repeat_has_distinct_job_lease_and_equal_snp_callset", original["valid"]["job"] != original["repeat"]["job"]
-              and original["valid"]["lease_id"] != original["repeat"]["lease_id"]
-              and len(original["valid"]["normalized_snps"]) == 3 and original["valid"]["normalized_snps"] == original["repeat"]["normalized_snps"])
+            original[label] = {"job": job, "operation": op, "accepted": accepted, "plaintext": plaintext, "client_run": client_run, "operation_path": operation_path, "gateway_run_id": gateway_run_id,
+                               "http_result": result_raw if args.results else None, "lease_id": execution_result["lease_id"], "normalized_snps": snps((objects / "normalized_vcf").read_bytes()) if label != "invalid" and args.mode == "variants" else None}
+        if args.mode == "variants":
+            check("repeat_has_distinct_job_lease_and_equal_snp_callset", original["valid"]["job"] != original["repeat"]["job"]
+                  and original["valid"]["lease_id"] != original["repeat"]["lease_id"]
+                  and len(original["valid"]["normalized_snps"]) == 3 and original["valid"]["normalized_snps"] == original["repeat"]["normalized_snps"])
+        if args.gateway:
+            if args.browser:
+                private_json(evidence / "browser-mobile.json", gateway_a.mobile_layout())
+                private_json(evidence / "browser-private-session-gate.json", gateway_a.privacy_gate(original["valid"]["job"], "b"))
+                gateway_a.login("a"); gateway_b.login("b")
+            gateway_history = tree_hashes(gateway_state)
+            report["gateway_history_after_terminal"] = gateway_history
+            ledger = exact_json((gateway_state / "ledger.json").read_bytes())
+            charge = 2 * ((10 << 20) + 16) + 8 * (96 << 10) + (64 << 10)
+            check("gateway_retains_all_promises_and_distinct_signed_runs", len(ledger["runs"]) == len(original)
+                  and ledger["retained_bytes"] == len(original) * charge
+                  and {row["job_id"] for row in ledger["runs"]} == {value["job"] for value in original.values()}
+                  and all(row["phase"] == "delivered" and row["commit"] is not None and row["charge_bytes"] == charge for row in ledger["runs"]))
+            code, _ = gateway_api("unknown-job", gateway_a, "GET", "/api/results/" + "f" * 16)
+            check("gateway_unknown_job_preserves_full_history", code == 404 and gateway_history == tree_hashes(gateway_state))
+            # Real Gateway process restart invalidates only its sessions. Its
+            # retained accepted/delivered/committed history opens without replay.
+            gateway_restart_producer_history = readonly_state()
+            gateway.send_signal(signal.SIGTERM)
+            gateway_exit = gateway.wait(timeout=20)
+            retired.add(gateway.pid)
+            check("gateway_first_process_clean_wait_before_restart", gateway_exit == 0 and tree_hashes(gateway_state) == gateway_history)
+            gateway = start("gateway-restart", [bins / "reviewer-gateway"], gateway_env)
+            wait_for(lambda: b'"state":"owner_gateway_ready"' in (logs / "gateway-restart.stdout").read_bytes())
+            check("gateway_restart_invalidates_old_sessions", gateway_api("stale-a", gateway_a, "GET", "/api/session")[0] == 401
+                  and gateway_api("stale-b", gateway_b, "GET", "/api/session")[0] == 401)
+            gateway_a.login("a"); gateway_b.login("b")
+            status, rows_raw = gateway_api("recovered-history", gateway_a, "GET", "/api/runs")
+            rows = exact_json(rows_raw)
+            check("gateway_cold_history_preserves_all_original_signed_jobs", status == 200
+                  and {row["run_id"] for row in rows} == {value["gateway_run_id"] for value in original.values()}
+                  and all(row["phase"] == "delivered" and row["needs_operator"] is False for row in rows))
+            for label, previous in original.items():
+                status, recovered = gateway_api(label + "-cold-result", gateway_a, "GET", "/api/results/" + previous["job"])
+                projected = exact_json(recovered); original_direct = exact_json(previous["http_result"])
+                check(label + "_gateway_cold_same_receipt_and_unchanged_history", status == 200
+                      and gateway_projection_matches(projected, original_direct, previous["gateway_run_id"], "invalid" if label == "invalid" else "valid")
+                      and tree_hashes(gateway_state) == gateway_history)
+            check("gateway_restart_and_reads_preserve_all_producer_histories", gateway_restart_producer_history == readonly_state())
 
         # B legitimately obtains a fresh authority challenge/acceptance while
         # signing copied ciphertext/envelope with B's distinct actual TLS key.
@@ -751,7 +943,7 @@ def main():
         code, raw_challenge = api("b-reserve", authority_port, ctx_b, "POST", "/v1/reservations", reserve, {"Content-Type": "application/json"})
         check("copy_attack_b_has_real_signed_challenge", code == 200)
         challenge = exact_json(raw_challenge); verify_signed("b-challenge", challenge, pki / "signing.pub", "claim")
-        original_a = original["valid"]; copied_cipher = (original_a["client_run"] / "operation/ciphertext.bin").read_bytes(); copied_envelope = bytes.fromhex(original_a["operation"]["envelope_hex"])
+        original_a = original["valid"]; copied_cipher = (original_a["operation_path"] / "ciphertext.bin").read_bytes(); copied_envelope = bytes.fromhex(original_a["operation"]["envelope_hex"])
         aad_b = canonical_aad(challenge["claim"])
         manifest_b = {"schema_version": 1, "domain": "biozero.ownership.manifest.v1", "sig_alg": "rsa-pss-sha256", "challenge_sha256": digest(compact(challenge)), "aad_sha256": digest(aad_b), "ciphertext_sha256": digest(copied_cipher), "ciphertext_bytes": len(copied_cipher), "key_envelope_sha256": digest(copied_envelope)}
         private_bytes(evidence / "b-manifest.signed", compact(manifest_b)); private_bytes(evidence / "b-aad.bin", aad_b); private_bytes(evidence / "copied-envelope.bin", copied_envelope)
@@ -764,7 +956,7 @@ def main():
         binding_b = accepted_b["record"]["binding"]; job_b = binding_b["job_id"]; acceptance_b = compact(accepted_b)
         expected_binding_b = {"authority_id": authority_id, "job_id": challenge["claim"]["job_id"], "nonce": challenge["claim"]["nonce"],
                               "credential_sha256": digest(ssl.PEM_cert_to_DER_cert((pki / "owner-b.crt").read_text())), "original_name": "synthetic.fastq",
-                              "enc_alg": "aes-256-gcm+rsa-oaep-sha256+owner-v1", "pipeline_mode": "variants", "execution_profile_sha256": profile,
+                              "enc_alg": "aes-256-gcm+rsa-oaep-sha256+owner-v1", "pipeline_mode": args.mode, "execution_profile_sha256": profile,
                               "challenge_sha256": digest(compact(challenge)), "aad_sha256": digest(aad_b), "manifest_sha256": digest(signed_manifest_b),
                               "ciphertext_sha256": digest(copied_cipher), "ciphertext_bytes": len(copied_cipher), "key_envelope_sha256": digest(copied_envelope)}
         check("copy_attack_acceptance_contains_exact_verified_b_challenge_manifest", binding_b == expected_binding_b
@@ -772,7 +964,7 @@ def main():
               and accepted_b["record"]["credential_der"] == ssl.PEM_cert_to_DER_cert((pki / "owner-b.crt").read_text()).hex())
         check("copy_attack_signed_facts_are_distinct_owner_same_bytes", job_b != original_a["job"] and binding_b["credential_sha256"] == digest(ssl.PEM_cert_to_DER_cert((pki / "owner-b.crt").read_text())) and binding_b["credential_sha256"] != original_a["accepted"]["record"]["binding"]["credential_sha256"] and binding_b["ciphertext_sha256"] == digest(copied_cipher) and binding_b["ciphertext_bytes"] == len(copied_cipher) and binding_b["key_envelope_sha256"] == digest(copied_envelope) and binding_b["aad_sha256"] == digest(aad_b) and binding_b["execution_profile_sha256"] == profile and accepted_b["record"]["store_id"] == scope["store_id"] and accepted_b["record"]["policy_sha256"] == scope["policy_sha256"])
         aad_a = canonical_aad(original_a["accepted"]["record"]["challenge"]["claim"]); private_bytes(evidence / "a-aad.bin", aad_a)
-        inspection_args = [bins / "payload-inspector", "--key", pki / "recipient.key", "--ciphertext", original_a["client_run"] / "operation/ciphertext.bin", "--envelope", evidence / "copied-envelope.bin", "--plaintext", original_a["plaintext"]]
+        inspection_args = [bins / "payload-inspector", "--key", pki / "recipient.key", "--ciphertext", original_a["operation_path"] / "ciphertext.bin", "--envelope", evidence / "copied-envelope.bin", "--plaintext", original_a["plaintext"]]
         _, raw = command("inspect-copied-original-aad", [*inspection_args, "--aad", evidence / "a-aad.bin"])
         check("original_copied_bytes_decrypt_under_aad_a", raw == b'{"plaintext_matches":true,"changed_aad_rejected":true}\n')
         code, _ = command("inspect-identical-copy-wrong-owner-aad", [*inspection_args, "--aad", evidence / "b-aad.bin"], expected=1)
@@ -804,11 +996,11 @@ def main():
         report["copy_attack_observation"] = {"worker_log": "owner_worker_input_rejected", "stage_mutations": len(events), "custody_unchanged": before_attack == after_attack, "independent_aad_control": True}
         worker_journal = exact_json((worker_root / "custody/journal.json").read_bytes()); broker_journal = exact_json((host / "j/journal.json").read_bytes()); store_ledger = exact_json((host / "s/ledger.json").read_bytes())
         expected_jobs = {value["job"] for value in original.values()}
-        check("only_three_a_jobs_occupy_execution_custody", set(worker_journal["records"]) == set(broker_journal["records"]) == set(broker_journal["owner_bindings"]) == expected_jobs and len(store_ledger["records"]) == 3 and all(row["state"] == "committed" for row in store_ledger["records"].values()))
+        check("only_three_a_jobs_occupy_execution_custody" if args.mode == "variants" else "only_one_stats_job_occupies_execution_custody", set(worker_journal["records"]) == set(broker_journal["records"]) == set(broker_journal["owner_bindings"]) == expected_jobs and len(store_ledger["records"]) == len(original) and all(row["state"] == "committed" for row in store_ledger["records"].values()))
         authority_rows = exact_json((authority_store / "ledger.json").read_bytes())["ledger"]["records"]
         upload_rows = exact_json((upload_store / "ledger.json").read_bytes())["records"]
         promise = (25 << 20) + (128 << 10)
-        check("all_four_admitted_inputs_keep_full_transport_and_authority_charges", len(authority_rows) == len(upload_rows) == 4 and all(row["charge_bytes"] == promise and row["state"] == "accepted" for row in authority_rows) and all(row["charge_bytes"] == promise and row["state"] == "delivered" for row in upload_rows))
+        check("all_four_admitted_inputs_keep_full_transport_and_authority_charges" if args.mode == "variants" else "both_stats_admissions_keep_full_charges", len(authority_rows) == len(upload_rows) == len(original) + 1 and all(row["charge_bytes"] == promise and row["state"] == "accepted" for row in authority_rows) and all(row["charge_bytes"] == promise and row["state"] == "delivered" for row in upload_rows))
         for lease, row in store_ledger["records"].items():
             objects = host / "s/objects" / lease
             exact_charge = sum(file["bytes"] for file in row["files"].values()) + (objects / "manifest.json").stat().st_size + (objects / "proof.json").stat().st_size + 2 * len(compact(row)) + 72
@@ -835,6 +1027,12 @@ def main():
                 private_json(cache_path, {"job_id": job, "status": "succeeded", "release_status": "evaluated_passed", "pipeline_output": {"forged": True}}, replace=True)
                 code, raw = api(label + "-results-after-cache-substitution", results_port, ctx_a, "GET", "/v1/results/" + job)
                 check(label + "_mutable_cache_cannot_relabel_science", code == 200 and raw == original_result["http_result"] and before_reads == readonly_state())
+                if args.gateway:
+                    status, browser_raw = gateway_api(label + "-after-cache-substitution", gateway_a, "GET", "/api/results/" + job)
+                    check(label + "_gateway_cache_independent_same_receipt", status == 200
+                          and gateway_projection_matches(exact_json(browser_raw), exact_json(original_result["http_result"]),
+                              original_result["gateway_run_id"], "invalid" if label == "invalid" else "valid")
+                          and gateway_history == tree_hashes(gateway_state) and before_reads == readonly_state())
             # Only the independent signed-authorization inbox is changed by these
             # negatives. Preserve upload/authority/execution histories untouched.
             for label in ("copied_job", "tampered_signature", "missing"):
@@ -850,12 +1048,22 @@ def main():
                     private_json(results_inbox / (unknown_job + ".json"), signed, replace=label == "tampered_signature")
                 code, _ = api("results-" + label, results_port, ctx_a, "GET", "/v1/results/" + unknown_job)
                 check("results_" + label + "_denied_history_preserved", code == 403 and before_reads == readonly_state())
+                if saved_authorization is not None and args.gateway:
+                    denied, _ = gateway_api("known-job-bad-authorization", gateway_a, "GET", "/api/results/" + unknown_job)
+                    check("gateway_known_job_bad_signed_inbox_withheld", denied == 503
+                          and gateway_history == tree_hashes(gateway_state) and before_reads == readonly_state())
                 if saved_authorization is not None:
                     # Restore only the independent test inbox after preserving
                     # both versions; producer histories were never changed.
                     private_bytes(results_inbox / (unknown_job + ".json"), saved_authorization, replace=True)
                     code, raw = api("results-signature-restored-control", results_port, ctx_a, "GET", "/v1/results/" + unknown_job)
                     check("results_signature_negative_has_positive_control", code == 200 and raw == original["valid"]["http_result"])
+                    if args.gateway:
+                        status, browser_raw = gateway_api("signed-authorization-restored", gateway_a, "GET", "/api/results/" + unknown_job)
+                        previous = original["valid"]
+                        check("gateway_signature_negative_positive_control_same_receipt", status == 200
+                              and gateway_projection_matches(exact_json(browser_raw), exact_json(previous["http_result"]), previous["gateway_run_id"], "valid")
+                              and gateway_history == tree_hashes(gateway_state) and before_reads == readonly_state())
             anonymous = ssl.create_default_context(cafile=str(pki / "ca.crt"))
             anonymous.minimum_version = anonymous.maximum_version = ssl.TLSVersion.TLSv1_3
             anonymous.set_alpn_protocols(["http/1.1"])
@@ -877,6 +1085,10 @@ def main():
         private_bytes(evidence / "failure.txt", traceback.format_exc().encode())
     finally:
         cleanup_ok = True
+        try:
+            sessions.close()
+        except BaseException:
+            cleanup_ok = False; private_bytes(evidence / "browser-close-failure.txt", traceback.format_exc().encode())
         if watch:
             try:
                 private_json(evidence / "final-stage-events.json", watch.drain()); watch.close()
@@ -905,6 +1117,9 @@ def main():
             if stable_history is not None:
                 final_history = retained(); private_json(evidence / "history-after-wait.json", final_history)
                 report["history_unchanged_after_wait"] = final_history == stable_history; cleanup_ok = cleanup_ok and report["history_unchanged_after_wait"]
+            if args.gateway and "gateway_history" in locals():
+                report["gateway_history_unchanged_after_wait"] = tree_hashes(gateway_state) == gateway_history
+                cleanup_ok = cleanup_ok and report["gateway_history_unchanged_after_wait"]
             if stable_results_history is not None:
                 final_results_history = readonly_state()
                 private_json(evidence / "all-history-after-results-wait.json", final_results_history)
@@ -914,7 +1129,7 @@ def main():
             cleanup_ok = False; private_bytes(evidence / "final-readback-failure.txt", traceback.format_exc().encode())
         report["cleanup_clean_wait"] = cleanup_ok; report["status"] = "passed" if report.get("checks_completed") and cleanup_ok else "failed"
         report["finished_at"] = datetime.now(timezone.utc).isoformat(); save()
-        print(json.dumps({"status": report["status"], "checks": len(report["cases"]), "passed": sum(case["passed"] for case in report["cases"]), "scope": "native_owner_results" if args.results else "native_owner_worker_capsule"}))
+        print(json.dumps({"status": report["status"], "checks": len(report["cases"]), "passed": sum(case["passed"] for case in report["cases"]), "scope": "native_owner_gateway_" + args.mode if args.gateway else ("native_owner_results" if args.results else "native_owner_worker_capsule")}))
     return 0 if report["status"] == "passed" else 1
 
 
