@@ -374,3 +374,54 @@ successful attempts do not relabel them. Final checks and hosted CI are recorded
 separately in [STATUS](../STATUS.md). Same-UID trusted-host synthetic acceptance
 does not establish production/clinical readiness, close TM-02 globally or complete
 the project requirements.
+
+
+## Automatic owner-v1 authorization publication
+
+Use the [publication contract](../security/ownership-publication-contract.md) and
+[public aggregate/pins](../evidence/20261015-owner-publisher/public/README.md).
+The same native Linux ARM64, UID/GID1000, namespace, cached tools and real-browser
+prerequisites above apply. `--publisher` requires `--gateway`; it selects fresh
+Upload schema2 and a separate publisher with a dedicated producer CA/key and
+external genesis scope. Both direct CLI and Gateway submit through canonical
+Upload. Positive Results authorization is observed from actual publisher output;
+no fixture copy provisions it.
+
+```sh
+/tmp/biozero-browser/bin/python -B biozero/infra/native/run_owner_worker.py \
+  --gateway --browser --publisher --mode variants \
+  --run-dir /absolute/private/new-owner-publisher-variants \
+  --tools-prefix /tmp/biozero-bio-tools-locked
+
+/tmp/biozero-browser/bin/python -B biozero/infra/native/run_owner_worker.py \
+  --gateway --browser --publisher --mode stats \
+  --run-dir /absolute/private/new-owner-publisher-stats \
+  --tools-prefix /tmp/biozero-bio-tools-locked \
+  --reuse-build-report /absolute/private/new-owner-publisher-variants/report.json
+```
+
+The first command compiles eleven targets, including `cmd/acceptance-publisher`.
+The second verifies and copies those exact eleven binary bytes and complete
+Go/module inputs into new runtime/profile/genesis/history. Old eight-, nine- or
+ten-binary receipts cannot satisfy publisher mode; mismatch does not fall back
+to compilation or adoption. Never reuse/reset an old run directory or store.
+No Docker/image build, installation, download, model or paid service is needed.
+
+Retained actual acceptance has310variants and216stats controls at the same
+573-source/206Go snapshot. Variants includes three valid scientific inputs
+(two Gateway, one CLI), invalid Gateway input and copied-ciphertext owner B.
+Stats includes Gateway plus CLI success/unassessed and the copied-ciphertext
+negative. Each run joins eleven own service instances, including Gateway,
+publisher and Upload restarts. Publication and its charges persist even when
+copied ciphertext fails GCM before new execution custody.
+
+For signed-inbox negatives, first stop/Wait original Results, then start another
+owned Results instance with the same endpoint, TLS identity, pin and policy but
+a separate explicit negative fixture inbox. Only that fixture is mutated or
+restored; primary publisher bytes/inodes and all durable charges remain equal.
+The fixture also checks known GET/duplicate receipts, exact producer leaf rather
+than CN/serial and rejected second initialization. Native history equality is
+not an HTTP request counter; one-POST/known-GET response-loss causality has
+separate component tests. Signals/Wait target only exact registered own children.
+This acceptance does not establish deployed role isolation, physical quotas,
+maximum-load behavior, arbitrary active-job failures or operator reconciliation.

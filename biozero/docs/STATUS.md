@@ -4,8 +4,60 @@ Updated2026-10-15 UTC. Working branch: `biozero/authenticated-ownership`, based 
 the `biozero/container-capsule-provider` milestone at 77a4e03.
 [PR22](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/22) is a draft
 above [merged PR21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
+[PR23](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/23) is the current ownership draft.
 No production deployment is established.
-Latest increment: [owner-v1 Gateway and actual Firefox UI](#owner-v1-gateway-and-actual-firefox-ui).
+Latest increment: [automatic signed authorization publication](#automatic-signed-authorization-publication).
+
+## Automatic signed authorization publication
+
+The canonical Upload schema2 path now publishes already-signed owner acceptances
+through a separate mTLS service before exposing lifecycle jobs. Both direct CLI
+and Gateway use that path. A dedicated producer CA and exact leaf pins separate
+the producer from owner/server RSA keys. Sender intent precedes its sole POST;
+a lost response permits a known GET only. Pending work retains its charge and
+raw custody; cold Open never publishes or completes it. Schema1 keeps its
+historical closed configuration, context and charge. See the
+[publication contract](security/ownership-publication-contract.md).
+
+Fresh actual Firefox/native variants passed310/310 controls; fresh stats passed
+216/216 using the same eleven binary bytes with explicit verified reuse. Both
+573-file source snapshots and206Go/module inputs are identical. Each run joined
+eleven owned service instances with Wait0, including clean publisher and Upload
+restarts and a separate Results instance for negative fixtures. Positive
+Results authorizations were read from actual publisher output without fixture
+copies. Negative Results testing changed only a separate fixture inbox after
+original Results Wait0, retaining endpoint/TLS/pin/policy and primary publisher
+history unchanged.
+
+Three synthetic valid variant inputs, including direct CLI, each yielded
+TP3/FP0/FN0 and1,171 mapped SAM records; invalid FASTQ stayed failed/withheld.
+Two stats inputs succeeded/unassessed. Copied ciphertext was legitimately signed
+and published for its new owner, then rejected before new execution custody.
+Gateway does not adopt direct-CLI jobs into its run registry. Variants retains
+five authority/Upload/publisher promises and four execution slots; stats retains
+three promises and two slots. Publisher charges208,896logical bytes per promise;
+Upload separately adds three96KiB journal steps plus64bytes to its previous
+body/metadata charge. These are distinct logical accounts, not physical quotas.
+
+Full authority-module race passed156principal tests/583subtests. A subsequent
+added test-only file passed2principal/5subtests for active admission and changed
+cold trust contexts; all other Go inputs match the full-module run. Final make
+passed294Python cases (292passed/two skipped) and uncached tests/vet in nine Go
+modules with unchanged source. The empty-selection attempt is retained as
+non-acceptance, and the earlier catalogue decoder failure remains failed.
+Independent retained readback passed495/495 controls, including public signatures,
+Upload/publisher contexts, accounting, exact receipt/projection/Firefox and
+post-Wait file identity. Hosted CI for this publication has its own scope; earlier
+CI does not approve this new source.
+
+[Public aggregate and source/binary pins](evidence/20261015-owner-publisher/public/README.md)
+record the final readback and publication scope. Documentation/public exports
+follow the runtime source snapshots. Fresh eleven-target compilation and
+same-environment reuse do not measure the complete historical GOROOT/FIPS tree,
+image closure or cross-host reproducibility. Same-UID host trust, deployed
+role/key/mount/network separation, physical/principal resource closure,
+maximum-load scope, active V3 failures/reconciliation and TM02 remain open.
+The regulatory biological and economic conclusions are unchanged.
 
 ## Protected synthetic experiment
 

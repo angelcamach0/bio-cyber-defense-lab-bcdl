@@ -50,6 +50,7 @@ type OwnerIngressConfig struct {
 	Pin                  AuthorityPin
 	Scope                AcceptanceScope
 	Policy               OwnerIngressPolicy
+	Publication          *OwnerIngressPublicationConfig
 }
 type ownerIngressEntry struct {
 	JobID            string `json:"job_id"`
@@ -69,9 +70,9 @@ type ownerIngressLedger struct {
 	Records       []ownerIngressEntry `json:"records"`
 }
 type OwnerIngressSnapshot struct {
-	Jobs, Reading, Delivered, Rejected int
-	ChargedBytes                       int64
-	Sticky                             bool
+	Jobs, Reading, Authorizing, Delivered, Rejected int
+	ChargedBytes                                    int64
+	Sticky                                          bool
 }
 
 // OwnerIngressStore is transport state, never owner/execution authority. Only the
@@ -89,6 +90,7 @@ type OwnerIngressStore struct {
 	ledgerSHA                              string
 	accepted                               map[string]VerifiedAcceptance
 	fault                                  func(string) error
+	publication                            *ownerIngressPublication
 }
 
 func CreateOwnerIngress(c OwnerIngressConfig) (*OwnerIngressStore, error) {
@@ -97,9 +99,17 @@ func CreateOwnerIngress(c OwnerIngressConfig) (*OwnerIngressStore, error) {
 func OpenOwnerIngress(c OwnerIngressConfig) (*OwnerIngressStore, error) {
 	return openOwnerIngress(c, false)
 }
-func openOwnerIngress(c OwnerIngressConfig, create bool) (*OwnerIngressStore, error) {
+func openOwnerIngress(c OwnerIngressConfig, create bool) (out *OwnerIngressStore, outErr error) {
 	if !authorityServicePath(c.Directory) || !nameValid(c.Namespace) || c.Pin.validate() != nil || c.Scope.validate() != nil || c.Policy.validate() != nil {
 		return nil, fail("ownership_ingress_config_invalid")
+	}
+	var publication *ownerIngressPublication
+	if c.Publication != nil {
+		var err error
+		c, publication, err = snapshotOwnerIngressPublication(c)
+		if err != nil {
+			return nil, err
+		}
 	}
 	c.Pin.PublicKey = append(ed25519.PublicKey(nil), c.Pin.PublicKey...)
 	raw, _ := json.Marshal(struct {
@@ -108,13 +118,25 @@ func openOwnerIngress(c OwnerIngressConfig, create bool) (*OwnerIngressStore, er
 		Scope     AcceptanceScope
 		Policy    OwnerIngressPolicy
 	}{c.Namespace, c.Pin, c.Scope, c.Policy})
+	if publication != nil {
+		raw = publication.context(c)
+	}
 	root, err := storeRoot(c.Directory, create)
 	if err != nil {
 		return nil, err
 	}
 	s := &OwnerIngressStore{config: c, root: root, accepted: map[string]VerifiedAcceptance{}, data: ownerIngressLedger{1, "biozero.ownership.transport-spool.v1", digest(raw), []ownerIngressEntry{}}}
+	if publication != nil {
+		s.publication = publication
+		s.data.SchemaVersion = 2
+		s.data.Domain = "biozero.ownership.transport-spool.v2"
+	}
 	ok := false
 	defer func() {
+		if !ok && s.publication != nil && s.rawHeld {
+			s.latch()
+			out = s // retain all uncertain constructor children, never adopt or reset
+		}
 		if !ok && !s.sticky {
 			s.releaseFailedOpen()
 		}
@@ -153,6 +175,17 @@ func openOwnerIngress(c OwnerIngressConfig, create bool) (*OwnerIngressStore, er
 		}
 		*target = d
 	}
+	if s.publication != nil {
+		if create {
+			if syscall.Mkdirat(int(root.Fd()), "publication", 0700) != nil || root.Sync() != nil {
+				return nil, s.latch()
+			}
+		}
+		s.publication.root, err = storeRoot(filepath.Join(c.Directory, "publication"), false)
+		if err != nil {
+			return nil, s.latch()
+		}
+	}
 	if create {
 		if err = s.save(s.data); err != nil {
 			return nil, err
@@ -166,7 +199,7 @@ func openOwnerIngress(c OwnerIngressConfig, create bool) (*OwnerIngressStore, er
 			return nil, err
 		}
 		var ledger ownerIngressLedger
-		if decodeStoreJSON(raw, &ledger) != nil || ledger.SchemaVersion != 1 || ledger.Domain != s.data.Domain || ledger.ContextSHA256 != s.data.ContextSHA256 || int64(len(ledger.Records)) > c.Policy.MaxJobs {
+		if decodeStoreJSON(raw, &ledger) != nil || ledger.SchemaVersion != s.data.SchemaVersion || ledger.Domain != s.data.Domain || ledger.ContextSHA256 != s.data.ContextSHA256 || int64(len(ledger.Records)) > c.Policy.MaxJobs {
 			return nil, fail("ownership_ingress_history_invalid")
 		}
 		for _, e := range ledger.Records {
@@ -178,7 +211,7 @@ func openOwnerIngress(c OwnerIngressConfig, create bool) (*OwnerIngressStore, er
 				return nil, err
 			}
 			s.accepted[e.JobID] = v
-			if e.State == "reading" {
+			if e.State == "reading" || s.publication != nil && e.State == "authorizing" {
 				return nil, fail("ownership_ingress_pending")
 			}
 		}
@@ -187,6 +220,11 @@ func openOwnerIngress(c OwnerIngressConfig, create bool) (*OwnerIngressStore, er
 		}
 		s.data = ledger
 		s.ledgerSHA = digest(raw)
+		if s.publication != nil {
+			if err = s.openPublicationChildren(); err != nil {
+				return nil, err
+			}
+		}
 		if err = s.preflight(); err != nil {
 			return nil, err
 		}
@@ -203,7 +241,7 @@ func (s *OwnerIngressStore) checkBudget(ledger ownerIngressLedger) error {
 		a := principals[e.PrincipalSHA256]
 		a[0]++
 		a[1] += e.ChargeBytes
-		if e.State == "reading" {
+		if e.State == "reading" || s.publication != nil && e.State == "authorizing" {
 			active++
 			a[2]++
 		}
@@ -260,6 +298,9 @@ func ownerReadNames(root *os.File, limit int) ([]string, error) {
 	return out, nil
 }
 func (s *OwnerIngressStore) rootNames(missingLedger bool) error {
+	if s.publication != nil {
+		return s.publicationRootNames(missingLedger)
+	}
 	names, err := ownerReadNames(s.root, 8)
 	if err != nil {
 		return err
@@ -282,12 +323,15 @@ func (s *OwnerIngressStore) rootNames(missingLedger bool) error {
 }
 func (s *OwnerIngressStore) verifyEntry(e ownerIngressEntry) (VerifiedAcceptance, error) {
 	v, err := VerifyAcceptance([]byte(e.AcceptanceJSON), s.config.Pin, s.config.Scope)
+	if err == nil {
+		err = s.checkPublicationOwner(v)
+	}
 	if err != nil {
 		return v, fail("ownership_ingress_history_invalid")
 	}
 	b := v.Binding()
 	env, err := hex.DecodeString(e.EnvelopeHex)
-	if err != nil || len(env) < 256 || len(env) > 512 || digest(env) != b.KeyEnvelopeSHA256 || e.JobID != b.JobID || e.AcceptanceSHA256 != v.SHA256() || e.CredentialSHA256 != b.CredentialSHA256 || !hexValue(e.PrincipalSHA256, 64) || e.ChargeBytes != s.config.Policy.MaxBodyBytes+StoreMetadataHeadroom || e.ReceivedBytes < 0 || e.ReceivedBytes > b.CiphertextBytes || b.CiphertextBytes > s.config.Policy.MaxBodyBytes {
+	if err != nil || len(env) < 256 || len(env) > 512 || digest(env) != b.KeyEnvelopeSHA256 || e.JobID != b.JobID || e.AcceptanceSHA256 != v.SHA256() || e.CredentialSHA256 != b.CredentialSHA256 || !hexValue(e.PrincipalSHA256, 64) || e.ChargeBytes != s.ingressCharge() || e.ReceivedBytes < 0 || e.ReceivedBytes > b.CiphertextBytes || b.CiphertextBytes > s.config.Policy.MaxBodyBytes {
 		return v, fail("ownership_ingress_history_invalid")
 	}
 	var certBytes []byte
@@ -305,6 +349,10 @@ func (s *OwnerIngressStore) verifyEntry(e ownerIngressEntry) (VerifiedAcceptance
 	}
 	switch e.State {
 	case "reading", "rejected":
+	case "authorizing":
+		if s.publication == nil || e.ReceivedBytes != b.CiphertextBytes {
+			return v, fail("ownership_ingress_history_invalid")
+		}
 	case "delivered":
 		if e.ReceivedBytes != b.CiphertextBytes {
 			return v, fail("ownership_ingress_history_invalid")
@@ -318,7 +366,7 @@ func (s *OwnerIngressStore) preflight() error {
 	if s.closed || s.sticky {
 		return fail("ownership_ingress_unavailable")
 	}
-	for name, f := range map[string]*os.File{"": s.root, "uploads": s.uploads, "jobs": s.jobs, "acceptances": s.acceptances} {
+	for name, f := range s.ingressDirectories() {
 		path := s.config.Directory
 		if name != "" {
 			path = filepath.Join(path, name)
@@ -328,9 +376,9 @@ func (s *OwnerIngressStore) preflight() error {
 			return s.latch()
 		}
 		a, e1 := fresh.Stat()
-		fresh.Close()
+		closeErr := fresh.Close()
 		b, e2 := f.Stat()
-		if e1 != nil || e2 != nil || !os.SameFile(a, b) {
+		if e1 != nil || e2 != nil || s.publication != nil && closeErr != nil || !os.SameFile(a, b) {
 			return s.latch()
 		}
 	}
@@ -342,9 +390,9 @@ func (s *OwnerIngressStore) preflight() error {
 		return s.latch()
 	}
 	a, e1 := lock.Stat()
-	lock.Close()
+	closeErr := lock.Close()
 	b, e2 := s.lock.Stat()
-	if e1 != nil || e2 != nil || a.Size() != 0 || !os.SameFile(a, b) {
+	if e1 != nil || e2 != nil || s.publication != nil && closeErr != nil || a.Size() != 0 || !os.SameFile(a, b) {
 		return s.latch()
 	}
 	raw, e := storeRead(s.root, "ledger.json", StoreLedgerLimit)
@@ -358,9 +406,15 @@ func (s *OwnerIngressStore) preflight() error {
 	if err := s.files(); err != nil {
 		return s.latch()
 	}
+	if s.publication != nil && s.checkPublicationChildren() != nil {
+		return s.latch()
+	}
 	return nil
 }
 func (s *OwnerIngressStore) files() error {
+	if s.publication != nil {
+		return s.publicationFiles()
+	}
 	// The worker's lifecycle job JSON remains a cache. Do not treat its strings as
 	// ownership authority or read ciphertext merely to authorize a GET receipt.
 	for kind, dir := range map[string]*os.File{"uploads": s.uploads, "jobs": s.jobs, "acceptances": s.acceptances} {
@@ -486,6 +540,8 @@ func (s *OwnerIngressStore) Snapshot() OwnerIngressSnapshot {
 		switch e.State {
 		case "reading":
 			v.Reading++
+		case "authorizing":
+			v.Authorizing++
 		case "rejected":
 			v.Rejected++
 		case "delivered":
@@ -554,6 +610,9 @@ func (s *OwnerIngressStore) Accept(ctx context.Context, state *tls.ConnectionSta
 		return zero, err
 	}
 	b := v.Binding()
+	if err = s.checkPublicationOwner(v); err != nil {
+		return zero, err
+	}
 	if p.CredentialSHA256() != b.CredentialSHA256 {
 		return zero, fail("ownership_denied")
 	}
@@ -591,18 +650,18 @@ func (s *OwnerIngressStore) Accept(ctx context.Context, state *tls.ConnectionSta
 	for _, e := range s.data.Records {
 		jobs++
 		charged += e.ChargeBytes
-		if e.State == "reading" {
+		if e.State == "reading" || s.publication != nil && e.State == "authorizing" {
 			active++
 		}
 		if e.PrincipalSHA256 == principal {
 			pjobs++
 			pcharged += e.ChargeBytes
-			if e.State == "reading" {
+			if e.State == "reading" || s.publication != nil && e.State == "authorizing" {
 				pactive++
 			}
 		}
 	}
-	promise := s.config.Policy.MaxBodyBytes + StoreMetadataHeadroom
+	promise := s.ingressCharge()
 	pol := s.config.Policy
 	if jobs >= pol.MaxJobs || pjobs >= pol.MaxPrincipalJobs || active >= pol.MaxActive || pactive >= pol.MaxPrincipalActive || charged+promise > pol.MaxBytes || pcharged+promise > pol.MaxPrincipalBytes {
 		s.mu.Unlock()
@@ -693,11 +752,16 @@ func (s *OwnerIngressStore) Accept(ctx context.Context, state *tls.ConnectionSta
 		readErr = fail("ownership_ingress_payload_invalid")
 	}
 	syncErr := file.Sync()
+	var originalCipher os.FileInfo
+	var cipherStatErr error
+	if s.publication != nil && syncErr == nil {
+		originalCipher, cipherStatErr = storeSafeFile(file)
+	}
 	closeErr := file.Close()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	defer func() { s.inflight-- }()
-	if syncErr != nil || closeErr != nil || readErr != nil && readErr.Error() == "ownership_ingress_storage_failed" {
+	if syncErr != nil || closeErr != nil || cipherStatErr != nil || readErr != nil && readErr.Error() == "ownership_ingress_storage_failed" {
 		return zero, s.latch()
 	}
 	if err = s.preflight(); err != nil {
@@ -713,6 +777,9 @@ func (s *OwnerIngressStore) Accept(ctx context.Context, state *tls.ConnectionSta
 			return zero, s.latch()
 		}
 		return zero, fail("ownership_ingress_payload_invalid")
+	}
+	if s.publication != nil {
+		return s.publishIngressAcceptanceLocked(i, entry, v, originalCipher)
 	}
 	// Sidecar is signed owner context, NOT execution proof. Job JSON is only a
 	// future lifecycle cache; old workers must reject this owner-v1 algorithm.
@@ -824,6 +891,9 @@ func (s *OwnerIngressStore) deliver(ctx context.Context, receipt OwnerUploadRece
 	return nil
 }
 func (s *OwnerIngressStore) Close() error {
+	if s != nil && s.publication != nil {
+		return s.closePublicationIngress()
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.closed {

@@ -11,6 +11,9 @@ reader and owner-v1 HTTPS Results with fresh producer profile and genesis. No
 Docker, download or biological model is run. --gateway adds the actual owner-v1
 Gateway, --browser uses the installed Firefox with private NSS trust, and --mode
 stats has fresh profile/genesis/state and its own unassessed-success checks.
+--publisher requires --gateway, adds automatic signed-acceptance publication via
+a dedicated producer identity and fresh eleven-bin source snapshot. Positive
+Results authorization is read only from the publisher inbox.
 The private worker cache is observability, never result authorization. This is
 same-host synthetic acceptance, not deployment isolation or clinical accuracy.
 """
@@ -377,12 +380,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", required=True, type=Path, help="new private retained evidence root")
     parser.add_argument("--tools-prefix", required=True, type=Path, help="existing ARM tool installation; never installs")
-    parser.add_argument("--reuse-build-report", type=Path, help="explicit private original build receipt; verify/copy the exact eight worker, nine Results or ten Gateway binaries without rebuilding")
+    parser.add_argument("--reuse-build-report", type=Path, help="explicit private original build receipt; verify/copy the exact eight worker, nine Results, ten Gateway or eleven publisher binaries without rebuilding")
     parser.add_argument("--results", action="store_true", help="also verify owner Results and dedicated read-only broker; own producer binary and fresh profile/genesis/state")
     parser.add_argument("--gateway", action="store_true", help="also verify real owner browser protocol, Gateway admission and typed Results; implies --results")
     parser.add_argument("--browser", action="store_true", help="use installed CA-validated Firefox UI for Gateway submissions; requires --gateway")
     parser.add_argument("--mode", choices=("variants", "stats"), default="variants", help="separate fresh producer mode/profile; stats requires --results")
+    parser.add_argument("--publisher", action="store_true", help="automatic schema2 Upload publication, dedicated producer PKI and eleven binaries; requires --gateway")
     args = parser.parse_args()
+    if args.publisher and not args.gateway:
+        parser.error("--publisher requires --gateway")
     if args.browser and not args.gateway:
         parser.error("--browser requires --gateway")
     if args.gateway:
@@ -420,6 +426,8 @@ def main():
         report["scope"] = "native synthetic owner authority/upload/worker-v3/dedicated-reader/HTTPS-Results/capsule; same UID; no gateway/deployment/clinical claim"
     if args.gateway:
         report["scope"] = "native synthetic owner-v1 Gateway/authority/upload/worker/dedicated-reader/HTTPS-Results/capsule; " + args.mode + "; same UID; no deployment/clinical claim"
+    if args.publisher:
+        report["scope"] = "native synthetic automatic Upload-schema2 acceptance-publisher/owner-v1 Gateway/CLI/authority/worker/reader/HTTPS-Results/capsule; " + args.mode + "; same UID; no deployed isolation or clinical claim"
     report["pipeline_mode"] = args.mode
     report["browser_requested"] = args.browser
     children, handles, watch = [], [], None
@@ -429,6 +437,8 @@ def main():
     counter, api_counter = 0, 0
     stable_history = None
     stable_results_history = None
+    publisher = None
+    stable_publication_history = None
 
     def save():
         private_json(run / "report.json", report, replace=(run / "report.json").exists())
@@ -499,7 +509,25 @@ def main():
         return {name: tree_hashes(path) for name, path in (("store", host / "s"), ("broker", host / "j"), ("worker", worker_root / "custody"))}
 
     def readonly_state():
-        return {**retained(), "authority": tree_hashes(runtime / "authority"), "upload": tree_hashes(runtime / "upload")}
+        state = {**retained(), "authority": tree_hashes(runtime / "authority"), "upload": tree_hashes(runtime / "upload")}
+        if publisher is not None:
+            state["publication_receiver"] = tree_hashes(publisher.state)
+        return state
+
+    def stop_owned(proc, label, timeout=40):
+        # Retire one exact registered instance, preserving its actual Wait now.
+        if proc.pid in retired:
+            raise ValueError("owned instance was already retired")
+        if proc.poll() is None:
+            proc.send_signal(signal.SIGTERM)
+        code = proc.wait(timeout=timeout)
+        retired.add(proc.pid)
+        entry = next(item for item in report["processes"] if item["pid"] == proc.pid)
+        entry["returncode"] = code
+        entry["retired_by"] = label
+        save()
+        check(label + "_clean_owned_wait", code == 0)
+        return code
 
     def gateway_api(name, session, method, route, body=None, headers=None):
         nonlocal api_counter
@@ -546,6 +574,8 @@ def main():
             expected_names = (BUILD_NAMES - {"artifact-owner-broker"}) | {"artifact-owner-read-broker", "results-api"} if args.results else BUILD_NAMES
             if args.gateway:
                 expected_names = expected_names | {"reviewer-gateway"}
+            if args.publisher:
+                expected_names = expected_names | {"acceptance-publisher"}
             report["reused_builds"] = reuse_builds(args.reuse_build_report, report["go_module_inputs"], bins, evidence, expected_names=expected_names)
         else:
             report["build_mode"] = "fresh_compile"
@@ -558,8 +588,12 @@ def main():
                 command("build-results-api", ["go", "build", "-o", bins / "results-api", "."], cwd=services / "results-api")
             if args.gateway:
                 command("build-reviewer-gateway", ["go", "build", "-o", bins / "reviewer-gateway", "."], cwd=services / "reviewer-gateway")
+            if args.publisher:
+                command("build-acceptance-publisher", ["go", "build", "-o", bins / "acceptance-publisher", "./cmd/acceptance-publisher"], cwd=services / "ownership-authority")
             command("build-payload-inspector", ["go", "build", "-o", bins / "payload-inspector", ROOT / "biozero/infra/native/owner_upload_verify/main.go"])
         report["binary_pins"] = {path.name: {"sha256": sha(path), "bytes": path.stat().st_size} for path in bins.iterdir()}
+        if args.publisher:
+            check("publisher_exact_eleven_binary_namespace", set(report["binary_pins"]) == (BUILD_NAMES - {"artifact-owner-broker"}) | {"artifact-owner-read-broker", "results-api", "reviewer-gateway", "acceptance-publisher"})
         for path in bins.iterdir():
             command("build-info-" + path.name, ["go", "version", "-m", path])
         check("build_snapshot_unchanged", inventory() == report["source_hashes"])
@@ -637,6 +671,25 @@ def main():
         check("scope_does_not_change_execution_profile", raw == (profile + "\n").encode())
         command("broker-genesis", [bins / broker_name, "--config", broker_path, "--init-owner-broker"])
         upload_config = {"schema_version": 1, "listen_address": "127.0.0.1:" + str(upload_port), "store_root": str(upload_store), "namespace": "owner-worker-transport", "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": args.mode, "execution_profile_sha256": profile, "expected_scope": scope, "policy": {name: value for name, value in policy.items() if name != "challenge_ttl_seconds"}, "tls_certificate": asset(pki / "upload.crt"), "tls_private_key": asset(pki / "upload.key"), "client_ca": asset(pki / "ca.crt")}
+        if args.publisher:
+            from owner_publication_native import PublicationNative
+            publication_tools = dict(command=command, openssl=openssl, start=start, request=request,
+                private_json=private_json, private_bytes=private_bytes, check=check, tree_hashes=tree_hashes,
+                asset=asset, exact_json=exact_json, compact=compact, sha=sha, free_port=free_port, wait_for=wait_for)
+            publisher = PublicationNative(publication_tools, runtime=runtime, bins=bins, pki=pki,
+                evidence=evidence, logs=logs, authority_id=authority_id, public_key_hex=public_der[-32:].hex(),
+                mode=args.mode, profile=profile, authority_scope=scope, used_ports=(authority_port, upload_port))
+            publication_material = publisher.prepare()
+            upload_config["schema_version"] = 2
+            upload_config["publisher"] = publication_material["upload_publisher"]
+            report["publisher"] = {"scope": publication_material["publisher_scope"],
+                "config_sha256": sha(publication_material["config_path"]),
+                "producer_credential_sha256": publisher.producer_sha,
+                "issuer_separation": "dedicated producer CA; distinct RSA owner/server/producer keys",
+                "positive_authorization": "automatic Upload schema2 -> actual publisher inbox; no positive fixture copies",
+                "request_count_scope": "native history equality only; no-autoPOST causal component scope",
+                "same_uid": os.geteuid(), "deployed_role_isolation": False}
+            report["pki_pins"] = tree_hashes(pki)
         upload_path = runtime / "config/upload.json"; private_json(upload_path, upload_config)
         upload_env = {"BIOZERO_UPLOAD_PROTOCOL": "owner-v1", "BIOZERO_OWNER_UPLOAD_CONFIG": str(upload_path)}
         command("upload-genesis", [bins / "upload-api", "--init-owner-ingress"], settings=upload_env)
@@ -651,15 +704,22 @@ def main():
         worker_env = {"BIOZERO_WORKER_PROTOCOL": "owner-v1", "BIOZERO_OWNER_WORKER_CONFIG": str(worker_path), "BIOZERO_SECURITY_MODE": "protected", "BIOZERO_EXECUTION_BACKEND": "capsule"}
         command("worker-genesis", [bins / "enclave-runner", "--init-owner-worker"], settings=worker_env)
         authority = start("authority", [bins / "ownership-authority", "--config", authority_path])
+        if args.publisher:
+            publisher_process = publisher.start()
         upload = start("upload", [bins / "upload-api"], upload_env)
         broker = start("broker", [bins / broker_name, "--config", broker_path])
         ctx_a, ctx_b = client_context(pki, "owner-a"), client_context(pki, "owner-b")
         service_ports = [authority_port, upload_port]
+        if args.publisher:
+            service_ports.append(publisher.port)
         if args.results:
             results_port = free_port()
             while results_port in service_ports:
                 results_port = free_port()
-            results_inbox = runtime / "results-acceptances"; results_inbox.mkdir(mode=0o700)
+            if args.publisher:
+                results_inbox = publisher.primary_inbox
+            else:
+                results_inbox = runtime / "results-acceptances"; results_inbox.mkdir(mode=0o700)
             results_config = {"schema_version": 1, "protocol": "owner-v1", "address": "127.0.0.1:" + str(results_port),
                               "acceptances_directory": str(results_inbox), "expected_acceptances_uid": os.geteuid(),
                               "reader_socket": str(reader_socket), "expected_broker_uid": os.geteuid(),
@@ -671,6 +731,8 @@ def main():
             results = start("results", [bins / "results-api"], {"BIOZERO_RESULTS_PROTOCOL": "owner-v1", "BIOZERO_OWNER_RESULTS_CONFIG": str(results_path)})
             service_ports.append(results_port)
         for port in service_ports:
+            if args.publisher and port == publisher.port:
+                continue  # Dedicated producer health was already verified by publisher.start.
             def healthy(port=port):
                 try:
                     return request(port, ctx_a, "GET", "/healthz")[0] == 200
@@ -767,14 +829,19 @@ def main():
             gateway_a.login("a"); gateway_b.login("b")
             check("gateway_individual_browser_sessions", gateway_api("a-session", gateway_a, "GET", "/api/session")[0] == 200
                   and gateway_api("b-session", gateway_b, "GET", "/api/session")[0] == 200)
-            report["gateway_authorization_provisioning"] = "Fixture explicitly copies exact already-signed Gateway acceptance to separate configured Results inbox; automated deployed publisher remains unverified"
+            report["gateway_authorization_provisioning"] = ("Automatic schema2 Upload publisher output; no positive copies; same UID, deployed isolation unverified" if args.publisher else "Fixture explicitly copies exact already-signed Gateway acceptance to separate configured Results inbox; automated deployed publisher remains unverified")
         original = {}
         fixtures = (("valid", "reads.fastq"), ("repeat", "reads.fastq"), ("invalid", "invalid.fastq")) if args.mode == "variants" else (("valid", "reads.fastq"),)
+        if args.publisher:
+            fixtures += (("cli", "reads.fastq"),)
         for label, fixture_name in fixtures:
+            use_gateway = args.gateway and label != "cli"
+            if args.publisher and not use_gateway:
+                cli_gateway_history = tree_hashes(gateway_state)
             plaintext = runtime / "plaintext" / (label + ".fastq"); private_bytes(plaintext, (FIXTURE / fixture_name).read_bytes())
             client_run = runtime / "client" / label
             gateway_run_id = None
-            if args.gateway:
+            if use_gateway:
                 experiment_id = "invalid" if label == "invalid" else "valid"
                 begun = gateway_a.start(experiment_id); gateway_run_id = begun["run_id"]
                 private_json(evidence / (label + "-gateway-intent-response.json"), begun)
@@ -784,12 +851,13 @@ def main():
                 check(label + "_gateway_retained_intent_matches_browser_response", initial_intent["phase"] == "intent"
                       and initial_intent["request_id"] == gateway_a.last_request_id and initial_intent["reviewer_id"] == "a"
                       and initial_intent["input_sha256"] == sha(plaintext) and initial_intent["job_id"] == "")
-                # Provision only an already-signed acceptance for this exact new
-                # operation. This fixture never infers authorization from cache.
+                # Observe the actual signed acceptance for this new operation.
+                # Only the explicitly manual historical mode provisions a copy.
                 wait_for(lambda: (operation_path / "04-accepted.json").is_file(), 150)
                 op = exact_json((operation_path / "04-accepted.json").read_bytes()); accepted = exact_json(op["acceptance_json"])
                 job = accepted["record"]["binding"]["job_id"]
-                private_bytes(results_inbox / (job + ".json"), compact(accepted))
+                if not args.publisher:
+                    private_bytes(results_inbox / (job + ".json"), compact(accepted))
                 def gateway_delivered():
                     nonlocal delivered
                     status, body = gateway_api(label + "-operation", gateway_a, "GET", "/api/operations/" + gateway_run_id)
@@ -804,7 +872,7 @@ def main():
                 op = exact_json((operation_path / "04-accepted.json").read_bytes()); accepted = exact_json(op["acceptance_json"])
             verify_signed(label + "-acceptance", accepted, pki / "signing.pub", "record")
             binding = accepted["record"]["binding"]; acceptance_sha = digest(compact(accepted))
-            check(label + "_signed_job_and_delivery_preserved", delivered.get("phase") == "delivered" and (args.gateway or delivered.get("acceptance_sha256") == acceptance_sha) and binding["job_id"] == job and binding["execution_profile_sha256"] == profile and binding["credential_sha256"] == digest(ssl.PEM_cert_to_DER_cert((pki / "owner-a.crt").read_text())))
+            check(label + "_signed_job_and_delivery_preserved", delivered.get("phase") == "delivered" and (use_gateway or delivered.get("acceptance_sha256") == acceptance_sha) and binding["job_id"] == job and binding["execution_profile_sha256"] == profile and binding["credential_sha256"] == digest(ssl.PEM_cert_to_DER_cert((pki / "owner-a.crt").read_text())))
             cache_path = worker_root / "results" / (job + ".json")
             wait_for(cache_path.is_file, 120)
             cache = exact_json(cache_path.read_bytes()); private_json(evidence / (label + "-cache.json"), cache)
@@ -842,12 +910,14 @@ def main():
             check(label + "_transport_owner_a_allowed_b_denied", a_code == 200 and b_code == 403)
             if args.results:
                 signed_sidecar = (upload_store / "acceptances" / (job + ".json")).read_bytes()
-                if not (results_inbox / (job + ".json")).exists():
+                if args.publisher:
+                    publisher.observe(job, compact(accepted), upload_store)
+                elif not (results_inbox / (job + ".json")).exists():
                     private_bytes(results_inbox / (job + ".json"), signed_sidecar)
                 else:
                     check(label + "_provisioned_acceptance_equals_upload_sidecar", (results_inbox / (job + ".json")).read_bytes() == signed_sidecar)
                 check(label + "_results_inbox_exact_signed_authorization", exact_json(signed_sidecar) == accepted)
-                if args.gateway:
+                if use_gateway:
                     status, gateway_raw = gateway_api(label + "-committed", gateway_a, "GET", "/api/results/" + job)
                     gateway_result = exact_json(gateway_raw)
                     check(label + "_gateway_terminal_same_signed_job", status == 200 and gateway_result["execution_state"] == "committed"
@@ -878,12 +948,17 @@ def main():
                       and result["job_id"] == job and result["acceptance_sha256"] == acceptance_sha
                       and result["processed_sha256"] == response["processed_sha256"] and result["upload_sha256"] == binding["ciphertext_sha256"]
                       and result["execution_state"] == "committed" and all(result[name] == value for name, value in expected_sections.items()))
-                if args.gateway:
+                if use_gateway:
                     check(label + "_gateway_typed_same_receipt_projection", gateway_projection_matches(gateway_result, result, gateway_run_id, experiment_id))
                     denied_gateway, _ = gateway_api(label + "-foreign-job", gateway_b, "GET", "/api/results/" + job,
                         headers={"X-Client-ID": "owner-a", "X-Reviewer-ID": "a"})
                     denied_run, _ = gateway_api(label + "-foreign-operation", gateway_b, "GET", "/api/operations/" + gateway_run_id)
                     check(label + "_gateway_b_cannot_read_a_run_or_job", denied_gateway == denied_run == 404)
+                if args.publisher and not use_gateway:
+                    cli_a, _ = gateway_api("cli-no-gateway-intent-a", gateway_a, "GET", "/api/results/" + job)
+                    cli_b, _ = gateway_api("cli-no-gateway-intent-b", gateway_b, "GET", "/api/results/" + job)
+                    check("cli_signed_owner_job_not_adopted_by_gateway", cli_a == cli_b == 404
+                          and cli_gateway_history == tree_hashes(gateway_state))
                 denied_code, _ = api(label + "-results-other-leaf", results_port, ctx_b, "GET", route,
                                      headers={"X-Client-ID": "owner-a", "X-Client-Cert": (pki / "owner-a.crt").read_text().replace("\n", " ")})
                 check(label + "_results_exact_leaf_not_labels_or_headers", denied_code == 403)
@@ -894,6 +969,7 @@ def main():
             check("repeat_has_distinct_job_lease_and_equal_snp_callset", original["valid"]["job"] != original["repeat"]["job"]
                   and original["valid"]["lease_id"] != original["repeat"]["lease_id"]
                   and len(original["valid"]["normalized_snps"]) == 3 and original["valid"]["normalized_snps"] == original["repeat"]["normalized_snps"])
+        gateway_original = {label: value for label, value in original.items() if value["gateway_run_id"] is not None}
         if args.gateway:
             if args.browser:
                 private_json(evidence / "browser-mobile.json", gateway_a.mobile_layout())
@@ -903,18 +979,16 @@ def main():
             report["gateway_history_after_terminal"] = gateway_history
             ledger = exact_json((gateway_state / "ledger.json").read_bytes())
             charge = 2 * ((10 << 20) + 16) + 8 * (96 << 10) + (64 << 10)
-            check("gateway_retains_all_promises_and_distinct_signed_runs", len(ledger["runs"]) == len(original)
-                  and ledger["retained_bytes"] == len(original) * charge
-                  and {row["job_id"] for row in ledger["runs"]} == {value["job"] for value in original.values()}
+            check("gateway_retains_all_promises_and_distinct_signed_runs", len(ledger["runs"]) == len(gateway_original)
+                  and ledger["retained_bytes"] == len(gateway_original) * charge
+                  and {row["job_id"] for row in ledger["runs"]} == {value["job"] for value in gateway_original.values()}
                   and all(row["phase"] == "delivered" and row["commit"] is not None and row["charge_bytes"] == charge for row in ledger["runs"]))
             code, _ = gateway_api("unknown-job", gateway_a, "GET", "/api/results/" + "f" * 16)
             check("gateway_unknown_job_preserves_full_history", code == 404 and gateway_history == tree_hashes(gateway_state))
             # Real Gateway process restart invalidates only its sessions. Its
             # retained accepted/delivered/committed history opens without replay.
             gateway_restart_producer_history = readonly_state()
-            gateway.send_signal(signal.SIGTERM)
-            gateway_exit = gateway.wait(timeout=20)
-            retired.add(gateway.pid)
+            gateway_exit = stop_owned(gateway, "gateway_first_process", timeout=20)
             check("gateway_first_process_clean_wait_before_restart", gateway_exit == 0 and tree_hashes(gateway_state) == gateway_history)
             gateway = start("gateway-restart", [bins / "reviewer-gateway"], gateway_env)
             wait_for(lambda: b'"state":"owner_gateway_ready"' in (logs / "gateway-restart.stdout").read_bytes())
@@ -924,9 +998,9 @@ def main():
             status, rows_raw = gateway_api("recovered-history", gateway_a, "GET", "/api/runs")
             rows = exact_json(rows_raw)
             check("gateway_cold_history_preserves_all_original_signed_jobs", status == 200
-                  and {row["run_id"] for row in rows} == {value["gateway_run_id"] for value in original.values()}
+                  and {row["run_id"] for row in rows} == {value["gateway_run_id"] for value in gateway_original.values()}
                   and all(row["phase"] == "delivered" and row["needs_operator"] is False for row in rows))
-            for label, previous in original.items():
+            for label, previous in gateway_original.items():
                 status, recovered = gateway_api(label + "-cold-result", gateway_a, "GET", "/api/results/" + previous["job"])
                 projected = exact_json(recovered); original_direct = exact_json(previous["http_result"])
                 check(label + "_gateway_cold_same_receipt_and_unchanged_history", status == 200
@@ -984,6 +1058,8 @@ def main():
               and physical_job_b["size_bytes"] == len(copied_cipher) and physical_job_b["enc_key"] == copied_envelope.hex()
               and physical_cipher_b.read_bytes() == copied_cipher and compact(exact_json(physical_acceptance_b.read_bytes())) == acceptance_b
               and all(stat.S_IMODE(path.stat().st_mode) == 0o600 and path.stat().st_uid == os.getuid() and path.stat().st_nlink == 1 for path in (job_b_path, physical_cipher_b, physical_acceptance_b)))
+        if args.publisher:
+            publisher.observe(job_b, acceptance_b, upload_store)
         wait_for(lambda: (logs / "worker.stderr").read_bytes().count(b"owner_worker_input_rejected\n") > before_rejections)
         time.sleep(0.3)
         events = watch.drain(); private_json(evidence / "copy-attack-stage-events.json", events)
@@ -996,11 +1072,41 @@ def main():
         report["copy_attack_observation"] = {"worker_log": "owner_worker_input_rejected", "stage_mutations": len(events), "custody_unchanged": before_attack == after_attack, "independent_aad_control": True}
         worker_journal = exact_json((worker_root / "custody/journal.json").read_bytes()); broker_journal = exact_json((host / "j/journal.json").read_bytes()); store_ledger = exact_json((host / "s/ledger.json").read_bytes())
         expected_jobs = {value["job"] for value in original.values()}
-        check("only_three_a_jobs_occupy_execution_custody" if args.mode == "variants" else "only_one_stats_job_occupies_execution_custody", set(worker_journal["records"]) == set(broker_journal["records"]) == set(broker_journal["owner_bindings"]) == expected_jobs and len(store_ledger["records"]) == len(original) and all(row["state"] == "committed" for row in store_ledger["records"].values()))
+        check("only_actual_scientific_jobs_occupy_execution_custody", set(worker_journal["records"]) == set(broker_journal["records"]) == set(broker_journal["owner_bindings"]) == expected_jobs and len(store_ledger["records"]) == len(original) and all(row["state"] == "committed" for row in store_ledger["records"].values()))
         authority_rows = exact_json((authority_store / "ledger.json").read_bytes())["ledger"]["records"]
         upload_rows = exact_json((upload_store / "ledger.json").read_bytes())["records"]
         promise = (25 << 20) + (128 << 10)
-        check("all_four_admitted_inputs_keep_full_transport_and_authority_charges" if args.mode == "variants" else "both_stats_admissions_keep_full_charges", len(authority_rows) == len(upload_rows) == len(original) + 1 and all(row["charge_bytes"] == promise and row["state"] == "accepted" for row in authority_rows) and all(row["charge_bytes"] == promise and row["state"] == "delivered" for row in upload_rows))
+        upload_promise = promise + (3 * (96 << 10) + 64 if args.publisher else 0)
+        admitted_jobs = expected_jobs | {job_b}
+        check("all_admitted_inputs_keep_independent_authority_and_transport_charges",
+              len(authority_rows) == len(upload_rows) == len(admitted_jobs)
+              and {exact_json(row["acceptance_json"])["record"]["binding"]["job_id"] for row in authority_rows}
+                  == {row["job_id"] for row in upload_rows} == admitted_jobs
+              and all(row["charge_bytes"] == promise and row["state"] == "accepted" for row in authority_rows)
+              and all(row["charge_bytes"] == upload_promise and row["state"] == "delivered" for row in upload_rows))
+        if args.publisher:
+            publisher.known_duplicate_and_role_controls(original["valid"]["job"], compact(original["valid"]["accepted"]))
+            stable_publication_history = publisher.snapshot(upload_store, "after-all-admissions")
+            report["publisher"]["retained_accounting"] = {key: stable_publication_history[key] for key in
+                ("retained_jobs", "per_owner_retained_jobs", "retained_bytes", "run_charge", "source_upload_logical_charge")}
+            stop_owned(publisher_process, "publisher_before_restart")
+            publisher_process = publisher.start("acceptance-publisher-restart")
+            # Read actual known receipts after cold Open. No POST is invoked here.
+            for label, previous in original.items():
+                publisher.observe(previous["job"], compact(previous["accepted"]), upload_store)
+            publisher.observe(job_b, acceptance_b, upload_store)
+            publisher.assert_unchanged(stable_publication_history, upload_store, "after-receiver-restart")
+            init_code, _ = command("publisher-second-init-rejected", [bins / "acceptance-publisher", "--config", publisher.genesis_config_path, "--init-store"], expected=None)
+            check("publisher_existing_root_cannot_be_reinitialized", init_code != 0)
+            publisher.assert_unchanged(stable_publication_history, upload_store, "after-rejected-init")
+            stop_owned(upload, "upload_before_restart")
+            upload = start("upload-restart", [bins / "upload-api"], upload_env)
+            wait_for(lambda: b"ownership_ingress_ready\n" in (logs / "upload-restart.stdout").read_bytes())
+            for job in admitted_jobs:
+                owner_context = ctx_b if job == job_b else ctx_a
+                code, raw = api("publication-cold-source-" + job, upload_port, owner_context, "GET", "/v1/uploads/" + job)
+                check("publication_cold_source_known_delivered_" + job, code == 200 and exact_json(raw)["state"] == "delivered")
+            publisher.assert_unchanged(stable_publication_history, upload_store, "after-source-restart-and-get")
         for lease, row in store_ledger["records"].items():
             objects = host / "s/objects" / lease
             exact_charge = sum(file["bytes"] for file in row["files"].values()) + (objects / "manifest.json").stat().st_size + (objects / "proof.json").stat().st_size + 2 * len(compact(row)) + 72
@@ -1016,8 +1122,7 @@ def main():
             # close it while that namespace still exists, before clean Wait.
             private_json(evidence / "final-stage-events.json", watch.drain())
             watch.close(); watch = None
-            launcher.send_signal(signal.SIGTERM)
-            worker_exit = launcher.wait(timeout=40)
+            worker_exit = stop_owned(launcher, "worker_before_cache_substitution", timeout=40)
             check("worker_clean_wait_before_cache_substitution", worker_exit == 0)
             before_reads = readonly_state()
             private_json(evidence / "history-before-results-negatives.json", before_reads)
@@ -1027,12 +1132,37 @@ def main():
                 private_json(cache_path, {"job_id": job, "status": "succeeded", "release_status": "evaluated_passed", "pipeline_output": {"forged": True}}, replace=True)
                 code, raw = api(label + "-results-after-cache-substitution", results_port, ctx_a, "GET", "/v1/results/" + job)
                 check(label + "_mutable_cache_cannot_relabel_science", code == 200 and raw == original_result["http_result"] and before_reads == readonly_state())
-                if args.gateway:
+                if args.gateway and original_result["gateway_run_id"] is not None:
                     status, browser_raw = gateway_api(label + "-after-cache-substitution", gateway_a, "GET", "/api/results/" + job)
                     check(label + "_gateway_cache_independent_same_receipt", status == 200
                           and gateway_projection_matches(exact_json(browser_raw), exact_json(original_result["http_result"]),
                               original_result["gateway_run_id"], "invalid" if label == "invalid" else "valid")
                           and gateway_history == tree_hashes(gateway_state) and before_reads == readonly_state())
+            if args.publisher:
+                publisher.assert_unchanged(stable_publication_history, upload_store, "after-cache-controls")
+                # Controlled trusted Results instance replacement: same endpoint,
+                # TLS identity and pin/policy; only the negative fixture inbox changes.
+                # Primary publisher inbox remains immutable and never repaired.
+                original_results_sha = sha(results_path)
+                original_results_tls = {key: results_config[key] for key in ("address", "tls_certificate", "tls_private_key", "client_ca")}
+                stop_owned(results, "primary_results_before_negative_fixture")
+                negative_material = publisher.negative_results_config(results_config,
+                    {value["job"]: compact(value["accepted"]) for value in original.values()})
+                results_inbox = negative_material["inbox"]
+                negative_config = negative_material["config"]
+                check("negative_results_preserves_endpoint_tls_pin_policy", negative_material["port"] == results_port
+                      and {key: negative_config[key] for key in original_results_tls} == original_results_tls
+                      and {key: value for key, value in negative_config.items() if key != "acceptances_directory"}
+                          == {key: value for key, value in results_config.items() if key != "acceptances_directory"}
+                      and results_inbox != publisher.primary_inbox)
+                results = start("results-negative", [bins / "results-api"], negative_material["env"])
+                wait_for(lambda: healthy(results_port))
+                code, raw = api("negative-results-health", results_port, ctx_a, "GET", "/healthz")
+                check("negative_results_new_owned_instance_actual_mtls_ready", code == 200)
+                report["publisher"]["negative_results_fixture"] = {"original_config_sha256": original_results_sha,
+                    "negative_config_sha256": sha(negative_material["config_path"]), "same_tls_identity": original_results_tls,
+                    "scope": "trusted Results process restart; fixture-only negative copies; primary automatic inbox unchanged"}
+                publisher.assert_unchanged(stable_publication_history, upload_store, "after-negative-results-start")
             # Only the independent signed-authorization inbox is changed by these
             # negatives. Preserve upload/authority/execution histories untouched.
             for label in ("copied_job", "tampered_signature", "missing"):
@@ -1073,6 +1203,8 @@ def main():
             except (OSError, http.client.HTTPException):
                 anonymous_failed = True
             check("results_missing_certificate_tls_denied", anonymous_failed and before_reads == readonly_state())
+            if args.publisher:
+                publisher.assert_unchanged(stable_publication_history, upload_store, "after-results-and-gateway-negatives")
             stable_results_history = readonly_state()
             private_json(evidence / "history-after-results-negatives.json", stable_results_history)
             report["results_limits"] = {"connections": 4, "handlers": 2, "metadata_bytes": 64 << 10, "response_bytes": 16 << 20,
@@ -1098,6 +1230,9 @@ def main():
         # remains available. Then stop broker and HTTPS services. Signal only
         # exact Popen children created by this fixture, never process names.
         for proc, entry in reversed(list(zip(children, report["processes"]))):
+            if proc.pid in retired:
+                cleanup_ok = cleanup_ok and entry["returncode"] == 0
+                continue
             try:
                 if proc.poll() is None:
                     proc.send_signal(signal.SIGTERM)
@@ -1120,6 +1255,8 @@ def main():
             if args.gateway and "gateway_history" in locals():
                 report["gateway_history_unchanged_after_wait"] = tree_hashes(gateway_state) == gateway_history
                 cleanup_ok = cleanup_ok and report["gateway_history_unchanged_after_wait"]
+            if stable_publication_history is not None:
+                publisher.assert_unchanged(stable_publication_history, upload_store, "after-all-owned-wait")
             if stable_results_history is not None:
                 final_results_history = readonly_state()
                 private_json(evidence / "all-history-after-results-wait.json", final_results_history)
@@ -1129,7 +1266,7 @@ def main():
             cleanup_ok = False; private_bytes(evidence / "final-readback-failure.txt", traceback.format_exc().encode())
         report["cleanup_clean_wait"] = cleanup_ok; report["status"] = "passed" if report.get("checks_completed") and cleanup_ok else "failed"
         report["finished_at"] = datetime.now(timezone.utc).isoformat(); save()
-        print(json.dumps({"status": report["status"], "checks": len(report["cases"]), "passed": sum(case["passed"] for case in report["cases"]), "scope": "native_owner_gateway_" + args.mode if args.gateway else ("native_owner_results" if args.results else "native_owner_worker_capsule")}))
+        print(json.dumps({"status": report["status"], "checks": len(report["cases"]), "passed": sum(case["passed"] for case in report["cases"]), "scope": "native_owner_publisher_gateway_" + args.mode if args.publisher else ("native_owner_gateway_" + args.mode if args.gateway else ("native_owner_results" if args.results else "native_owner_worker_capsule"))}))
     return 0 if report["status"] == "passed" else 1
 
 

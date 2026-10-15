@@ -30,19 +30,20 @@ const OwnerIngressServiceShutdownBudget = AuthorityServiceShutdownBudget
 // OwnerIngressServiceConfig contains only public authority verification material
 // and this transport endpoint's TLS assets. It cannot enroll signing/decrypt keys.
 type OwnerIngressServiceConfig struct {
-	SchemaVersion          int                   `json:"schema_version"`
-	ListenAddress          string                `json:"listen_address"`
-	StoreRoot              string                `json:"store_root"`
-	Namespace              string                `json:"namespace"`
-	AuthorityID            string                `json:"authority_id"`
-	PublicKeyHex           string                `json:"public_key_hex"`
-	PipelineMode           string                `json:"pipeline_mode"`
-	ExecutionProfileSHA256 string                `json:"execution_profile_sha256"`
-	ExpectedScope          AcceptanceScope       `json:"expected_scope"`
-	Policy                 OwnerIngressPolicy    `json:"policy"`
-	TLSCertificate         AuthorityServiceAsset `json:"tls_certificate"`
-	TLSPrivateKey          AuthorityServiceAsset `json:"tls_private_key"`
-	ClientCA               AuthorityServiceAsset `json:"client_ca"`
+	SchemaVersion          int                                 `json:"schema_version"`
+	ListenAddress          string                              `json:"listen_address"`
+	StoreRoot              string                              `json:"store_root"`
+	Namespace              string                              `json:"namespace"`
+	AuthorityID            string                              `json:"authority_id"`
+	PublicKeyHex           string                              `json:"public_key_hex"`
+	PipelineMode           string                              `json:"pipeline_mode"`
+	ExecutionProfileSHA256 string                              `json:"execution_profile_sha256"`
+	ExpectedScope          AcceptanceScope                     `json:"expected_scope"`
+	Policy                 OwnerIngressPolicy                  `json:"policy"`
+	TLSCertificate         AuthorityServiceAsset               `json:"tls_certificate"`
+	TLSPrivateKey          AuthorityServiceAsset               `json:"tls_private_key"`
+	ClientCA               AuthorityServiceAsset               `json:"client_ca"`
+	Publisher              *OwnerIngressPublisherServiceConfig `json:"publisher,omitempty"`
 	loaded                 *ownerIngressServiceMaterial
 }
 
@@ -62,14 +63,31 @@ type ownerIngressServiceWire struct {
 	TLSPrivateKey          AuthorityServiceAsset `json:"tls_private_key"`
 	ClientCA               AuthorityServiceAsset `json:"client_ca"`
 }
+type ownerIngressServiceWireV2 struct {
+	SchemaVersion          int                                `json:"schema_version"`
+	ListenAddress          string                             `json:"listen_address"`
+	StoreRoot              string                             `json:"store_root"`
+	Namespace              string                             `json:"namespace"`
+	AuthorityID            string                             `json:"authority_id"`
+	PublicKeyHex           string                             `json:"public_key_hex"`
+	PipelineMode           string                             `json:"pipeline_mode"`
+	ExecutionProfileSHA256 string                             `json:"execution_profile_sha256"`
+	ExpectedScope          AcceptanceScope                    `json:"expected_scope"`
+	Policy                 OwnerIngressPolicy                 `json:"policy"`
+	TLSCertificate         AuthorityServiceAsset              `json:"tls_certificate"`
+	TLSPrivateKey          AuthorityServiceAsset              `json:"tls_private_key"`
+	ClientCA               AuthorityServiceAsset              `json:"client_ca"`
+	Publisher              OwnerIngressPublisherServiceConfig `json:"publisher"`
+}
 type ownerIngressServiceMaterial struct {
-	configSHA string
-	pin       AuthorityPin
-	tls       *tls.Config
+	configSHA   string
+	pin         AuthorityPin
+	tls         *tls.Config
+	publication *OwnerIngressPublicationConfig
 }
 
 func (c OwnerIngressServiceConfig) shape() error {
-	if c.SchemaVersion != 1 || !authorityServicePath(c.StoreRoot) || !nameValid(c.Namespace) || !hexValue(c.PublicKeyHex, 64) || c.ExpectedScope.validate() != nil || c.Policy.validate() != nil {
+	if (c.SchemaVersion != 1 && c.SchemaVersion != 2) || c.SchemaVersion == 1 && c.Publisher != nil || c.SchemaVersion == 2 && c.Publisher == nil || !authorityServicePath(c.StoreRoot) || !nameValid(c.Namespace) || !hexValue(c.PublicKeyHex, 64) || c.ExpectedScope.validate() != nil || c.Policy.validate() != nil {
 		return fail("ownership_ingress_service_config_invalid")
 	}
 	host, port, err := net.SplitHostPort(c.ListenAddress)
@@ -87,6 +105,9 @@ func (c OwnerIngressServiceConfig) shape() error {
 		if !authorityServicePath(asset.Path) || !hexValue(asset.SHA256, 64) || authorityServiceOverlap(asset.Path, c.StoreRoot) {
 			return fail("ownership_ingress_service_asset_invalid")
 		}
+	}
+	if c.Publisher != nil {
+		return c.publisherShape()
 	}
 	return nil
 }
@@ -160,7 +181,14 @@ func loadOwnerIngressMaterial(ctx context.Context, c OwnerIngressServiceConfig) 
 		pool.AddCert(cert)
 	}
 	serverCert.Leaf = leaf
-	return &ownerIngressServiceMaterial{configSHA, pin, &tls.Config{Certificates: []tls.Certificate{serverCert}, ClientCAs: pool, ClientAuth: tls.RequireAndVerifyClientCert, MinVersion: tls.VersionTLS13, NextProtos: []string{"http/1.1"}, SessionTicketsDisabled: true}}, nil
+	m := &ownerIngressServiceMaterial{configSHA: configSHA, pin: pin, tls: &tls.Config{Certificates: []tls.Certificate{serverCert}, ClientCAs: pool, ClientAuth: tls.RequireAndVerifyClientCert, MinVersion: tls.VersionTLS13, NextProtos: []string{"http/1.1"}, SessionTicketsDisabled: true}}
+	if c.Publisher != nil {
+		m.publication, err = loadOwnerIngressPublisherMaterial(ctx, c, m)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return m, nil
 }
 
 // Load validates and caches private pinned assets, without creating/opening state
@@ -171,8 +199,24 @@ func LoadOwnerIngressServiceConfig(ctx context.Context, path string) (OwnerIngre
 	if err != nil {
 		return zero, err
 	}
-	var wire ownerIngressServiceWire
-	if decodeStoreJSON(raw, &wire) != nil {
+	var version struct {
+		SchemaVersion int `json:"schema_version"`
+	}
+	if json.Unmarshal(raw, &version) != nil {
+		return zero, fail("ownership_ingress_service_config_invalid")
+	}
+	switch version.SchemaVersion {
+	case 1:
+		var wire ownerIngressServiceWire
+		if decodeStoreJSON(raw, &wire) != nil {
+			return zero, fail("ownership_ingress_service_config_invalid")
+		}
+	case 2:
+		var wire ownerIngressServiceWireV2
+		if decodeStoreJSON(raw, &wire) != nil {
+			return zero, fail("ownership_ingress_service_config_invalid")
+		}
+	default:
 		return zero, fail("ownership_ingress_service_config_invalid")
 	}
 	var c OwnerIngressServiceConfig
@@ -189,7 +233,7 @@ func LoadOwnerIngressServiceConfig(ctx context.Context, path string) (OwnerIngre
 	return c, nil
 }
 func (c OwnerIngressServiceConfig) ingressConfig(m *ownerIngressServiceMaterial) OwnerIngressConfig {
-	return OwnerIngressConfig{Directory: c.StoreRoot, Namespace: c.Namespace, Pin: m.pin, Scope: c.ExpectedScope, Policy: c.Policy}
+	return OwnerIngressConfig{Directory: c.StoreRoot, Namespace: c.Namespace, Pin: m.pin, Scope: c.ExpectedScope, Policy: c.Policy, Publication: m.publication}
 }
 
 // InitializeOwnerIngress creates only a new transport spool. The scope already
@@ -242,7 +286,14 @@ func OpenOwnerIngressService(ctx context.Context, c OwnerIngressServiceConfig) (
 	s.store, err = OpenOwnerIngress(c.ingressConfig(m))
 	if err != nil {
 		s.cancel()
+		if s.store != nil {
+			return s, err
+		}
 		return nil, err
+	}
+	if err = s.store.setPublicationBase(s.base); err != nil {
+		s.cancel()
+		return s, err
 	}
 	cleanup := func(cause error) (*OwnerIngressService, error) {
 		s.cancel()
