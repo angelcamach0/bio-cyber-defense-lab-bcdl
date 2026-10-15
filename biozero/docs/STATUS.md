@@ -116,6 +116,20 @@ Go source did not change. The public acceptance bundle pins the runtime snapshot
 status documents and that bundle were added afterward. Its hashes do not claim a
 byte-for-byte rebuild or an immutable published commit at runtime.
 
+The first integrated publication, a226981, failed its own
+[CI38672344835](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38672344835)
+in upload-api's cross-module lifecycle-boundary fixture before PKI/scientific
+acceptance. An uncached causal run reproduced the failure with the backend unset;
+selecting legacy alone made that same fixture pass. Its worker now explicitly
+selects legacy, preserving the boundary, rejection and no-pipeline assertions.
+Repository checks use `go test -count=1 ./...` because Go's package cache does not
+track the sibling worker sources that this fixture builds with a subprocess.
+The earlier local make pass included cached package results; it did not prove
+this cross-module fixture against the changed worker. Corrected source passed a
+fresh uncached make:263Python (261passed/two opt-ins skipped), eight Go modules
+test/vet, unchanged source inventory throughout. Its hosted CI result is tracked
+in the live PR; the failed CI receipt remains preserved.
+
 The following earlier component receipts retain their original source scope:
 
 - Final component `make test`:263Python cases,261passed/two helper kernel skips;

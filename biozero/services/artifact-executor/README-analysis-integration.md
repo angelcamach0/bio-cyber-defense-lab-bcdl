@@ -2,7 +2,10 @@
 
 The native and Docker providers can now run the pinned `capsule-analysis`
 executable after the pipeline and scientific evaluator, within the same capsule,
-workspace and deadline. The protected worker is not connected to this path yet.
+workspace and deadline. The [protected worker](../enclave-runner/README-worker-backend.md)
+now connects to this path; its native and three-service Compose acceptance both
+use the native provider. This document's earlier component receipts use asserted
+synthetic crypto facts and keep that separate scope.
 The [host broker service](README-service.md) exposes the fixed v2 FD protocol;
 it is a separate host process, without a Docker socket in the worker.
 

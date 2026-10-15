@@ -269,7 +269,7 @@ func TestAcceptedLifecycleBoundaryProcessesInActualWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 	worker := exec.Command(binary)
-	worker.Env = append(os.Environ(), "BIOZERO_DATA_DIR="+root, "BIOZERO_SECURITY_MODE=protected",
+	worker.Env = append(os.Environ(), "BIOZERO_EXECUTION_BACKEND=legacy", "BIOZERO_DATA_DIR="+root, "BIOZERO_SECURITY_MODE=protected",
 		"BIOZERO_SECURITY_EVENTS_DIR=", "BIOZERO_POLL_SECONDS=0.01", "BIOZERO_PIPELINE_PATH="+pipeline,
 		"BIOZERO_RULES_PATH="+filepath.Join(root, "absent-rules"), "BIOZERO_SIGNER_CERT="+filepath.Join(root, "absent-signer"))
 	if err := worker.Start(); err != nil {

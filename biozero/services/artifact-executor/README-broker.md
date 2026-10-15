@@ -1,11 +1,14 @@
 # Trusted worker descriptor broker
 
 This Linux broker composes the existing Store, registry, coordinator and configured
-provider with a separate FD-aware Unix transport. The protected worker does not
-call it yet. The [fixed host service](README-service.md) and
+provider with a separate FD-aware Unix transport. The
+[protected worker](../enclave-runner/README-worker-backend.md) now calls v2 after
+actual verification, with separate native/Compose acceptance using the native
+provider. The [fixed host service](README-service.md) and
 [actual complete analysis](README-analysis-integration.md) now combine v2 broker,
 native/Docker capsules, pipeline, evaluator and pinned analysis. Their crypto facts
-are synthetic; a persistent deployment and protected end-to-end entry remain pending.
+are synthetic in those earlier component receipts. Persistent deployment and the
+protected Docker-provider end-to-end route remain pending.
 
 ## Authority and bounded protocol
 

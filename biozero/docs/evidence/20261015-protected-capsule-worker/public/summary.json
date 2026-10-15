@@ -36,6 +36,7 @@
     },
     "make_test": {
       "go_modules_test_and_vet": 8,
+      "go_test_cache_scope": "Original runtime-snapshot make included cached package results; separate corrected uncached verification is recorded below.",
       "python_opt_in_skipped": 2,
       "python_passed": 261,
       "python_total": 263
@@ -79,6 +80,23 @@
     "Runtime source pins precede the documentation and aggregate additions in this publication."
   ],
   "observed_date_utc": "2026-10-15",
+  "post_acceptance_verification": {
+    "first_publication_ci": {
+      "commit": "a2269819543f79e9e7fbd8de2c0bd8d6dd5e5f45",
+      "conclusion": "failure",
+      "reason": "Cross-module legacy worker fixture lacked explicit legacy selector; later PKI/science were not reached.",
+      "run_id": 38672344835
+    },
+    "go_modules_test_and_vet": 8,
+    "make_log_sha256": "49a62a5f80fdd0421f21a0a341647895be108ca71b5e613f9489f743bcbe0aca",
+    "make_private_receipt_sha256": "d4385233a85178df77d5b04f708956809285344ea6ee2525a85c93dbb232ca92",
+    "python_opt_in_skipped": 2,
+    "python_passed": 261,
+    "python_total": 263,
+    "scope": "Test-infrastructure-only explicit legacy selector and cross-module cache bypass; runtime unchanged. Documentation additions are later.",
+    "source_unchanged_during_make": true,
+    "uncached_make_passed": true
+  },
   "receipt_sha256": {
     "compose": "24f96dc91beb42ba2fde0b51bf613389513b4d9e50e1cadc70bb02ac477a5917",
     "compose_readback": "6f15d59b9c84f8d5521f12c42d90e40418792638824630ebee69843cfbe43fc3",

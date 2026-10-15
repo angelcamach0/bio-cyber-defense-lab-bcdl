@@ -40,6 +40,17 @@ incorrect assumptions about raw versus projected DTOs, invalid-input analysis an
 ciphertext names were corrected in new verification receipts; original execution
 evidence was not changed or rerun to repair those assertions.
 
+Subsequent [CI38672344835](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38672344835)
+at a226981 failed a separate legacy upload-boundary fixture before PKI/scientific
+acceptance. The uncached fixture reproduced that failure; selecting legacy alone
+made it pass. Its explicit selector and the repository runner's cache bypass are
+later test-infrastructure corrections, outside this387-file acceptance snapshot.
+The original local make result included cached package tests and did not establish
+that cross-module fixture against the new worker. Those corrections have their
+own verification: the causal fixture, upload-api test/vet and fresh full uncached
+make all passed (263Python,261passed/two opt-in skips; eight Go modules test/vet).
+They do not alter the retained native25/Compose30 execution.
+
 Reproduce using [the native harness](../../../../infra/native/run_capsule_worker.py)
 and [Compose prerequisites/invocation](../../../../infra/compose/README-capsule-worker.md).
 Use fresh private run directories and existing permitted tools. The Compose run
