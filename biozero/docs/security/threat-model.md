@@ -316,10 +316,22 @@ adds downstream response loss26/41 and whole worker-container SIGKILL/restart32/
 actual/independent checks. Each has one Submit/capsule and query-only recovery of
 unchanged artifacts/proofs/custody/charges. Simultaneous namespace/tmpfs references
 prove a new empty plaintext filesystem on container restart; temporarily retaining
-the old mount tree is measurement authority, not secure erasure. Broker death,
-active cancellation, actual upstream ACK-write faults, process-only death retaining
-plaintext and uncertain-state reconciliation remain open. No
-hardware-enclave, independent principal identity or complete filesystem quota
+the old mount tree is measurement authority, not secure erasure. Subsequent
+[broker/cancellation evidence](../evidence/20261015-broker-cancel-recovery/public/README.md)
+adds committed-only broker socket recovery (31 actual/48 independent checks) and
+operator active cancellation of a waiting lifecycle fixture (17/49). A verified
+dead own child, pinned socket/pidfd, unchanged complete committed history, rejected
+identical restart and directory fsync precede replacement. This is explicit fixture
+operation, not a production stale-socket or pending-state recovery service. Socket
+unlink is not conditional by inode; cooperative host/same-UID writers remain trusted.
+The proxy holds the worker response through the outage, so unavailable-broker query
+retries and actual upstream ACK-write failure are not demonstrated. Cancel retains
+three physical original before-state files and rechecks them before the frame;
+this is not an adversarial atomic transaction across files. Failure withholds
+science, fences exports and retains the slot/actual metadata charge. No client
+cancellation API follows. Active broker/capsule death, process-only death retaining
+plaintext, storage/removal faults and uncertain-state reconciliation remain open.
+No hardware-enclave, independent principal identity or complete filesystem quota
 follows from either provider's resource controls.
 
 TM-01 is narrower but not closed: retained artifacts have a1GiB/64slot Store and

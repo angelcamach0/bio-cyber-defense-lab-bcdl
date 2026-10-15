@@ -46,6 +46,17 @@ container restart, not a failed broker ACK write, process-only recovery retainin
 plaintext or broker-death reconciliation. Temporary kernel measurement references
 retain both plaintext tmpfs generations until comparison; no secure erase follows.
 
+[Broker and cancellation acceptance](evidence/20261015-broker-cancel-recovery/public/README.md)
+adds 31 committed-only broker death/recovery checks and 17 active-cancellation
+checks, with 48/49 independent controls and a 57/52 default regression. Broker
+recovery preserves one execution and unchanged science/artifacts/custody/charges;
+it retires only its previously pinned socket after verified death and unchanged
+committed history. Operator Cancel preserves original before-state files and
+finishes failed/withheld, with no exports or scientific result and its slot/charge
+retained. It uses a pinned waiting lifecycle fixture, not a public cancellation
+API. Two exact runtime snapshots and the small delta are recorded; final make
+passed 294 Python cases (two opt-in skips) and test/vet in eight Go modules.
+
 ## What the evidence means
 
 The benchmark measures normalized synthetic SNP presence. It does not establish
@@ -65,9 +76,9 @@ novelty claim follows from those results.
 
 ## Work required for delivery
 
-Extend protected execution with broker-death, active-cancellation, upstream
-ACK-write/storage/removal faults and explicit reconciliation of uncertain custody
-and retained plaintext. Then close image/tool/
+Extend protected execution beyond committed-only broker recovery and operator
+cancellation with broker death during execution, upstream ACK-write/storage/removal
+faults and explicit reconciliation of uncertain custody and retained plaintext. Then close image/tool/
 license provenance, immutable owner records, principal and physical-storage
 quotas/retention, durable queues/multiple workers, effective SOC response and
 verified free cloud identity/key/storage/network controls. These requirements

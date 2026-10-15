@@ -169,11 +169,16 @@ def wait_for_drop(proxy):
     raise fixture.Failure("fault_submit_response_not_dropped")
 
 
-def postcommit_scenario(ctx, scenario):
+def postcommit_scenario(ctx, scenario, *, after_commit=None):
+    if ((scenario == "broker-sigkill-postcommit") != callable(after_commit)
+            or scenario not in {*SCENARIOS, "broker-sigkill-postcommit"}):
+        raise fixture.Failure("fault_scenario_invalid")
     ctx.report["fault_scenario"] = scenario
     ctx.report["scope"] = ("three-service protected Compose and real Docker capsule; " + scenario
                            + "; one signed encrypted synthetic execution with query-only recovery; "
-                           "no broker-death, active-cancel, browser, biological model or full lifecycle-gate claim")
+                           + ("explicit committed-only broker socket recovery; no general pending reconciliation, "
+                            if after_commit is not None else "no broker-death, ")
+                           + "active-cancel, browser, biological model or full lifecycle-gate claim")
     if ctx.proxy is None or ctx.observer is None or ctx.config["provider"] != "docker":
         raise fixture.Failure("fault_fixture_configuration_invalid")
     log = (ctx.run / "fault-uploader.log").open("xb")
@@ -188,7 +193,7 @@ def postcommit_scenario(ctx, scenario):
         fixture.write_private(ctx.run / "proxy-postcommit-barrier.json", barrier)
         sent, upstream = barrier.get("submit_request", {}), barrier.get("submit_response", {})
         job, lease = sent.get("job_id", ""), upstream.get("lease_id", "")
-        expected_mode = "hold_submit_response" if scenario == "worker-sigkill-postcommit" else "drop_submit_response_once"
+        expected_mode = "hold_submit_response" if scenario in {"worker-sigkill-postcommit", "broker-sigkill-postcommit"} else "drop_submit_response_once"
         ctx.record("real_submit_response_and_eof_before_fault", barrier.get("error_code") is None
                    and barrier.get("mode") == expected_mode and barrier.get("barrier_reached") is True
                    and barrier.get("upstream_submit_response_complete") is True and barrier.get("upstream_submit_eof") is True
@@ -203,6 +208,9 @@ def postcommit_scenario(ctx, scenario):
         ctx.record("postcommit_store_and_custody_before_fault", before["store_id"] == upstream.get("store_id")
                    and before["hashes"]["object_manifest.json"] == upstream.get("manifest_sha256")
                    and before["hashes"]["object_execution_receipt"] == upstream.get("receipt_sha256"))
+
+        if after_commit is not None:
+            after_commit(ctx, job, lease, before)
 
         if scenario == "worker-sigkill-postcommit":
             previous = ctx.inspect("worker")

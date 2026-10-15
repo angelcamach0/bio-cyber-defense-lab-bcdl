@@ -430,7 +430,7 @@ def retained_accounting(store):
     return ({"header_reserve": 4096, "record_charges": charges, "total_charged_bytes": 4096 + sum(charges.values())}, ledger, matches)
 
 
-def main(argv=None, *, scenario=None, bridge_proxy_factory=None):
+def main(argv=None, *, scenario=None, bridge_proxy_factory=None, assets_factory=None):
     """Default acceptance or a trusted local fault scenario using the same setup.
 
     Hooks are Python-only fixture composition, never RPC/caller execution input.
@@ -472,7 +472,7 @@ def main(argv=None, *, scenario=None, bridge_proxy_factory=None):
     compose_prefix = None
     started = False
     broker = None
-    broker_log = None
+    broker_processes = []
     observer = None
     bridge_proxy = None
     commands = 0
@@ -538,6 +538,24 @@ def main(argv=None, *, scenario=None, bridge_proxy_factory=None):
             time.sleep(0.1)
         raise Failure("result_deadline_exceeded")
 
+    def start_broker(label):
+        nonlocal broker
+        if (not re.fullmatch("[a-z][a-z0-9-]{0,31}", label) or any(row["label"] == label for row in broker_processes)
+                or (broker is not None and broker.poll() is None)):
+            raise Failure("broker_start_identity_invalid")
+        if broker is not None:
+            broker.wait(timeout=0)
+        path = run / ("broker.log" if label == "initial" else "broker-" + label + ".log")
+        log = path.open("xb")
+        try:
+            broker = subprocess.Popen([str(bin_dir / "artifact-broker"), "--config", str(config_path)], env=env,
+                                      stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        except BaseException:
+            log.close()
+            raise
+        broker_processes.append({"label": label, "process": broker, "log": log})
+        return broker
+
     try:
         # Explicit local Docker selectors; inherited DOCKER_CONFIG/proxy/CA/auth
         # variables are preserved. No daemon restart, pull or build is attempted.
@@ -561,6 +579,14 @@ def main(argv=None, *, scenario=None, bridge_proxy_factory=None):
                   "evaluator": ROOT / "biozero/bio/benchmarks/evaluate_variants.py", "truth": FIXTURE / "expected.vcf",
                   "analysis_executable": bin_dir / "capsule-analysis", "analysis_rules": ROOT / "biozero/bio/reference-db/rules.json",
                   "analysis_panel": FIXTURE / "reference.fa"}
+        if assets_factory is not None:
+            replacements = assets_factory(runtime)
+            if (not isinstance(replacements, dict) or set(replacements) != {"pipeline", "resource_budget"}
+                    or not all(isinstance(path, Path) and path.is_absolute() for path in replacements.values())
+                    or replacements["pipeline"].name != "pipeline.py"
+                    or replacements["resource_budget"] != replacements["pipeline"].with_name("resource_budget.py")):
+                raise Failure("fixture_assets_invalid")
+            assets.update(replacements)
         config = {"schema_version": 1, "provider": provider, "mode": "variants", "store_root": str(host / "store"),
                   "journal_root": str(host / "journal"), "workspace_root": str(host / "workspace"), "socket_path": str(host / "channel/b.sock"),
                   "allowed_uid": 1000, "timeout_seconds": 60, "python_path": str(Path("/usr/bin/python3").resolve()) if provider == "native" else "",
@@ -577,9 +603,7 @@ def main(argv=None, *, scenario=None, bridge_proxy_factory=None):
         policy = runtime / "worker-policy.json"
         write_private(policy, {"schema_version": 1, "profile_sha256": profile, "pipeline_mode": "variants", "capsule_kind": provider, "source_pins": pins})
         report["profile_sha256"] = profile
-        broker_log = (run / "broker.log").open("xb")
-        broker = subprocess.Popen([str(bin_dir / "artifact-broker"), "--config", str(config_path)], env=env,
-                                  stdout=broker_log, stderr=subprocess.STDOUT, start_new_session=True)
+        start_broker("initial")
         deadline = time.monotonic() + 15
         while not Path(config["socket_path"]).is_socket():
             if broker.poll() is not None or time.monotonic() > deadline:
@@ -756,6 +780,8 @@ def main(argv=None, *, scenario=None, bridge_proxy_factory=None):
         if scenario is not None:
             scenario(SimpleNamespace(run=run, runtime=runtime, data=data, host=host, env=env, config=config,
                                      profile=profile, pins=pins, report=report, broker=broker, observer=observer,
+                                     bin_dir=bin_dir, config_path=config_path, start_broker=start_broker,
+                                     get_broker=lambda: broker, broker_processes=broker_processes,
                                      proxy=bridge_proxy, owned_ids=owned_ids, record=record, command=command,
                                      inspect=inspect, await_result=await_result, upload_argv=upload_argv,
                                      docker_retained=docker_retained, client_a=client_a, client_b=client_b,
@@ -933,21 +959,31 @@ def main(argv=None, *, scenario=None, bridge_proxy_factory=None):
             except Exception as exc:
                 cleanup_ok = False
                 report["fault_proxy_close_error_type"] = type(exc).__name__
-        if broker is not None:
-            if broker.poll() is None:
-                broker.send_signal(signal.SIGTERM)
+        report["broker_processes"] = []
+        for row in broker_processes:
+            proc = row["process"]
             try:
-                broker.wait(timeout=45)
-            except subprocess.TimeoutExpired:
-                # Only the host session started by this harness; forced exit is
-                # a failure, never proof of completion or permission to refund.
-                os.killpg(broker.pid, signal.SIGKILL)
-                broker.wait(timeout=5)
+                if proc.poll() is None:
+                    proc.send_signal(signal.SIGTERM)
+                try:
+                    proc.wait(timeout=45)
+                except subprocess.TimeoutExpired:
+                    # Only the host session started by this harness; forced exit
+                    # never authorizes proof, retry or quota release.
+                    os.killpg(proc.pid, signal.SIGKILL)
+                    proc.wait(timeout=5)
+                    cleanup_ok = False
+                expected = report.get("expected_broker_exits", {}).get(row["label"], 0)
+                cleanup_ok = cleanup_ok and expected in (0, 1, -signal.SIGKILL) and proc.returncode == expected
+                report["broker_processes"].append({"label": row["label"], "pid": proc.pid, "returncode": proc.returncode,
+                                                  "expected_returncode": expected, "waited": True})
+            except Exception as exc:
                 cleanup_ok = False
+                report.setdefault("broker_wait_errors", {})[row["label"]] = type(exc).__name__
+            finally:
+                row["log"].close()
+        if broker is not None:
             report["broker_returncode"] = broker.returncode
-            cleanup_ok = cleanup_ok and broker.returncode == 0
-        if broker_log is not None:
-            broker_log.close()
         if observer is not None:
             try:
                 observation = observer.finish()

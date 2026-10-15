@@ -163,6 +163,47 @@ relay EPIPE failures and an unpinned namespace-ID measurement failure also remai
 preserved. The correction and causal Unix-socket test affect only the fixture.
 See the [public aggregate and exact source pins](evidence/20261015-protected-postcommit-faults/public/README.md).
 
+## Active cancellation and committed broker recovery
+
+Protected Docker acceptance now adds 31 broker postcommit SIGKILL/recovery checks
+and 17 active-cancellation checks, independently audited with 48 and 49 controls.
+A fresh default Docker run passed 57 checks and 52 independent controls. See the
+[exact source snapshots and public aggregate](evidence/20261015-broker-cancel-recovery/public/README.md).
+
+The broker test pinned its own live child/socket before SIGKILL and verified
+complete committed Store/journal/custody history. The identical first restart
+exited 1 with the generic `artifact_service_start_failed` message. After verified
+death and unchanged history, an explicit operator fixture retired only that
+pinned socket once, fsynced its directory and checked the replacement's identity.
+The three broker exits were -9/1/0. One Submit/capsule produced the same four
+artifacts, proof, TP3/FP0/FN0, 1,171 mapped reads and 27,729 charged bytes including
+header reserve. The proxy held the worker response through the outage; worker
+query retries while the broker was down were not exercised. This is committed-only
+fixture recovery, not a production socket repair service or pending-state adoption.
+
+The cancellation test used a pinned waiting lifecycle producer, not the scientific
+pipeline. Before the local operator V2 Cancel, it preserved the exact original
+ledger, journal and custody files, their hashes and stable metadata, synchronized
+copies/directories and revalidated original bytes immediately before the frame.
+The physical 67,239,936-byte reservation became committed metadata charge 1,617
+plus 4,096 header bytes, with the slot and custody retained. Terminal output was
+failed/withheld/artifact_cancelled, with zero exports and a post-Wait/fence proof;
+Cancel ACK was observed true and terminal publication followed in about 0.419 s.
+No public cancellation API or scientific approval follows. The earlier 16-check
+run and 41-check audit without physical before copies remain preserved as weaker
+evidence, along with an audit-only Docker error-text mismatch.
+
+Broker/default used a 408-file snapshot based on 3770129 with fixture changes;
+cancellation/final make used 408 files based on 476e89ee with fixture changes.
+The three-file delta consists of the cancellation checkpoint writer and an earlier
+public attribution/checksum correction. All six binaries and all 51 production
+Go/module inputs were verified unchanged; original build metadata remains
+333995f dirty. No new service/image build, download or biological inference ran.
+Final make passed 294 Python cases (292 passed, two helper opt-ins skipped), with
+uncached test/vet in eight Go modules and unchanged source throughout. The 15 socket
+fixture tests require UID/EUID 1000; hosted CI may skip them on other hosts.
+Documents and public aggregates were written after runtime acceptance.
+
 ## Verification and reproduction scope
 
 The integrated worker snapshot passed `make test`:263Python cases,261passed/two
@@ -237,10 +278,10 @@ hashes, without DNA, rows, case IDs, vectors or weights. See
 
 ## Remaining requirements
 
-1. Extend integrated lifecycle evidence beyond protected execution, downstream
-   response loss and whole worker-container postcommit death to broker death,
-   active cancellation, actual ACK-write errors, process-only death retaining
-   plaintext and durable uncertainty/reconciliation.
+1. Extend lifecycle evidence beyond committed-only broker socket recovery and
+   operator active cancellation to broker death during execution, actual upstream
+   ACK-write errors, process-only death retaining plaintext and durable
+   uncertainty/reconciliation.
 2. Pin and verify the image dependency closure, build/distribution and licences;
    cached-image acceptance alone does not establish image reproducibility.
 3. Inject attach/removal/storage uncertainty and define explicit operator
