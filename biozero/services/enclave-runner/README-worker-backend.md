@@ -14,7 +14,9 @@ capsule-produced paths or invokes those tools on this route.
 
 Fresh protected native25-check and three-service Compose30-check runs passed,
 with independent retained-evidence readback78/35. Both use the native capsule
-provider. [Acceptance and source pins](../../docs/evidence/20261015-protected-capsule-worker/public/README.md)
+provider. Separate [protected Docker acceptance](../../docs/evidence/20261015-protected-docker-capsule-worker/public/README.md)
+passed57actual assertions and52independent retained-state checks, using the same
+production binaries and actual Docker capsules. [Earlier acceptance and source pins](../../docs/evidence/20261015-protected-capsule-worker/public/README.md)
 distinguish runtime evidence from component tests, later documentation, production
 deployment and cross-host reproducibility.
 See [current gates](../../docs/requirements-and-gates.md) for remaining scope.
@@ -38,7 +40,7 @@ of these values before starting it:
 PKI, data, security-event and optional job-key settings retain their protected
 entry roles. The capsule route does not load host-side pipeline/rules/evaluator
 selectors. Compose grants no Docker socket, Store mount or provider command
-authority. The native launcher retains the trusted host filesystem namespace;
+authority. The native launcher retains access to the trusted host filesystem tree;
 its configuration does not confer authority to open Store paths, but it does not
 isolate host files or hostile same-UID writers. See the launcher's explicit scope.
 
@@ -129,5 +131,5 @@ decryption, repeated three-SNP science, provenance hashes, A/B denial, unsigned
 rejection before custody, invalid FASTQ withheld and worker clean-stop/lost-
 publication recovery without reexecution. Original failed startup evidence remains
 preserved. These runs do not establish crash recovery or broker/capsule cancellation.
-The protected Docker-provider route, image dependency/build closure, fault
+Image dependency/build closure, actual integrated crash/cancel/lost-ACK fault
 reconciliation, principal quotas/retention and broader project gates remain open.

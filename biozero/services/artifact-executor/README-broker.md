@@ -3,12 +3,12 @@
 This Linux broker composes the existing Store, registry, coordinator and configured
 provider with a separate FD-aware Unix transport. The
 [protected worker](../enclave-runner/README-worker-backend.md) now calls v2 after
-actual verification, with separate native/Compose acceptance using the native
-provider. The [fixed host service](README-service.md) and
+actual verification, with separately pinned native/Compose-native and protected
+Docker-provider acceptance. The [fixed host service](README-service.md) and
 [actual complete analysis](README-analysis-integration.md) now combine v2 broker,
 native/Docker capsules, pipeline, evaluator and pinned analysis. Their crypto facts
 are synthetic in those earlier component receipts. Persistent deployment and the
-protected Docker-provider end-to-end route remain pending.
+integrated crash/cancel/lost-ACK reconciliation remain pending.
 
 ## Authority and bounded protocol
 

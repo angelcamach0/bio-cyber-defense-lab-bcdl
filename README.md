@@ -67,12 +67,15 @@ The [protected worker](biozero/services/enclave-runner/README-worker-backend.md)
 now verifies encrypted signed inputs, stages verified plaintext in bounded tmpfs,
 and submits through the v2 FD broker. Fresh native25-check and three-service
 Compose30-check acceptance cover science, authorization and committed-result
-recovery using the native capsule provider. The worker projects confirmed receipts
+recovery using the native capsule provider. Separate protected Docker-provider
+acceptance now passed57checks and52independent retained-evidence checks, including
+actual capsule configuration/kernel observations and exact artifact accounting.
+The worker projects confirmed receipts
 without invoking pipeline/evaluator/detection tools itself. Native execution trusts
 the host filesystem; its namespaces do not establish host-file or same-UID isolation.
 The standalone [container capsule provider](biozero/services/artifact-executor/README-container.md)
-has separate quota and lifecycle acceptance; its protected end-to-end route and a
-reproducible image build remain pending. Pinned analysis executes inside both
+has separate quota and lifecycle acceptance. Integrated crash/cancel/lost-ACK
+reconciliation and a reproducible image build remain pending. Pinned analysis executes inside both
 providers through the broker, and the compiled
 [host service](biozero/services/artifact-executor/README-service.md) has actual
 native/Docker science, detection, restart and visible cleanup-failure acceptance.
@@ -92,6 +95,7 @@ withheld or unassessed. A completed process alone does not approve scientific re
 ## Project documentation
 
 - [Implementation status](biozero/docs/STATUS.md)
+- [Executive summary](biozero/docs/EXECUTIVE_SUMMARY.md)
 - [Requirements, evidence and next gates](biozero/docs/requirements-and-gates.md)
 - [Project flow guide](biozero/docs/PROJECT_FLOW_GUIDE.md)
 - [Regulatory evaluation](biozero/docs/experiments/005-biological-evaluation.md)

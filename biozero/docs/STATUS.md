@@ -96,6 +96,30 @@ source/binary/profile pins and exact accounting. The native Store retained47,545
 charged bytes including its header, and Compose47,328bytes; each retains3slots.
 Compose comprises43,232bytes of record charges plus4,096bytes of header reserve.
 These are separate runs with distinct profiles and per-run artifact bytes.
+
+The protected Docker capsule-provider route subsequently passed57/57actual
+three-service Compose assertions, followed by52independent retained-evidence
+checks. The broker used provider=docker with the exact cached image and pinned
+helpers/assets. A bounded read-only observer correlated three distinct capsule
+IDs/leases/nonces and create/start/die/destroy sequences, inspected actual
+configuration while created, and kept those observations separate from the
+helper's live kernel records and provider/coordinator proof authority.
+
+Both valid inputs had TP3/FP0/FN0 and1,171mapped reads; invalid FASTQ remained
+failed/withheld with only its execution receipt. All nine retained files, proofs,
+contexts and journal bindings matched. Record charges61,258bytes plus4,096header
+reserve total65,354bytes, with3slots retained. Broker/worker exited0, APIs143;
+the observer exited143 and joined without error. Three successful capsules were
+removed by the provider after authoritative wait/inspection; the three application
+containers remain stopped and preserved.
+
+The runtime snapshot was392files based on4e9e119 with local harness/docs changes,
+unchanged throughout acceptance. Six existing binaries were reused after checking
+all51production Go/module inputs and their hashes against the earlier build
+receipt; their build VCS metadata remains333995f dirty. No new compile, image
+build/pull, model run or dataset acquisition occurred. Post-acceptance documents
+and aggregates are separate from that snapshot. See
+[protected Docker acceptance](evidence/20261015-protected-docker-capsule-worker/public/README.md).
 See [protected acceptance](evidence/20261015-protected-capsule-worker/public/README.md)
 and [worker configuration](../services/enclave-runner/README-worker-backend.md).
 See [broker](../services/artifact-executor/README-broker.md),
@@ -179,8 +203,8 @@ hashes, without DNA, rows, case IDs, vectors or weights. See
 
 ## Remaining requirements
 
-1. Repeat the protected route with the Docker capsule provider. Extend integrated
-   lifecycle evidence beyond clean-stop/lost-publication recovery to actual worker/
+1. Extend integrated lifecycle evidence beyond native/Docker protected positive
+   execution and clean-stop/lost-publication recovery to actual worker/
    broker death, cancellation, lost ACK and durable uncertainty/reconciliation.
 2. Pin and verify the image dependency closure, build/distribution and licences;
    cached-image acceptance alone does not establish image reproducibility.

@@ -3,7 +3,7 @@
 `cmd/artifact-broker` provides a v2 FD broker service around the existing Store,
 registry, coordinator and one host-configured native or Docker provider. The
 protected worker has [separate integrated acceptance](../enclave-runner/README-worker-backend.md)
-using the native provider. Requests cannot choose commands,
+using both native and Docker providers. Requests cannot choose commands,
 paths, references, rules, images, policies or mounts. Only the configured Unix UID
 can submit its asserted verification facts; this is not tenant authentication,
 cryptographic proof, host attestation or a production deployment.

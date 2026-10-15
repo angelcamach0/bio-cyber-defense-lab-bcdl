@@ -1,15 +1,18 @@
 # Pinned Docker capsule provider
 
 The standalone Linux ContainerProvider executes the synthetic pipeline and its
-evaluator in a per-job container controlled by the trusted host. It is not
-installed in enclave-runner. The worker receives no Docker socket or general
+evaluator in a per-job container controlled by the trusted host broker. The
+protected worker now uses it through the v2 FD protocol, with
+[57actual protected assertions and52independent readback checks](../../docs/evidence/20261015-protected-docker-capsule-worker/public/README.md).
+The worker receives no Docker socket or general
 container-command API. Existing native and container acceptance have separate
 source, resource and lifecycle evidence.
 
 Subsequent [complete analysis acceptance](README-analysis-integration.md) installs
 pinned analysis/rules/panel and per-job context inside this capsule. It composes
 the v2 FD broker and compiled [host service](README-service.md), including failed
-analysis withholding and committed readback. The protected worker remains separate;
+analysis withholding and committed readback. Protected crypto entry now has its
+separate acceptance above;
 the earlier receipts below are not relabeled as that newer source or scope.
 
 ## Trusted configuration and entry
@@ -41,8 +44,8 @@ After connection, host SO_PEERCRED must match UID/GID1000 and the exact running
 container PID1 from inspect. Only then does the host transfer byte I and one
 read-only input FD. The helper requires CLOEXEC, regular/private/single-link
 metadata, exact length and the separately registered plaintext hash, copying only
-inside tmpfs. Original-upload identity remains distinct. Registration still needs
-integration after the existing worker's protected crypto barrier.
+inside tmpfs. Original-upload identity remains distinct. The protected worker now
+registers these facts only after its actual crypto barrier, as separately accepted.
 
 ## Observed kernel boundaries and custody
 
@@ -119,12 +122,14 @@ BIOZERO_RUN_CONTAINER_PROVIDER_ACCEPTANCE=1 go test -race \
 BIOZERO_CONTAINER_PROVIDER_EVIDENCE_DIR selects a new absolute private destination;
 the default is a new timestamped root under ignored .biozero. Existing destinations
 are refused. The cached image must exist with that exact ID: this receipt is not
-a reproducible image-build/publishing claim. Locking/distributing the image and
-installing the provider in the protected worker remain deployment tasks.
+a reproducible image-build/publishing claim. Image locking/distribution and
+production deployment remain open; protected worker integration is separately
+accepted above.
 
 No model or external dataset was run or downloaded, and no image was built/pulled
 for this acceptance. Original input identity is a synthetic encrypted-upload
-placeholder; actual worker TLS/signature/decryption was not exercised. Integrated
-worker authorization/lifecycle, operator recovery, full quotas/retention, immutable
+placeholder; actual worker TLS/signature/decryption was not exercised in those
+earlier component receipts. Protected positive/recovery acceptance is now separate;
+integrated worker/broker death/cancel/lost-ACK, operator recovery, full quotas/retention, immutable
 ownership and production/cloud delivery remain required. Synthetic allele presence
 does not establish genotype, indel, human-genome or clinical accuracy.
