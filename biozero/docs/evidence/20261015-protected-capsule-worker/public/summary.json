@@ -1,0 +1,360 @@
+{
+  "binary_pins": {
+    "artifact-broker": {
+      "bytes": 5130512,
+      "sha256": "4f5da6194301525a36654720885e03bf4fed370b461d186f5ea7f37730a249f9"
+    },
+    "capsule-analysis": {
+      "bytes": 3566444,
+      "sha256": "cd15b4c284961ad0d18c6b4f70b07c3277f36f3809dffc39dfa1c0a4c1c6087e"
+    },
+    "enclave-runner": {
+      "bytes": 6762143,
+      "sha256": "877c8dd7978f6a51bc445b520178d089a5a4e5633c96e967e465ce38a312b8b6"
+    },
+    "results-api": {
+      "bytes": 9026902,
+      "sha256": "5854ddce365cabb248b8d1f710dcc292ff6a47e3ea6714a8b3f917ae2ae1c85c"
+    },
+    "upload-api": {
+      "bytes": 9220557,
+      "sha256": "eaa2aa6999e2d708fe27a9c7cd77cf9038eba7d9a3c19d2a84e677c12088d9ed"
+    },
+    "uploader-cli": {
+      "bytes": 8925233,
+      "sha256": "3571bb520bda8455d75a270c6091808a14b33933eb7752b4f23423e6d8b98f3e"
+    },
+    "worker-scope": {
+      "bytes": 4032842,
+      "sha256": "e3029abe0770e736298a666ef3099555bc0fb1975155384c1e16ca724a623745"
+    }
+  },
+  "checks": {
+    "focused_backend_race": {
+      "subcases": 34,
+      "top_level": 14
+    },
+    "make_test": {
+      "go_modules_test_and_vet": 8,
+      "python_opt_in_skipped": 2,
+      "python_passed": 261,
+      "python_total": 263
+    },
+    "metadata_shared_cases": {
+      "invalid": 104,
+      "total": 114,
+      "valid": 10
+    }
+  },
+  "host": {
+    "cgo_enabled": false,
+    "docker": "29.9.0",
+    "go": "1.26.7",
+    "os": "Linux ARM64"
+  },
+  "independent_readback": {
+    "compose": {
+      "passed": 35,
+      "record_charges_bytes": 43232,
+      "retained_slots": 3,
+      "store_charged_bytes_including_header": 47328,
+      "store_header_reserve_bytes": 4096
+    },
+    "native": {
+      "passed": 78,
+      "record_charges_bytes": 43449,
+      "retained_slots": 3,
+      "store_charged_bytes_including_header": 47545,
+      "store_header_reserve_bytes": 4096
+    }
+  },
+  "limitations": [
+    "Native provider trusts host filesystem, dependencies and same-UID writers; no host-file isolation or attestation claim.",
+    "Compose uses three app containers and a host native provider; protected Docker capsule-provider end-to-end acceptance remains open.",
+    "Cached image reused without build or pull; no reproducible OCI/dependency/license closure or bitwise rebuild claim.",
+    "API ports publish on loopback through a normal bridge; API egress is not denied. Worker network is none.",
+    "Clean-stop/lost-publication recovery does not prove crash/cancel/lost-ACK or ambiguous-storage reconciliation.",
+    "Runtime kernel/TLS observations are retained harness evidence, not measurements repeated by independent readback.",
+    "No production, immutable-principal TM02, biological-model, genotype, indel, WGS or clinical approval.",
+    "Runtime source pins precede the documentation and aggregate additions in this publication."
+  ],
+  "observed_date_utc": "2026-10-15",
+  "receipt_sha256": {
+    "compose": "24f96dc91beb42ba2fde0b51bf613389513b4d9e50e1cadc70bb02ac477a5917",
+    "compose_readback": "6f15d59b9c84f8d5521f12c42d90e40418792638824630ebee69843cfbe43fc3",
+    "native": "a1ff4437bdfe0ec0ed9a872efe700ebec4ed52ac09a35e899e3995ce5310d25e",
+    "native_readback": "ede490d0890f2afb135b5344490fad6d38346611f38f453ec198bf3527c73c3f"
+  },
+  "runs": {
+    "compose": {
+      "binary_sources_and_private_copies_unchanged": true,
+      "case_verdicts": [
+        {
+          "case": "exact_cached_image_without_build_or_pull",
+          "passed": true
+        },
+        {
+          "case": "profile_without_store_or_provider_creation",
+          "passed": true
+        },
+        {
+          "case": "api_project_bridge_with_loopback_default",
+          "passed": true
+        },
+        {
+          "case": "container_controls_and_exact_mounts_upload",
+          "passed": true
+        },
+        {
+          "case": "container_controls_and_exact_mounts_results",
+          "passed": true
+        },
+        {
+          "case": "container_controls_and_exact_mounts_worker",
+          "passed": true
+        },
+        {
+          "case": "worker_plaintext_tmpfs_actual_kernel_guards",
+          "passed": true
+        },
+        {
+          "case": "protected_three_snp_1",
+          "passed": true
+        },
+        {
+          "case": "ciphertext_and_plaintext_hashes_1",
+          "passed": true
+        },
+        {
+          "case": "receipt_context_science_and_pins_1",
+          "passed": true
+        },
+        {
+          "case": "actual_detection_and_1171_mapped_reads_1",
+          "passed": true
+        },
+        {
+          "case": "four_artifacts_receipt_and_proof_1",
+          "passed": true
+        },
+        {
+          "case": "observed_evaluated_retained_vcf_hash_1",
+          "passed": true
+        },
+        {
+          "case": "worker_did_not_materialize_unbounded_outputs_1",
+          "passed": true
+        },
+        {
+          "case": "nonowner_cannot_spoof_header_1",
+          "passed": true
+        },
+        {
+          "case": "protected_three_snp_2",
+          "passed": true
+        },
+        {
+          "case": "ciphertext_and_plaintext_hashes_2",
+          "passed": true
+        },
+        {
+          "case": "receipt_context_science_and_pins_2",
+          "passed": true
+        },
+        {
+          "case": "actual_detection_and_1171_mapped_reads_2",
+          "passed": true
+        },
+        {
+          "case": "four_artifacts_receipt_and_proof_2",
+          "passed": true
+        },
+        {
+          "case": "observed_evaluated_retained_vcf_hash_2",
+          "passed": true
+        },
+        {
+          "case": "worker_did_not_materialize_unbounded_outputs_2",
+          "passed": true
+        },
+        {
+          "case": "nonowner_cannot_spoof_header_2",
+          "passed": true
+        },
+        {
+          "case": "repeat_exact_three_snp_callset",
+          "passed": true
+        },
+        {
+          "case": "invalid_fastq_withheld_with_custody",
+          "passed": true
+        },
+        {
+          "case": "unsigned_upload_reaches_verifier",
+          "passed": true
+        },
+        {
+          "case": "unsigned_rejected_before_any_custody",
+          "passed": true
+        },
+        {
+          "case": "missing_client_certificate_rejected_with_live_tls",
+          "passed": true
+        },
+        {
+          "case": "worker_clean_stop_before_recovery",
+          "passed": true
+        },
+        {
+          "case": "restart_lost_publication_same_lease_without_execution",
+          "passed": true
+        }
+      ],
+      "exit_codes": {
+        "host_broker": 0,
+        "results_api": 143,
+        "upload_api": 143,
+        "worker": 0
+      },
+      "expected_process_exits": true,
+      "image_id": "sha256:1ca8e95c2f5679ab2001f856549c634f0b9daeeeb1492b8610814b96cf30fa7d",
+      "passed": 30,
+      "profile_sha256": "c38b2922e0224376e4f75a68112e093c6441c4724ea8e6c8f117e431520d5f62",
+      "provider": "native",
+      "source_unchanged": true,
+      "stopped_objects_preserved": true
+    },
+    "native": {
+      "all_processes_waited": true,
+      "case_verdicts": [
+        {
+          "case": "profile_is_bounded_hex_without_state",
+          "passed": true
+        },
+        {
+          "case": "worker_tmpfs_and_privilege_guards_observed",
+          "passed": true
+        },
+        {
+          "case": "protected_three_snp_1",
+          "passed": true
+        },
+        {
+          "case": "immutable_ciphertext_and_verified_plaintext_1",
+          "passed": true
+        },
+        {
+          "case": "receipt_science_input_and_policy_match_1",
+          "passed": true
+        },
+        {
+          "case": "actual_alignment_and_detection_1",
+          "passed": true
+        },
+        {
+          "case": "retained_receipt_and_proof_1",
+          "passed": true
+        },
+        {
+          "case": "observed_evaluated_retained_hash_1",
+          "passed": true
+        },
+        {
+          "case": "worker_has_no_unbounded_artifacts_1",
+          "passed": true
+        },
+        {
+          "case": "nonowner_denied_1",
+          "passed": true
+        },
+        {
+          "case": "protected_three_snp_2",
+          "passed": true
+        },
+        {
+          "case": "immutable_ciphertext_and_verified_plaintext_2",
+          "passed": true
+        },
+        {
+          "case": "receipt_science_input_and_policy_match_2",
+          "passed": true
+        },
+        {
+          "case": "actual_alignment_and_detection_2",
+          "passed": true
+        },
+        {
+          "case": "retained_receipt_and_proof_2",
+          "passed": true
+        },
+        {
+          "case": "observed_evaluated_retained_hash_2",
+          "passed": true
+        },
+        {
+          "case": "worker_has_no_unbounded_artifacts_2",
+          "passed": true
+        },
+        {
+          "case": "nonowner_denied_2",
+          "passed": true
+        },
+        {
+          "case": "repeat_callset_identical",
+          "passed": true
+        },
+        {
+          "case": "invalid_fastq_failed_withheld",
+          "passed": true
+        },
+        {
+          "case": "unsigned_upload_admitted_for_verification",
+          "passed": true
+        },
+        {
+          "case": "unsigned_rejected_without_custody",
+          "passed": true
+        },
+        {
+          "case": "mtls_rejects_missing_client_certificate",
+          "passed": true
+        },
+        {
+          "case": "worker_clean_shutdown",
+          "passed": true
+        },
+        {
+          "case": "restart_recovers_same_artifacts_without_execution",
+          "passed": true
+        }
+      ],
+      "expected_process_exits": true,
+      "passed": 25,
+      "profile_sha256": "63cf3b07f26292e3b5cf10f61fd13ae68398aa4f182f5453a6bc160b47188532",
+      "provider": "native",
+      "source_unchanged": true
+    }
+  },
+  "schema_version": 1,
+  "scientific_scope": {
+    "cross_repeat_comparison": "Normalized allele callsets; per-run VCF bytes may differ because headers contain runtime paths.",
+    "each_valid_run": {
+      "alignment_records": 1171,
+      "detection_score": 0.7,
+      "detection_severity": "medium",
+      "false_negative": 0,
+      "false_positive": 0,
+      "mapped_reads": 1171,
+      "precision": 1,
+      "recall": 1,
+      "true_positive": 3
+    },
+    "fixture_reads": 1171,
+    "fixture_reference_bases": 6000,
+    "invalid_input": "failed/withheld, no scientific evaluation, one retained execution receipt; independent analysis may still execute",
+    "per_run_hash_invariant": "observed VCF = evaluated VCF = retained VCF",
+    "valid_repeats_per_environment": 2
+  },
+  "scope": "Protected synthetic SNP execution through v2 broker; native capsule provider in both environments.",
+  "status": "passed"
+}

@@ -96,7 +96,8 @@ func boundedResultRecord(result resultRecord) (resultRecord, []byte, error) {
 		UploadSHA256: result.UploadSHA256, ProcessedSHA256: result.ProcessedSHA256,
 		SizeBytes: result.SizeBytes, Decrypted: result.Decrypted,
 		SignatureValid: result.SignatureValid, ClientCertSerial: result.ClientCertSerial,
-		ReleaseStatus: "withheld", ErrorCode: "result_metadata_too_large",
+		ArtifactExecution: result.ArtifactExecution,
+		ReleaseStatus:     "withheld", ErrorCode: "result_metadata_too_large",
 		ErrorMessage: "derived result exceeds the supported metadata size",
 		Detection:    detectionResult{Reason: "result withheld after metadata size failure"},
 	}

@@ -180,6 +180,12 @@ func TestResultSerializedBudgetExactAndOneOver(t *testing.T) {
 	base := resultRecord{SchemaVersion: 1, JobID: "abcdef1234567890", Status: "succeeded", SecurityMode: "protected", PipelineMode: "variants",
 		ProcessedAt: "2026-10-14T00:00:00Z", UploadSHA256: strings.Repeat("a", 64), ProcessedSHA256: strings.Repeat("b", 64),
 		SizeBytes: 42, Decrypted: true, SignatureValid: true, ClientCertSerial: "42", ReleaseStatus: "evaluated_passed", ErrorMessage: "x"}
+	base.ArtifactExecution = &artifactExecution{SchemaVersion: 1, ProfileSHA256: strings.Repeat("c", 64), StoreID: strings.Repeat("d", 32), LeaseID: strings.Repeat("e", 32), ManifestSHA256: strings.Repeat("f", 64), ReceiptSHA256: strings.Repeat("a", 64), ReceiptBytes: 1, Files: map[string]artifactFile{
+		"execution_receipt":  {SHA256: strings.Repeat("a", 64), Bytes: 1},
+		"normalized_vcf":     {SHA256: strings.Repeat("b", 64), Bytes: 1},
+		"variants_vcf":       {SHA256: strings.Repeat("c", 64), Bytes: 1},
+		"variants_vcf_index": {SHA256: strings.Repeat("d", 64), Bytes: 1},
+	}}
 	skeleton, err := json.MarshalIndent(base, "", "  ")
 	if err != nil {
 		t.Fatal(err)
@@ -201,6 +207,9 @@ func TestResultSerializedBudgetExactAndOneOver(t *testing.T) {
 			}
 			if final.JobID != base.JobID || final.ProcessedAt != base.ProcessedAt || final.UploadSHA256 != base.UploadSHA256 || final.ProcessedSHA256 != base.ProcessedSHA256 || final.ClientCertSerial != base.ClientCertSerial || final.SizeBytes != base.SizeBytes || !final.Decrypted || !final.SignatureValid {
 				t.Fatal("provenance changed")
+			}
+			if final.ArtifactExecution == nil || final.ArtifactExecution.ManifestSHA256 != base.ArtifactExecution.ManifestSHA256 || final.ArtifactExecution.ReceiptSHA256 != base.ArtifactExecution.ReceiptSHA256 {
+				t.Fatal("oversized result lost retained artifact binding")
 			}
 		}
 		path := filepath.Join(t.TempDir(), "record.json")

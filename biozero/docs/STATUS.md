@@ -74,12 +74,30 @@ reexecution, and deliberate socket replacement causing exit1 with marker and
 accounting preserved. A cached first-close error cannot disappear behind a later
 successful Close. Provider Wait and healthy Store remain required before release.
 
-The protected worker is not connected yet. This acceptance supplied synthetic
-crypto facts and public fixture input; no persistent deployed service is claimed.
-The host retains Docker authority; the worker receives no Docker socket or
-writable Store mount. Complete protected integration still requires verifier-only
-submission, bounded tmpfs plaintext staging, committed-receipt result projection
-and durable recovery, followed by native/Compose authorization/lifecycle acceptance.
+The protected worker now verifies one anchored ciphertext snapshot, checks its
+signature, authenticates decryption and stages the verified plaintext in checked
+32MiB/4096inode-unit tmpfs. Durable custody precedes Submit; result projection
+requires the retained committed receipt. Pending or ambiguous history fences new
+admission; recovery queries prior bindings without decrypting or submitting again.
+Missing capsule configuration fails startup; legacy execution is an explicit
+separate selector. The worker does not invoke pipeline/evaluator/detection tools.
+
+Fresh native25-check and three-service Compose30-check acceptance passed actual
+mTLS, signature/decryption, repeated three-SNP science, A/B denial, invalid FASTQ,
+unsigned rejection before custody and clean-stop/lost-publication recovery with
+the same artifacts and charges. Both use the host native capsule provider. Native
+launching trusts host files/credentials and same-UID writers; it is not a host-file
+sandbox. Compose instead checks explicit mounts, no worker network, read-only root
+and no Store or Docker-socket mount. The APIs use a loopback-published normal
+bridge; API egress is not denied. No persistent deployed service is claimed.
+
+Independent readback passed78native and35Compose checks of retained evidence,
+source/binary/profile pins and exact accounting. The native Store retained47,545
+charged bytes including its header, and Compose47,328bytes; each retains3slots.
+Compose comprises43,232bytes of record charges plus4,096bytes of header reserve.
+These are separate runs with distinct profiles and per-run artifact bytes.
+See [protected acceptance](evidence/20261015-protected-capsule-worker/public/README.md)
+and [worker configuration](../services/enclave-runner/README-worker-backend.md).
 See [broker](../services/artifact-executor/README-broker.md),
 [capsule](../services/artifact-executor/README-container.md),
 [analysis](../services/enclave-runner/analysis/README.md) and
@@ -88,6 +106,17 @@ See [broker](../services/artifact-executor/README-broker.md),
 and [host service](../services/artifact-executor/README-service.md) for current commands.
 
 ## Verification and reproduction scope
+
+The integrated worker snapshot passed `make test`:263Python cases,261passed/two
+helper opt-ins skipped, and test/vet in eight Go modules. Focused backend race
+tests passed14top-level functions/34subcases. Custody, receipt projection and
+staging/launcher have separately recorded ordinary/race/vet checks. The final
+Compose-only network correction passed syntax checks and its real30-case run;
+Go source did not change. The public acceptance bundle pins the runtime snapshot;
+status documents and that bundle were added afterward. Its hashes do not claim a
+byte-for-byte rebuild or an immutable published commit at runtime.
+
+The following earlier component receipts retain their original source scope:
 
 - Final component `make test`:263Python cases,261passed/two helper kernel skips;
   test/vet in eight Go modules. simulated-adversary has no Go tests.
@@ -112,9 +141,9 @@ and [host service](../services/artifact-executor/README-service.md) for current 
   synthetic. This is standalone analysis and same-host/toolchain repeatability,
   not integrated protected entry, cross-host or OCI reproduction.
 
-Final host binary:5,128,722 bytes, SHA256
+Earlier standalone host binary:5,128,722 bytes, SHA256
 `c6cea629b14cafc4abc4cda69a4d8db60f5de569cf89036e4460e2f156f57194`.
-Final source inventory was unchanged throughout build/make/race acceptance.
+That source inventory was unchanged throughout its build/make/race acceptance.
 Private receipts: `.biozero/broker-service-final-checks-20261015T011527.352455Z/`.
 No actual acceptance service remains running after its authoritative process Wait.
 
@@ -136,9 +165,9 @@ hashes, without DNA, rows, case IDs, vectors or weights. See
 
 ## Remaining requirements
 
-1. Connect protected worker crypto, verified bounded tmpfs staging, committed
-   receipt projection and durable recovery through the fixed-profile v2 service. Repeat
-   protected native/Compose science, A/B authorization, cancellation and restart.
+1. Repeat the protected route with the Docker capsule provider. Extend integrated
+   lifecycle evidence beyond clean-stop/lost-publication recovery to actual worker/
+   broker death, cancellation, lost ACK and durable uncertainty/reconciliation.
 2. Pin and verify the image dependency closure, build/distribution and licences;
    cached-image acceptance alone does not establish image reproducibility.
 3. Inject attach/removal/storage uncertainty and define explicit operator

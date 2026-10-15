@@ -185,6 +185,7 @@ def run_checks(*, run_dir, binaries, pki, env, record):
         else:
             port = None
             settings.update({"BIOZERO_PIPELINE_PATH": str(data / "pipeline-must-not-run"),
+                             "BIOZERO_EXECUTION_BACKEND": "legacy",
                              "BIOZERO_RULES_PATH": str(data / "absent-rules"),
                              "BIOZERO_DECRYPT_DIR": str(data / "decrypted"),
                              "BIOZERO_SECURITY_EVENTS_DIR": str(data / "security-events"),

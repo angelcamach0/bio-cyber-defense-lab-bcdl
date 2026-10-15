@@ -291,7 +291,7 @@ func TestWorkerSignalsCancelPipelineDescendants(t *testing.T) {
 				t.Fatal(err)
 			}
 			worker := exec.Command(executable, "-test.run=^TestWorkerSignalHelper$")
-			worker.Env = append(os.Environ(), "BIOZERO_TEST_WORKER_HELPER=1", "BIOZERO_DATA_DIR="+f.root, "BIOZERO_PIPELINE_PATH="+f.pipeline, "BIOZERO_SECURITY_MODE=demo", "BIOZERO_PIPELINE_MODE=stats", "BIOZERO_POLL_SECONDS=0.01", "BIOZERO_PIPELINE_TIMEOUT=30s", "BIOZERO_RULES_PATH="+filepath.Join(f.root, "absent-rules"))
+			worker.Env = append(os.Environ(), "BIOZERO_TEST_WORKER_HELPER=1", "BIOZERO_EXECUTION_BACKEND=legacy", "BIOZERO_DATA_DIR="+f.root, "BIOZERO_PIPELINE_PATH="+f.pipeline, "BIOZERO_SECURITY_MODE=demo", "BIOZERO_PIPELINE_MODE=stats", "BIOZERO_POLL_SECONDS=0.01", "BIOZERO_PIPELINE_TIMEOUT=30s", "BIOZERO_RULES_PATH="+filepath.Join(f.root, "absent-rules"))
 			if err := worker.Start(); err != nil {
 				t.Fatal(err)
 			}

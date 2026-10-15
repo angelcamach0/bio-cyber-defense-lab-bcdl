@@ -343,3 +343,35 @@ func TestHTTPMetadataDepthBoundaryAndRequiredFields(t *testing.T) {
 		})
 	}
 }
+
+func TestMetadataArtifactBindingRoundTripAndAbsentCompatibility(t *testing.T) {
+	before := completeResult(t, "failed")
+	original, err := parseResult(before)
+	if err != nil {
+		t.Fatal(err)
+	}
+	after, err := json.Marshal(original)
+	if err != nil || string(before) != string(after) {
+		t.Fatal("binding-absent v1 serialization changed", err)
+	}
+	original.ReleaseStatus = "withheld"
+	original.SecurityMode = "protected"
+	original.PipelineMode = "stats"
+	original.Decrypted = true
+	original.SignatureValid = true
+	original.DecryptionError = ""
+	original.SignatureError = ""
+	original.UploadSHA256 = strings.Repeat("1", 64)
+	original.ProcessedSHA256 = strings.Repeat("2", 64)
+	original.SizeBytes = 0
+	original.ArtifactExecution = &artifactExecution{SchemaVersion: 1, ProfileSHA256: strings.Repeat("a", 64), StoreID: strings.Repeat("b", 32), LeaseID: strings.Repeat("c", 32), ManifestSHA256: strings.Repeat("d", 64), ReceiptSHA256: strings.Repeat("e", 64), ReceiptBytes: 5, Files: map[string]artifactFile{"execution_receipt": {SHA256: strings.Repeat("e", 64), Bytes: 5}}}
+	raw, _ := json.Marshal(original)
+	parsed, err := parseResult(raw)
+	if err != nil || parsed.ArtifactExecution == nil || parsed.ArtifactExecution.ReceiptBytes != 5 {
+		t.Fatal("valid binding lost", err)
+	}
+	bad := strings.Replace(string(raw), `"profile_sha256"`, `"Profile_SHA256"`, 1)
+	if _, err := parseResult([]byte(bad)); err == nil {
+		t.Fatal("nested binding alias accepted")
+	}
+}

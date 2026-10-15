@@ -184,7 +184,7 @@ def main():
                 if time.monotonic() > deadline:
                     raise RuntimeError("Service readiness deadline expired")
                 time.sleep(0.2)
-        worker_settings = {**shared, "BIOZERO_RULES_PATH": str(ROOT / "biozero/bio/reference-db/rules.json"),
+        worker_settings = {**shared, "BIOZERO_EXECUTION_BACKEND": "legacy", "BIOZERO_RULES_PATH": str(ROOT / "biozero/bio/reference-db/rules.json"),
               "BIOZERO_PRIVATE_KEY": str(pki / "runtime/worker/decrypt.key"),
               "BIOZERO_SIGNER_CERT": str(pki / "runtime/worker/signer.crt"),
               "BIOZERO_PIPELINE_PATH": str(ROOT / "biozero/bio/pipeline/pipeline.py"),

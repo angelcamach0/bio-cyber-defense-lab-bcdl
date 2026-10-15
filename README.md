@@ -63,14 +63,23 @@ passed23 UI/TLS/session-race checks with zero JavaScript errors. The planned Ora
 deployment remains pending. ZeroResponder is optional simulation.
 
 The initial implementation and curated evidence were merged through [PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21) on2026-10-14.
+The [protected worker](biozero/services/enclave-runner/README-worker-backend.md)
+now verifies encrypted signed inputs, stages verified plaintext in bounded tmpfs,
+and submits through the v2 FD broker. Fresh native25-check and three-service
+Compose30-check acceptance cover science, authorization and committed-result
+recovery using the native capsule provider. The worker projects confirmed receipts
+without invoking pipeline/evaluator/detection tools itself. Native execution trusts
+the host filesystem; its namespaces do not establish host-file or same-UID isolation.
 The standalone [container capsule provider](biozero/services/artifact-executor/README-container.md)
-has separate synthetic, quota and recovery acceptance; protected worker integration
-and a reproducible image build remain pending. Pinned analysis now executes inside
-both providers through the v2 FD broker, and the compiled
+has separate quota and lifecycle acceptance; its protected end-to-end route and a
+reproducible image build remain pending. Pinned analysis executes inside both
+providers through the broker, and the compiled
 [host service](biozero/services/artifact-executor/README-service.md) has actual
 native/Docker science, detection, restart and visible cleanup-failure acceptance.
-These tests supply synthetic crypto facts; connecting the protected worker is next.
-See [complete analysis scope](biozero/services/artifact-executor/README-analysis-integration.md)
+The earlier provider tests used synthetic crypto facts; the new worker acceptance
+performs actual signature/decryption checks. See
+[protected acceptance](biozero/docs/evidence/20261015-protected-capsule-worker/public/README.md),
+[complete analysis scope](biozero/services/artifact-executor/README-analysis-integration.md)
 and the current status for the
 source and publication scope of this subsequent delivery.
 [Hosted ARM CI for98f2f89](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38661813114)

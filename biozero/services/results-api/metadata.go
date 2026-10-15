@@ -44,27 +44,28 @@ type jobRecord struct {
 	ClientCertSerial  string `json:"client_cert_serial,omitempty"`
 }
 type resultRecord struct {
-	SchemaVersion        int             `json:"schema_version"`
-	ErrorCode            string          `json:"error_code,omitempty"`
-	ErrorMessage         string          `json:"error_message,omitempty"`
-	SecurityMode         string          `json:"security_mode"`
-	PipelineMode         string          `json:"pipeline_mode"`
-	JobID                string          `json:"job_id"`
-	Status               string          `json:"status"`
-	ProcessedAt          string          `json:"processed_at"`
-	UploadSHA256         string          `json:"upload_sha256"`
-	ProcessedSHA256      string          `json:"processed_sha256"`
-	SizeBytes            int64           `json:"size_bytes"`
-	Decrypted            bool            `json:"decrypted"`
-	DecryptionError      string          `json:"decryption_error,omitempty"`
-	SignatureValid       bool            `json:"signature_valid"`
-	SignatureError       string          `json:"signature_error,omitempty"`
-	PipelineOutput       json.RawMessage `json:"pipeline_output,omitempty"`
-	PipelineError        string          `json:"pipeline_error,omitempty"`
-	ScientificEvaluation json.RawMessage `json:"scientific_evaluation,omitempty"`
-	ReleaseStatus        string          `json:"release_status"`
-	Detection            detectionResult `json:"detection"`
-	ClientCertSerial     string          `json:"client_cert_serial,omitempty"`
+	SchemaVersion        int                `json:"schema_version"`
+	ErrorCode            string             `json:"error_code,omitempty"`
+	ErrorMessage         string             `json:"error_message,omitempty"`
+	SecurityMode         string             `json:"security_mode"`
+	PipelineMode         string             `json:"pipeline_mode"`
+	JobID                string             `json:"job_id"`
+	Status               string             `json:"status"`
+	ProcessedAt          string             `json:"processed_at"`
+	UploadSHA256         string             `json:"upload_sha256"`
+	ProcessedSHA256      string             `json:"processed_sha256"`
+	SizeBytes            int64              `json:"size_bytes"`
+	Decrypted            bool               `json:"decrypted"`
+	DecryptionError      string             `json:"decryption_error,omitempty"`
+	SignatureValid       bool               `json:"signature_valid"`
+	SignatureError       string             `json:"signature_error,omitempty"`
+	PipelineOutput       json.RawMessage    `json:"pipeline_output,omitempty"`
+	PipelineError        string             `json:"pipeline_error,omitempty"`
+	ScientificEvaluation json.RawMessage    `json:"scientific_evaluation,omitempty"`
+	ReleaseStatus        string             `json:"release_status"`
+	Detection            detectionResult    `json:"detection"`
+	ClientCertSerial     string             `json:"client_cert_serial,omitempty"`
+	ArtifactExecution    *artifactExecution `json:"artifact_execution,omitempty"`
 }
 type detectionResult struct {
 	Score   float64        `json:"score"`
@@ -264,8 +265,166 @@ func parseResult(data []byte) (resultRecord, error) {
 	} else if result.Status != "processed" {
 		return resultRecord{}, errRecordInvalid
 	}
+	if raw, ok := fields["artifact_execution"]; ok {
+		if result.SchemaVersion != 1 {
+			return resultRecord{}, errRecordInvalid
+		}
+		if _, err := validateArtifactExecution(raw, result.Status, result.ReleaseStatus); err != nil {
+			return resultRecord{}, errRecordInvalid
+		}
+		if validateArtifactResultEnvelope(result) != nil {
+			return resultRecord{}, errRecordInvalid
+		}
+	}
 	return result, nil
 }
 func knownJobStatus(status string) bool {
 	return status == "uploaded" || status == "running" || knownTerminal(status)
+}
+
+// artifactExecution binds a projected private result to retained broker objects.
+// It is not authority to open files and is not a scientific-release proof.
+type artifactExecution struct {
+	SchemaVersion  int                     `json:"schema_version"`
+	ProfileSHA256  string                  `json:"profile_sha256"`
+	StoreID        string                  `json:"store_id"`
+	LeaseID        string                  `json:"lease_id"`
+	ManifestSHA256 string                  `json:"manifest_sha256"`
+	ReceiptSHA256  string                  `json:"receipt_sha256"`
+	ReceiptBytes   int64                   `json:"receipt_bytes"`
+	Files          map[string]artifactFile `json:"files"`
+}
+type artifactFile struct {
+	SHA256 string `json:"sha256"`
+	Bytes  int64  `json:"bytes"`
+}
+
+func artifactHex(value string, size int) bool {
+	if len(value) != size {
+		return false
+	}
+	for _, c := range value {
+		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+			return false
+		}
+	}
+	return true
+}
+func artifactObject(raw []byte, keys ...string) (map[string]json.RawMessage, bool) {
+	var object map[string]json.RawMessage
+	if json.Unmarshal(raw, &object) != nil || object == nil || len(object) != len(keys) {
+		return nil, false
+	}
+	for _, key := range keys {
+		value, ok := object[key]
+		if !ok || bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+			return nil, false
+		}
+	}
+	return object, true
+}
+
+// The caller's duplicate/depth pass precedes this exact nested shape check.
+func validateArtifactExecution(raw []byte, status, release string) (*artifactExecution, error) {
+	invalid := func() (*artifactExecution, error) { return nil, errors.New("metadata_artifact_execution_invalid") }
+	object, ok := artifactObject(raw, "schema_version", "profile_sha256", "store_id", "lease_id", "manifest_sha256", "receipt_sha256", "receipt_bytes", "files")
+	if !ok {
+		return invalid()
+	}
+	var binding artifactExecution
+	if json.Unmarshal(raw, &binding) != nil || binding.SchemaVersion != 1 || !artifactHex(binding.ProfileSHA256, 64) || !artifactHex(binding.StoreID, 32) || !artifactHex(binding.LeaseID, 32) || !artifactHex(binding.ManifestSHA256, 64) || binding.Files == nil || len(binding.Files) > 4 || binding.ReceiptBytes < 0 || binding.ReceiptBytes > 16<<20 {
+		return invalid()
+	}
+	var entries map[string]json.RawMessage
+	if json.Unmarshal(object["files"], &entries) != nil || entries == nil {
+		return invalid()
+	}
+	var total int64
+	for id, entry := range entries {
+		switch id {
+		case "execution_receipt", "normalized_vcf", "variants_vcf", "variants_vcf_index":
+		default:
+			return invalid()
+		}
+		if _, ok := artifactObject(entry, "sha256", "bytes"); !ok {
+			return invalid()
+		}
+		file := binding.Files[id]
+		if !artifactHex(file.SHA256, 64) || file.Bytes < 0 || file.Bytes > 64<<20 || total > (64<<20)-file.Bytes {
+			return invalid()
+		}
+		total += file.Bytes
+	}
+	receipt, hasReceipt := binding.Files["execution_receipt"]
+	if !hasReceipt {
+		if binding.ReceiptSHA256 != "" || binding.ReceiptBytes != 0 || len(binding.Files) != 0 || status != "failed" || release != "withheld" {
+			return invalid()
+		}
+	} else if !artifactHex(binding.ReceiptSHA256, 64) || binding.ReceiptBytes <= 0 || receipt.Bytes != binding.ReceiptBytes || receipt.SHA256 != binding.ReceiptSHA256 {
+		return invalid()
+	}
+	_, normalized := binding.Files["normalized_vcf"]
+	_, variants := binding.Files["variants_vcf"]
+	_, index := binding.Files["variants_vcf_index"]
+	if normalized != variants || variants != index {
+		return invalid()
+	}
+	switch status {
+	case "succeeded", "incomplete", "failed":
+	default:
+		return invalid()
+	}
+	switch release {
+	case "evaluated_passed":
+		if status != "succeeded" || !normalized || !hasReceipt {
+			return invalid()
+		}
+	case "unassessed":
+		if status != "succeeded" {
+			return invalid()
+		}
+	case "withheld":
+	default:
+		return invalid()
+	}
+	if status != "succeeded" && release != "withheld" {
+		return invalid()
+	}
+	return &binding, nil
+}
+
+// These verifier facts are coherent metadata, not cryptographic proof. The
+// capsule path is selected only after the protected entry verified the upload.
+func validateArtifactResultEnvelope(result resultRecord) error {
+	invalid := errors.New("metadata_artifact_result_invalid")
+	if result.SecurityMode != "protected" || !result.Decrypted || !result.SignatureValid || result.DecryptionError != "" || result.SignatureError != "" || !artifactHex(result.UploadSHA256, 64) || !artifactHex(result.ProcessedSHA256, 64) || result.SizeBytes < 0 || result.SizeBytes > 25<<20 || (result.PipelineMode != "stats" && result.PipelineMode != "variants") {
+		return invalid
+	}
+	if result.PipelineMode == "stats" {
+		if result.ReleaseStatus == "evaluated_passed" {
+			return invalid
+		}
+		if _, ok := result.ArtifactExecution.Files["normalized_vcf"]; ok {
+			return invalid
+		}
+	}
+	if len(result.PipelineOutput) != 0 && !bytes.Equal(bytes.TrimSpace(result.PipelineOutput), []byte("null")) {
+		var pipeline map[string]json.RawMessage
+		if json.Unmarshal(result.PipelineOutput, &pipeline) != nil || pipeline == nil {
+			return invalid
+		}
+		if raw, ok := pipeline["byte_count"]; ok {
+			var count int64
+			if bytes.Equal(bytes.TrimSpace(raw), []byte("null")) || json.Unmarshal(raw, &count) != nil || count != result.SizeBytes {
+				return invalid
+			}
+		}
+		if raw, ok := pipeline["sha256"]; ok {
+			var sha string
+			if json.Unmarshal(raw, &sha) != nil || sha != result.ProcessedSHA256 {
+				return invalid
+			}
+		}
+	}
+	return nil
 }

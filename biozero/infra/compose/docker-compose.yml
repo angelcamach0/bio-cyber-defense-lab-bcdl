@@ -129,14 +129,15 @@ services:
     mem_limit: 512m
     tmpfs:
     - /tmp:rw,noexec,nosuid,nodev,size=256m,mode=1777
-    - /data/decrypted:rw,noexec,nosuid,nodev,size=32m,mode=0700,uid=${BIOZERO_UID:-1000},gid=${BIOZERO_GID:-1000}
+    - /data/decrypted:rw,noexec,nosuid,nodev,size=32m,nr_inodes=4096,mode=0700,uid=${BIOZERO_UID:-1000},gid=${BIOZERO_GID:-1000}
     logging:
       driver: json-file
       options:
         max-size: 5m
         max-file: '2'
     build:
-      context: ../../services/enclave-runner
+      context: ../../services
+      dockerfile: enclave-runner/Dockerfile
     network_mode: none
     environment:
       BIOZERO_DATA_DIR: /data
@@ -144,6 +145,7 @@ services:
       BIOZERO_PRIVATE_KEY: /pki/decrypt.key
       BIOZERO_SIGNER_CERT: /pki/signer.crt
       BIOZERO_DECRYPT_DIR: /data/decrypted
+      BIOZERO_EXECUTION_BACKEND: ${BIOZERO_EXECUTION_BACKEND:-legacy}
       BIOZERO_PIPELINE_PATH: /pipeline/pipeline.py
       BIOZERO_REFERENCE_PATH: ${BIOZERO_REFERENCE_PATH:-/reference/reference.fa}
       BIOZERO_EVALUATOR_PATH: ${BIOZERO_EVALUATOR_PATH-/benchmarks/evaluate_variants.py}
