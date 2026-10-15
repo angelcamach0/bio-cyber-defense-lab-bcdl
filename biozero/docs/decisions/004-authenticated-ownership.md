@@ -193,3 +193,17 @@ worker for authenticated plaintext facts. Fresh B acceptance over copied A bytes
 was delivered and rejected without new execution state. Existing Results/Gateway
 routes remain outside this verified scope. The complete substitution/release and
 V3 fault gates above remain open; historical failures and charges are preserved.
+
+
+## Owner Results increment
+
+The separately selected owner-v1 Results endpoint now verifies the actual live TLS
+leaf against external signed-acceptance pin/scope/job/profile before any broker
+query. Its dedicated socket exposes status/receipt only, with no worker mutation
+or ACK authority. Full status/receipt bindings must agree before shared receipt
+projection. Actual [native83 and independent readback](../evidence/20261015-owner-results/public/README.md)
+cover the same retained science, equal-label distinct-leaf denial and cache/signature/
+job substitution negatives. The [contract](../security/ownership-results-contract.md)
+separates local reader failure from trusted-storage custody fencing. The first
+native policy remains same UID; Gateway, deployed isolation and integrated V3
+fault/reconciliation scope still prevent closing TM02.

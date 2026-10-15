@@ -47,6 +47,12 @@ type resultResponse struct {
 // /
 // / Example: `go run ./main.go`
 func main() {
+	if handled, code := ownerResultsMain(); handled {
+		if code != 0 {
+			os.Exit(code)
+		}
+		return
+	}
 	addr := envOr("BIOZERO_RESULTS_ADDR", ":8082")
 	dataDir := envOr("BIOZERO_DATA_DIR", "./data")
 	certPath := os.Getenv("BIOZERO_TLS_CERT")

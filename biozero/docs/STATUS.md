@@ -5,6 +5,7 @@ the `biozero/container-capsule-provider` milestone at 77a4e03.
 [PR22](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/22) is a draft
 above [merged PR21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
 No production deployment is established.
+Latest increment: [owner-v1 receipt-based Results and dedicated reader](#owner-v1-receipt-based-results-and-dedicated-reader).
 
 ## Protected synthetic experiment
 
@@ -602,3 +603,64 @@ hashes, without DNA, rows, case IDs, vectors or weights. See
    controls and the final documented deliverables under the free-only constraint.
 
 The full technical scope remains in [requirements and gates](requirements-and-gates.md).
+
+
+## Owner-v1 receipt-based Results and dedicated reader
+
+The explicitly selected Results API authorizes the live mTLS certificate leaf
+against externally pinned signed acceptance before querying private execution.
+It has no legacy jobs/results/Store root or worker/authority private-key setting.
+A separate status/receipt-only broker socket preserves owner/scope/input/profile
+and full commit bindings. It cannot Submit, Cancel or ACK. Worker and Results
+share policy parsing and the same scientific receipt projector.
+
+Fresh same-UID native acceptance passed83/83 controls. Distinct owner leaves with
+equal CN/serial produced A200/B403 despite forged headers. Two real three-SNP
+runs gave TP3/FP0/FN0 and1,171 mapped SAM records each; invalid FASTQ stayed
+failed/withheld. Worker, dedicated read-only receipt FD and HTTPS Results bound
+the same retained receipt and projection. Cache substitution after clean worker
+Wait could not relabel results. Missing/copied-job authorization, a modified
+signature on the same job and a missing TLS client certificate were denied.
+The signature negative also has a restored-inbox positive control.
+
+Five services ended SIGTERM/Wait0. All authority/upload/Store/broker/worker history
+bytes stayed unchanged across Results reads/negatives and final Wait. Authority
+and upload each retain105,381,888 logical bytes across four promises. Three Store
+records retain42,924 bytes plus4,096 header reserve=47,020 bytes. Physical spool and
+per-principal quotas remain separate gates.
+
+The original run passed all83 checks and five clean service exits, but was overall
+failed because its final inotify drain followed worker mount teardown. Its exact
+receipt/logs/binaries/state remain retained. The corrected observer closes before
+worker termination. Nine original executables were explicitly reused only after
+all172 initial/final Go/module inputs and binary hash/size/mode/UID/link/stable-copy
+checks. The successful run has new profile/genesis/runtime/history; it neither
+adopts old state nor silently recompiles on a reuse mismatch.
+
+Independent retained-evidence review passed147 controls without rerunning
+acceptance or reading private keys/input plaintext. Input-plaintext fixture
+sources remain recorded pins rather than independently rehashed. Full ordinary
+artifact/worker/Results race passed311 principal/1,155 subcases with14 explicit test
+skips. Its147 dependency inputs match the runtime subset. Final make passed294
+Python (292 passed/two skipped), uncached tests/vet in nine modules. Runtime has
+523 source files and172 Go/module inputs. Final make differs only in two test files: one added
+`defer cancel()` in a Results lifecycle test after vet detected its cleanup gap,
+and an explicit post-listen readiness marker for an existing Python reconciliation
+fixture that had raced bind/chmod against listen. Production Go/Python is unchanged; scientific and reconciliation checks remain
+intact. A fresh full Results race also
+verifies that final test source. Later document edits/exports have separate pins.
+All failed/weaker test, audit, native and make attempts remain retained.
+
+Causal component tests separately verify kernel-observed receipt reads: matching
+bindings read, otherwise-valid crossed tuples do not. Actual HTTPS reset after
+projection stays local. The reader's final trusted FD-check failure is typed and
+fences custody under locks even with concurrent cancellation; write/cancel faults
+preserve healthy custody. These temporary component fixtures are not relabeled
+as the retained native run or as integrated active-job fault acceptance.
+
+See [public evidence](evidence/20261015-owner-results/public/README.md) and the
+[Results contract](security/ownership-results-contract.md). Same-UID native host
+trust remains. Gateway/UI, deployed UID/key/mount/network separation, full V3
+fault/operator reconciliation, maximum-load/active-job fault acceptance and the
+rest of TM02/requirements remain open. No image build, model inference, dataset
+acquisition, regulatory recomputation or deployment ran in this increment.

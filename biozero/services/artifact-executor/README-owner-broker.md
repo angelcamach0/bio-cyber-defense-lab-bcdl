@@ -101,7 +101,7 @@ execution response. A receipt operation returns the bounded read-only receipt FD
 (up to 16 MiB), measured against committed SHA/length. Worker uses the shared
 projector; Store commitment alone does not prove scientific approval. This socket
 also permits Submit/cancel and must not be granted to a future Results service.
-A dedicated receipt/status-only reader channel remains a separate requirement.
+Use the separately profiled reader variant below for status/receipt-only access.
 
 ## Lifecycle and scope
 
@@ -125,3 +125,25 @@ covers two three-SNP inputs, invalid FASTQ withheld, and copied ciphertext with 
 legitimate acceptance rejected without new execution state. Old weaker/failed
 attempts and all charges remain. This does not close Results/Gateway, owner-V3
 lifecycle fault, deployed isolation or full physical quota gates.
+
+
+## Dedicated Results reader variant
+
+Build `./cmd/artifact-owner-read-broker` explicitly for a two-listener service.
+Its closed schema1 wrapper has `owner` (the existing complete owner configuration)
+and `reader` with `socket_path` and explicit `allowed_results_uid`. The reader
+root cannot overlap execution/Store/journal/workspace/assets. Current policy
+requires the broker UID, private0700 directories and0600 sockets. Print its new
+profile before authority genesis; use its own fresh scope/Store/journal/custody.
+It cannot adopt a profile produced by the earlier executable.
+
+The dedicated protocol allows status/receipt only, no input FD, Submit, Cancel or
+ACK. It verifies owner/scope and full durable bindings; a fresh delivery guard
+holds writer locks through the actual five-second write. A disconnected reader
+stays local; observed trusted storage corruption fences custody. Both listeners
+are drained before provider/Store release; first cleanup errors remain retained.
+See the [Results contract](../../docs/security/ownership-results-contract.md) and
+[native83 evidence](../../docs/evidence/20261015-owner-results/public/README.md).
+The worker socket retains its original mutation/ACK authority and must not be
+exposed to Results. Same UID is not deployed role isolation; Gateway and full V3
+fault/operator reconciliation remain gates.

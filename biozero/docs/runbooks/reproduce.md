@@ -256,3 +256,35 @@ one test-only keyed-literal delta from the runtime snapshot. This is same-host
 synthetic SNP presence, not owner Compose/browser/cloud/image reproduction or
 clinical accuracy. Old interrupted/failed acceptance directories stay preserved.
 V3 lifecycle faults and full Results/Gateway/deployed isolation remain pending.
+
+
+## Owner-v1 HTTPS Results acceptance
+
+Follow the [Results/reader contract](../security/ownership-results-contract.md).
+The separate `cmd/artifact-owner-read-broker` wrapper seals both listeners in its
+producer profile; initialize fresh authority genesis, broker and worker histories.
+Results configuration includes only TLS, external authorization pin/scope, signed
+inbox, reader and projection policy, without legacy spool/Store or decrypt/signing
+keys. The first native policy requires the same UID and private directories.
+
+```sh
+python3 -B biozero/infra/native/run_owner_worker.py \
+  --results \
+  --run-dir /absolute/private/new-owner-results-acceptance \
+  --tools-prefix /absolute/existing-tool-prefix
+```
+
+The opt-in builds nine executables offline and verifies real mTLS, protected
+three-SNP/invalid science, independent dedicated receipt FD readback and HTTPS
+projection, owner/signature/job/cache negatives and unchanged five-history
+snapshots/charges after clean Wait. Cache substitutions happen only after stopping
+the worker publisher. An explicit `--reuse-build-report` may verify/copy exactly
+nine Results binaries with identical Go/module inputs into fresh state after a
+harness-only correction; the historical eight-worker-binary set is incompatible.
+No fallback compilation, history adoption/reset/refund or deletion is permitted.
+
+The [retained Results evidence](../evidence/20261015-owner-results/public/README.md)
+records83 native controls, separate independent/race/make checks, exact source
+attribution and original failed attempts. Native same-UID acceptance is separate
+from component RST/EIO/stale-guard fixtures, maximum load, deployed isolation,
+Gateway/UI and complete V3 lifecycle/reconciliation acceptance.

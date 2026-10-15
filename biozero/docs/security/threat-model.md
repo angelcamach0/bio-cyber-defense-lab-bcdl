@@ -398,3 +398,25 @@ plaintext recovery and uncertain-storage operator reconciliation need their own
 acceptance. Same-host UID/root/provider/CA/authority/worker/broker trust, image build
 closure, physical/per-principal quotas, retention and attestation remain explicit.
 See the [execution contract](ownership-execution-contract.md).
+
+
+## Owner Results and dedicated reader boundary
+
+The explicit owner-v1 route now verifies signed acceptance/external pin/scope and
+exact live TLS leaf before broker access. A dedicated status/receipt-only channel
+has no Submit/Cancel/ACK authority. Full durable status/receipt facts precede the
+shared scientific projection; unsigned caches cannot relabel release. Actual
+[native83 and independent review](../evidence/20261015-owner-results/public/README.md)
+cover real equal-CN/serial distinct-leaf A/B denial, copied job, changed signature,
+missing authorization/certificates, same-receipt science and cache substitution.
+The original legacy Results route still has the historical TM02 limitations above.
+
+Read cancellation/disconnect/partial write is not an execution ACK failure. The
+fresh reader guard holds writer locks through bounded delivery; genuine trusted
+storage faults fence custody even with concurrent cancellation. Causal component
+fixtures verify that distinction and stale-snapshot interleaving separately from
+the retained native experiment. They do not establish simultaneous active-job
+HTTP-failure isolation, deployed role/key/mount/network separation, hostile-host
+protection, Gateway ownership or complete V3 lifecycle/operator reconciliation.
+Same UID and trusted host/provider boundaries remain; TM02 stays open. See the
+[Results contract](ownership-results-contract.md) for limits and migration.

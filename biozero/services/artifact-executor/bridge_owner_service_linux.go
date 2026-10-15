@@ -120,6 +120,16 @@ func openOwnerBrokerService(ctx context.Context, c OwnerBrokerServiceConfig, cre
 	if e != nil {
 		return nil, e
 	}
+	return openOwnerBrokerServiceWithProfile(ctx, c, create, factory, profile)
+}
+
+// The closed reader service computes its own profile before explicit genesis.
+// The ordinary owner service continues to use its original profile unchanged.
+func openOwnerBrokerServiceWithProfile(ctx context.Context, c OwnerBrokerServiceConfig, create bool, factory brokerServiceProviderFactory, profile string) (*BrokerService, error) {
+	if c.verify(ctx) != nil || !hexID(profile, 64) {
+		return nil, fail("artifact_owner_service_config_invalid")
+	}
+	var e error
 	if !hexID(c.ExpectedScope.StoreID, 32) || !hexID(c.ExpectedScope.PolicySHA256, 64) {
 		return nil, fail("artifact_owner_service_scope_invalid")
 	}

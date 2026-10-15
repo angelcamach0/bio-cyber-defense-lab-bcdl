@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import select
 import socket
 import subprocess
 import sys
@@ -23,6 +24,7 @@ if os.path.lexists(path):
  sys.exit(1)
 s=socket.socket(socket.AF_UNIX)
 s.bind(path);os.chmod(path,0o600);s.listen(8)
+print('broker_fixture_ready',flush=True)
 while True:
  c,_=s.accept();c.close()
 '''
@@ -63,14 +65,29 @@ class ReconcileTests(unittest.TestCase):
         proc = subprocess.Popen(self.argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         self.processes.append(proc)
         if ready:
+            # bind/chmod expose the node before listen accepts connections.
+            # Only this fixture's successful child emits the post-listen marker;
+            # rejected startups retain their exact, unread rejection stdout.
+            marker = b"broker_fixture_ready\n"
+            observed = b""
             until = time.monotonic() + 3
-            while time.monotonic() < until:
+            while len(observed) < len(marker):
+                remaining = until - time.monotonic()
+                if remaining <= 0:
+                    self.fail("test server readiness timed out")
                 if proc.poll() is not None:
                     self.fail("test server did not start")
-                if self.path.exists() and self.path.stat().st_mode & 0o777 == 0o600:
-                    return proc
-                time.sleep(0.01)
-            self.fail("test server not ready")
+                readable, _, _ = select.select([proc.stdout], [], [], remaining)
+                if not readable:
+                    self.fail("test server readiness timed out")
+                chunk = os.read(proc.stdout.fileno(), len(marker) - len(observed))
+                if not chunk:
+                    self.fail("test server exited before readiness")
+                observed += chunk
+                if not marker.startswith(observed):
+                    self.fail("test server readiness marker invalid")
+            if proc.poll() is not None or not self.path.is_socket() or self.path.stat().st_mode & 0o777 != 0o600:
+                self.fail("test server not ready after listen")
         return proc
 
     def pin(self, proc=None):

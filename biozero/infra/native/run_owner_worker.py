@@ -3,9 +3,12 @@
 """Opt-in real native owner upload -> protected worker -> V3 broker -> capsule.
 
 Uses cached local tools only. Builds fresh by default; explicit private build
-receipt reuse verifies complete Go/module inputs and copies eight pinned binaries
+receipt reuse verifies complete Go/module inputs and copies the exact eight
+worker or nine Results pinned binaries
 without compilation, retaining their original provenance. Retains all private
-attempts, keys, workspaces and logs. No Results service, gateway, Docker, download or biological model is run.
+attempts, keys, workspaces and logs. --results additionally verifies the dedicated
+reader and owner-v1 HTTPS Results with fresh producer profile and genesis. No
+gateway, Docker, download or biological model is run.
 The private worker cache is observability, never result authorization. This is
 same-host synthetic acceptance, not deployment isolation or clinical accuracy.
 """
@@ -93,12 +96,13 @@ def private_snapshot(path, limit):
         os.close(fd)
 
 
-def reuse_builds(report_path, current_inputs, bins, evidence):
+def reuse_builds(report_path, current_inputs, bins, evidence, *, expected_names=None):
     """Explicit verified copy only; failure never falls back to compilation."""
+    expected_names = BUILD_NAMES if expected_names is None else frozenset(expected_names)
     raw_report = private_snapshot(report_path, 16 << 20)
     previous = exact_json(raw_report)
     if (previous.get("schema_version") != 1 or previous.get("go_module_inputs") != current_inputs
-            or previous.get("source_unchanged") is not True or set(previous.get("binary_pins", {})) != BUILD_NAMES):
+            or previous.get("source_unchanged") is not True or set(previous.get("binary_pins", {})) != expected_names):
         raise ValueError("reuse source inventory or binary set differs")
     final_inputs = {name: value for name, value in previous.get("final_source_hashes", {}).items()
                     if name.endswith(".go") or Path(name).name in ("go.mod", "go.sum", "go.work", "go.work.sum")}
@@ -114,9 +118,9 @@ def reuse_builds(report_path, current_inputs, bins, evidence):
     try:
         directory_before = os.fstat(source_fd)
         if (directory_before.st_uid != os.geteuid() or stat.S_IMODE(directory_before.st_mode) != 0o700
-                or set(os.listdir(source_fd)) != BUILD_NAMES or list(bins.iterdir())):
+                or set(os.listdir(source_fd)) != expected_names or list(bins.iterdir())):
             raise ValueError("reuse binary directory has unexpected metadata or names")
-        for name in sorted(BUILD_NAMES):
+        for name in sorted(expected_names):
             pin = previous["binary_pins"][name]
             if (set(pin) != {"sha256", "bytes"} or not isinstance(pin["sha256"], str)
                     or re.fullmatch("[0-9a-f]{64}", pin["sha256"]) is None or type(pin["bytes"]) is not int or pin["bytes"] < 1):
@@ -180,16 +184,16 @@ def reuse_builds(report_path, current_inputs, bins, evidence):
                                 "source_stat_before": stable_stat(before), "source_stat_after": stable_stat(after), "bytes": copied}
             finally:
                 os.close(fd)
-        if set(os.listdir(source_fd)) != BUILD_NAMES or stable_stat(directory_before) != stable_stat(os.fstat(source_fd)):
+        if set(os.listdir(source_fd)) != expected_names or stable_stat(directory_before) != stable_stat(os.fstat(source_fd)):
             raise ValueError("reuse binary directory changed")
-        if {path.name for path in bins.iterdir()} != BUILD_NAMES:
+        if {path.name for path in bins.iterdir()} != expected_names:
             raise ValueError("copied executable set differs")
         sync_dir(bins)
     finally:
         os.close(source_fd)
     private_bytes(evidence / "original-build-report.json", raw_report)
     build_commands = [entry for entry in previous.get("commands", []) if entry["name"].startswith("build-info-")]
-    if {entry["name"].removeprefix("build-info-") for entry in build_commands} != BUILD_NAMES or len(build_commands) != len(BUILD_NAMES):
+    if {entry["name"].removeprefix("build-info-") for entry in build_commands} != expected_names or len(build_commands) != len(expected_names):
         raise ValueError("original build metadata set is incomplete")
     metadata = {}
     for entry in build_commands:
@@ -265,8 +269,8 @@ class StageWatch:
         os.close(self.fd)
 
 
-def broker_read(socket_path, broker_pid, query):
-    """Independent bounded V3 query/receipt FD reader. Never submits/cancels."""
+def broker_read(socket_path, broker_pid, query, *, dedicated=False):
+    """Independent bounded explicit V3 or owner-reader codec. Never mutates."""
     if query["operation"] not in ("status", "receipt"):
         raise ValueError("fixture reader cannot mutate broker")
     received = []
@@ -315,13 +319,32 @@ def broker_read(socket_path, broker_pid, query):
             if extra or controls or flags & (socket.MSG_CTRUNC | socket.MSG_TRUNC):
                 raise ValueError("broker sent trailing bytes/rights")
             response = exact_json(wire)
+            if dedicated:
+                if (set(response) != {"schema_version", "domain", "error_code", "has_receipt", "binding"}
+                        or response["schema_version"] != 1 or response["domain"] != "biozero.artifact.owner-reader.response.v1"
+                        or response["error_code"] != "" or type(response["has_receipt"]) is not bool):
+                    raise ValueError("invalid dedicated reader response")
+                binding = response["binding"]
+                if (binding["acceptance_sha256"] != query["acceptance_sha256"]
+                        or binding["credential_sha256"] != query["credential_sha256"]
+                        or binding["authority_scope"] != query["authority_scope"]
+                        or binding["execution"]["job_id"] != query["job_id"]
+                        or binding["execution"]["upload_sha256"] != query["upload_sha256"]
+                        or binding["execution"]["profile_sha256"] != query["expected_profile_sha256"]):
+                    raise ValueError("dedicated reader binding crossed")
+                has_receipt = response["has_receipt"]
+                if has_receipt != (query["operation"] == "receipt" and "execution_receipt" in binding["execution"]["manifest"]["files"]):
+                    raise ValueError("dedicated reader descriptor declaration differs")
+            else:
+                binding = response
+                has_receipt = query["operation"] == "receipt"
             payload = None
-            if query["operation"] == "receipt":
+            if has_receipt:
                 if len(received) != 1:
                     raise ValueError("receipt descriptor is absent")
                 fd = received[0]
                 before = os.fstat(fd)
-                size = response["execution"]["receipt_bytes"]
+                size = binding["execution"]["receipt_bytes"]
                 if (not stat.S_ISREG(before.st_mode) or stat.S_IMODE(before.st_mode) != 0o600 or before.st_uid != os.geteuid()
                         or before.st_nlink != 1 or before.st_size != size or not 0 <= size <= 16 << 20
                         or fcntl.fcntl(fd, fcntl.F_GETFL) & os.O_ACCMODE != os.O_RDONLY
@@ -337,7 +360,7 @@ def broker_read(socket_path, broker_pid, query):
                 after = os.fstat(fd)
                 if ((before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns, before.st_ctime_ns)
                         != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns)
-                        or digest(payload) != response["execution"]["receipt_sha256"]):
+                        or digest(payload) != binding["execution"]["receipt_sha256"]):
                     raise ValueError("receipt changed or digest differs")
             elif received:
                 raise ValueError("status returned descriptor")
@@ -351,7 +374,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", required=True, type=Path, help="new private retained evidence root")
     parser.add_argument("--tools-prefix", required=True, type=Path, help="existing ARM tool installation; never installs")
-    parser.add_argument("--reuse-build-report", type=Path, help="explicit private original build receipt; verify/copy eight binaries without rebuilding")
+    parser.add_argument("--reuse-build-report", type=Path, help="explicit private original build receipt; verify/copy the exact eight worker or nine Results binaries without rebuilding")
+    parser.add_argument("--results", action="store_true", help="also verify owner Results and dedicated read-only broker; own producer binary and fresh profile/genesis/state")
     args = parser.parse_args()
     if os.getuid() != 1000 or os.getgid() != 1000:
         parser.error("native worker scope requires UID/GID1000")
@@ -372,6 +396,7 @@ def main():
     for name in ("bin", "pki", "config", "host", "worker", "client", "plaintext"):
         (runtime / name).mkdir(mode=0o700)
     bins, pki, host, worker_root = [runtime / name for name in ("bin", "pki", "host", "worker")]
+    broker_name = "artifact-owner-read-broker" if args.results else "artifact-owner-broker"
     logs, evidence = run / "logs", run / "evidence"
     tools = args.tools_prefix.resolve(strict=True)
     env = {**os.environ, "GOMAXPROCS": "1", "GOFLAGS": "-p=1", "GOTOOLCHAIN": "local", "GOPROXY": "off", "GOSUMDB": "off", "CGO_ENABLED": "0"}
@@ -379,9 +404,12 @@ def main():
     report = {"schema_version": 1, "status": "failed", "started_at": datetime.now(timezone.utc).isoformat(),
               "scope": "native synthetic owner authority/upload/worker-v3/broker-v3/capsule; private cache only; no Results/gateway/deployment/clinical claim",
               "runtime_root": str(runtime), "cases": [], "commands": [], "processes": []}
+    if args.results:
+        report["scope"] = "native synthetic owner authority/upload/worker-v3/dedicated-reader/HTTPS-Results/capsule; same UID; no gateway/deployment/clinical claim"
     children, handles, watch = [], [], None
     counter, api_counter = 0, 0
     stable_history = None
+    stable_results_history = None
 
     def save():
         private_json(run / "report.json", report, replace=(run / "report.json").exists())
@@ -451,6 +479,9 @@ def main():
     def retained():
         return {name: tree_hashes(path) for name, path in (("store", host / "s"), ("broker", host / "j"), ("worker", worker_root / "custody"))}
 
+    def readonly_state():
+        return {**retained(), "authority": tree_hashes(runtime / "authority"), "upload": tree_hashes(runtime / "upload")}
+
     def verify_signed(label, signed, public, field):
         private_bytes(evidence / (label + ".signed"), compact(signed[field]))
         private_bytes(evidence / (label + ".sig"), bytes.fromhex(signed["signature"]))
@@ -467,6 +498,12 @@ def main():
         _, raw = command("commit", ["git", "rev-parse", "HEAD"]); report["commit"] = raw.decode().strip()
         _, raw = command("worktree", ["git", "status", "--porcelain"]); report["dirty"] = bool(raw)
         report["source_hashes"] = inventory()
+        # Retain exact reviewed sources alongside the runtime evidence. These
+        # copies are private, including any ordinary test fixtures in the tree.
+        for name in report["source_hashes"]:
+            destination = run / "sources" / name
+            destination.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
+            private_bytes(destination, (ROOT / name).read_bytes())
         report["go_module_inputs"] = {name: value for name, value in report["source_hashes"].items() if name.endswith(".go") or Path(name).name in ("go.mod", "go.sum", "go.work", "go.work.sum")}
         private_json(evidence / "go-module-inputs.json", report["go_module_inputs"])
         report["fixture_pins"] = {name: {"sha256": sha(FIXTURE / name), "bytes": (FIXTURE / name).stat().st_size} for name in ("reads.fastq", "invalid.fastq", "reference.fa", "expected.vcf")}
@@ -478,14 +515,17 @@ def main():
         services = ROOT / "biozero/services"
         if args.reuse_build_report is not None:
             report["build_mode"] = "explicit_verified_reuse"
-            report["reused_builds"] = reuse_builds(args.reuse_build_report, report["go_module_inputs"], bins, evidence)
+            expected_names = (BUILD_NAMES - {"artifact-owner-broker"}) | {"artifact-owner-read-broker", "results-api"} if args.results else BUILD_NAMES
+            report["reused_builds"] = reuse_builds(args.reuse_build_report, report["go_module_inputs"], bins, evidence, expected_names=expected_names)
         else:
             report["build_mode"] = "fresh_compile"
             for name, module, package in (("ownership-authority", "ownership-authority", "./cmd/ownership-authority"), ("upload-api", "upload-api", "."),
-                                          ("uploader-cli", "uploader-cli", "."), ("artifact-owner-broker", "artifact-executor", "./cmd/artifact-owner-broker"),
+                                          ("uploader-cli", "uploader-cli", "."), (broker_name, "artifact-executor", "./cmd/" + broker_name),
                                           ("enclave-runner", "enclave-runner", "."), ("worker-scope", "enclave-runner", "./cmd/worker-scope"),
                                           ("capsule-analysis", "enclave-runner", "./cmd/capsule-analysis")):
                 command("build-" + name, ["go", "build", "-o", bins / name, package], cwd=services / module)
+            if args.results:
+                command("build-results-api", ["go", "build", "-o", bins / "results-api", "."], cwd=services / "results-api")
             command("build-payload-inspector", ["go", "build", "-o", bins / "payload-inspector", ROOT / "biozero/infra/native/owner_upload_verify/main.go"])
         report["binary_pins"] = {path.name: {"sha256": sha(path), "bytes": path.stat().st_size} for path in bins.iterdir()}
         for path in bins.iterdir():
@@ -494,16 +534,22 @@ def main():
 
         openssl("ca-key", "genpkey", "-algorithm", "RSA", "-pkeyopt", "rsa_keygen_bits:2048", "-out", pki / "ca.key")
         openssl("ca-cert", "req", "-new", "-x509", "-sha256", "-key", pki / "ca.key", "-out", pki / "ca.crt", "-days", "2", "-subj", "/CN=owner-worker-fixture-ca", "-addext", "basicConstraints=critical,CA:TRUE", "-addext", "keyUsage=critical,keyCertSign,cRLSign")
-        for serial, role in enumerate(("authority", "upload", "owner-a", "owner-b"), 2):
-            server = role in ("authority", "upload")
+        for serial, role in enumerate(("authority", "upload", "owner-a", "owner-b") + (("results",) if args.results else ()), 2):
+            server = role in ("authority", "upload", "results")
+            subject_role = "owner-a" if args.results and role == "owner-b" else role
+            cert_serial = 4 if args.results and role == "owner-b" else serial
             openssl(role + "-key", "genpkey", "-algorithm", "RSA", "-pkeyopt", "rsa_keygen_bits:2048", "-out", pki / (role + ".key"))
-            openssl(role + "-csr", "req", "-new", "-sha256", "-key", pki / (role + ".key"), "-out", pki / (role + ".csr"), "-subj", "/CN=" + role)
+            openssl(role + "-csr", "req", "-new", "-sha256", "-key", pki / (role + ".key"), "-out", pki / (role + ".csr"), "-subj", "/CN=" + subject_role)
             extension = "basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature\nextendedKeyUsage=" + ("serverAuth\nsubjectAltName=IP:127.0.0.1\n" if server else "clientAuth\n")
             private_bytes(pki / (role + ".ext"), extension.encode())
-            openssl(role + "-cert", "x509", "-req", "-sha256", "-in", pki / (role + ".csr"), "-CA", pki / "ca.crt", "-CAkey", pki / "ca.key", "-set_serial", str(serial), "-days", "2", "-extfile", pki / (role + ".ext"), "-out", pki / (role + ".crt"))
+            openssl(role + "-cert", "x509", "-req", "-sha256", "-in", pki / (role + ".csr"), "-CA", pki / "ca.crt", "-CAkey", pki / "ca.key", "-set_serial", str(cert_serial), "-days", "2", "-extfile", pki / (role + ".ext"), "-out", pki / (role + ".crt"))
             openssl(role + "-purpose", "verify", "-CAfile", pki / "ca.crt", "-purpose", "sslserver" if server else "sslclient", pki / (role + ".crt"))
             wrong, _ = openssl(role + "-reject-other-purpose", "verify", "-CAfile", pki / "ca.crt", "-purpose", "sslclient" if server else "sslserver", pki / (role + ".crt"), expected=None)
             check("separate_tls_eku_" + role, wrong != 0)
+        if args.results:
+            _, a_identity = openssl("a-certificate-labels", "x509", "-in", pki / "owner-a.crt", "-noout", "-subject", "-serial")
+            _, b_identity = openssl("b-certificate-labels", "x509", "-in", pki / "owner-b.crt", "-noout", "-subject", "-serial")
+            check("distinct_owner_leaves_with_equal_cn_and_serial", a_identity == b_identity and sha(pki / "owner-a.crt") != sha(pki / "owner-b.crt"))
         openssl("recipient-key", "genpkey", "-algorithm", "RSA", "-pkeyopt", "rsa_keygen_bits:2048", "-out", pki / "recipient.key")
         openssl("recipient-public", "pkey", "-in", pki / "recipient.key", "-pubout", "-out", pki / "recipient.pub")
         openssl("authority-signing", "genpkey", "-algorithm", "ED25519", "-out", pki / "signing.pem")
@@ -519,8 +565,13 @@ def main():
         assets = {"native_helper": capsule / "native_capsule.py", "pipeline": ROOT / "biozero/bio/pipeline/pipeline.py", "resource_budget": ROOT / "biozero/bio/pipeline/resource_budget.py", "reference": FIXTURE / "reference.fa", "evaluator": ROOT / "biozero/bio/benchmarks/evaluate_variants.py", "truth": FIXTURE / "expected.vcf", "analysis_executable": bins / "capsule-analysis", "analysis_rules": ROOT / "biozero/bio/reference-db/rules.json", "analysis_panel": FIXTURE / "reference.fa"}
         execution = {"schema_version": 1, "provider": "native", "mode": "variants", "store_root": str(host / "s"), "journal_root": str(host / "j"), "workspace_root": str(host / "w"), "socket_path": str(host / "c/b.sock"), "allowed_uid": os.getuid(), "timeout_seconds": 60, "python_path": str(Path("/usr/bin/python3").resolve()), "tool_path": str(tools / "bin") + ":/usr/bin", "docker_command": [], "image_id": "", "container_helper": {"path": "", "sha256": ""}, **{name: asset(path) for name, path in assets.items()}}
         broker_config = {"schema_version": 1, "execution": execution, "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "expected_scope": {"store_id": "", "policy_sha256": ""}}
+        owner_broker_config = broker_config
+        reader_socket = host / "r/read.sock"
+        if args.results:
+            broker_config = {"schema_version": 1, "owner": owner_broker_config,
+                             "reader": {"socket_path": str(reader_socket), "allowed_results_uid": os.geteuid()}}
         broker_path = runtime / "config/broker.json"; private_json(broker_path, broker_config)
-        _, raw = command("owner-profile", [bins / "artifact-owner-broker", "--config", broker_path, "--print-profile"])
+        _, raw = command("owner-profile", [bins / broker_name, "--config", broker_path, "--print-profile"])
         profile = raw.decode().strip()
         check("profile_before_scope_without_state", bool(re.fullmatch("[0-9a-f]{64}", profile)) and raw == (profile + "\n").encode() and not (host / "s").exists() and not (host / "j").exists())
         report["profile_sha256"] = profile
@@ -535,10 +586,10 @@ def main():
         scope = exact_json(raw); private_bytes(evidence / "genesis-scope.json", raw)
         check("scope_from_real_authority_genesis", set(scope) == {"store_id", "policy_sha256"} and bool(re.fullmatch("[0-9a-f]{32}", scope["store_id"])) and bool(re.fullmatch("[0-9a-f]{64}", scope["policy_sha256"])))
         authority_config["expected_scope"] = scope; private_json(authority_path, authority_config, replace=True)
-        broker_config["expected_scope"] = scope; private_json(broker_path, broker_config, replace=True)
-        _, raw = command("owner-profile-after-scope", [bins / "artifact-owner-broker", "--config", broker_path, "--print-profile"])
+        owner_broker_config["expected_scope"] = scope; private_json(broker_path, broker_config, replace=True)
+        _, raw = command("owner-profile-after-scope", [bins / broker_name, "--config", broker_path, "--print-profile"])
         check("scope_does_not_change_execution_profile", raw == (profile + "\n").encode())
-        command("broker-genesis", [bins / "artifact-owner-broker", "--config", broker_path, "--init-owner-broker"])
+        command("broker-genesis", [bins / broker_name, "--config", broker_path, "--init-owner-broker"])
         upload_config = {"schema_version": 1, "listen_address": "127.0.0.1:" + str(upload_port), "store_root": str(upload_store), "namespace": "owner-worker-transport", "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": "variants", "execution_profile_sha256": profile, "expected_scope": scope, "policy": {name: value for name, value in policy.items() if name != "challenge_ttl_seconds"}, "tls_certificate": asset(pki / "upload.crt"), "tls_private_key": asset(pki / "upload.key"), "client_ca": asset(pki / "ca.crt")}
         upload_path = runtime / "config/upload.json"; private_json(upload_path, upload_config)
         upload_env = {"BIOZERO_UPLOAD_PROTOCOL": "owner-v1", "BIOZERO_OWNER_UPLOAD_CONFIG": str(upload_path)}
@@ -552,9 +603,25 @@ def main():
         command("worker-genesis", [bins / "enclave-runner", "--init-owner-worker"], settings=worker_env)
         authority = start("authority", [bins / "ownership-authority", "--config", authority_path])
         upload = start("upload", [bins / "upload-api"], upload_env)
-        broker = start("broker", [bins / "artifact-owner-broker", "--config", broker_path])
+        broker = start("broker", [bins / broker_name, "--config", broker_path])
         ctx_a, ctx_b = client_context(pki, "owner-a"), client_context(pki, "owner-b")
-        for port in (authority_port, upload_port):
+        service_ports = [authority_port, upload_port]
+        if args.results:
+            results_port = free_port()
+            while results_port in service_ports:
+                results_port = free_port()
+            results_inbox = runtime / "results-acceptances"; results_inbox.mkdir(mode=0o700)
+            results_config = {"schema_version": 1, "protocol": "owner-v1", "address": "127.0.0.1:" + str(results_port),
+                              "acceptances_directory": str(results_inbox), "expected_acceptances_uid": os.geteuid(),
+                              "reader_socket": str(reader_socket), "expected_broker_uid": os.geteuid(),
+                              "authority_id": authority_id, "public_key_hex": public_der[-32:].hex(), "pipeline_mode": "variants",
+                              "execution_profile_sha256": profile, "expected_scope": scope,
+                              "tls_certificate": asset(pki / "results.crt"), "tls_private_key": asset(pki / "results.key"),
+                              "client_ca": asset(pki / "ca.crt"), "projection_policy": asset(projection_path)}
+            results_path = runtime / "config/results.json"; private_json(results_path, results_config)
+            results = start("results", [bins / "results-api"], {"BIOZERO_RESULTS_PROTOCOL": "owner-v1", "BIOZERO_OWNER_RESULTS_CONFIG": str(results_path)})
+            service_ports.append(results_port)
+        for port in service_ports:
             def healthy(port=port):
                 try:
                     return request(port, ctx_a, "GET", "/healthz")[0] == 200
@@ -562,6 +629,11 @@ def main():
                     return False
             wait_for(healthy)
         wait_for(lambda: Path(execution["socket_path"]).is_socket())
+        if args.results:
+            wait_for(reader_socket.is_socket)
+            check("dedicated_reader_socket_separate_private_same_uid", reader_socket != Path(execution["socket_path"])
+                  and stat.S_IMODE(reader_socket.stat().st_mode) == 0o600 and reader_socket.stat().st_uid == os.geteuid()
+                  and stat.S_IMODE(reader_socket.parent.stat().st_mode) == 0o700)
         launcher = start("worker", [bins / "worker-scope", "--worker", bins / "enclave-runner", "--worker-sha256", sha(bins / "enclave-runner"), "--tmpfs", worker_root / "stage"], worker_env)
         wait_for(lambda: b"owner_worker_ready\n" in (logs / "worker.stdout").read_bytes())
         descendants = set()
@@ -632,8 +704,40 @@ def main():
             a_code, _ = api(label + "-owner-get", upload_port, ctx_a, "GET", "/v1/uploads/" + job)
             b_code, _ = api(label + "-other-owner-get", upload_port, ctx_b, "GET", "/v1/uploads/" + job)
             check(label + "_transport_owner_a_allowed_b_denied", a_code == 200 and b_code == 403)
+            if args.results:
+                signed_sidecar = (upload_store / "acceptances" / (job + ".json")).read_bytes()
+                private_bytes(results_inbox / (job + ".json"), signed_sidecar)
+                check(label + "_results_inbox_exact_signed_authorization", exact_json(signed_sidecar) == accepted)
+                before_read = readonly_state()
+                reader_query = {"schema_version": 1, "domain": "biozero.artifact.owner-reader.request.v1", "operation": "status",
+                                "job_id": job, "acceptance_sha256": acceptance_sha, "credential_sha256": binding["credential_sha256"],
+                                "upload_sha256": binding["ciphertext_sha256"], "expected_profile_sha256": profile, "authority_scope": scope}
+                read_status, no_payload = broker_read(reader_socket, broker.pid, reader_query, dedicated=True)
+                reader_query["operation"] = "receipt"
+                read_receipt, same_receipt = broker_read(reader_socket, broker.pid, reader_query, dedicated=True)
+                private_json(evidence / (label + "-dedicated-status.json"), read_status)
+                private_json(evidence / (label + "-dedicated-receipt.json"), read_receipt)
+                private_bytes(evidence / (label + "-dedicated-receipt.body"), same_receipt)
+                check(label + "_reader_same_authoritative_binding_and_receipt", no_payload is None and read_status["binding"] == read_receipt["binding"] == response and same_receipt == receipt_raw)
+                route = "/v1/results/" + job
+                result_code, result_raw = api(label + "-results-owner", results_port, ctx_a, "GET", route)
+                result = exact_json(result_raw)
+                private_json(evidence / (label + "-results-projection.json"), result)
+                check(label + "_closed_private_results_dto", set(result) == {"schema_version", "domain", "job_id", "acceptance_sha256",
+                      "execution_state", "status", "release_status", "error_code", "upload_sha256", "processed_sha256", "pipeline_mode",
+                      "pipeline_output", "scientific_evaluation", "detection", "artifact_execution"}
+                      and result["schema_version"] == 1 and len(result_raw) <= 16 << 20)
+                expected_sections = {name: cache[name] for name in ("status", "release_status", "pipeline_output", "scientific_evaluation", "detection", "artifact_execution")}
+                check(label + "_https_results_same_worker_projection", result_code == 200 and result["domain"] == "biozero.results.owner.v1"
+                      and result["job_id"] == job and result["acceptance_sha256"] == acceptance_sha
+                      and result["processed_sha256"] == response["processed_sha256"] and result["upload_sha256"] == binding["ciphertext_sha256"]
+                      and result["execution_state"] == "committed" and all(result[name] == value for name, value in expected_sections.items()))
+                denied_code, _ = api(label + "-results-other-leaf", results_port, ctx_b, "GET", route,
+                                     headers={"X-Client-ID": "owner-a", "X-Client-Cert": (pki / "owner-a.crt").read_text().replace("\n", " ")})
+                check(label + "_results_exact_leaf_not_labels_or_headers", denied_code == 403)
+                check(label + "_results_reads_preserve_all_history", before_read == readonly_state())
             original[label] = {"job": job, "operation": op, "accepted": accepted, "plaintext": plaintext, "client_run": client_run,
-                               "lease_id": execution_result["lease_id"], "normalized_snps": snps((objects / "normalized_vcf").read_bytes()) if label != "invalid" else None}
+                               "http_result": result_raw if args.results else None, "lease_id": execution_result["lease_id"], "normalized_snps": snps((objects / "normalized_vcf").read_bytes()) if label != "invalid" else None}
         check("repeat_has_distinct_job_lease_and_equal_snp_callset", original["valid"]["job"] != original["repeat"]["job"]
               and original["valid"]["lease_id"] != original["repeat"]["lease_id"]
               and len(original["valid"]["normalized_snps"]) == 3 and original["valid"]["normalized_snps"] == original["repeat"]["normalized_snps"])
@@ -712,6 +816,60 @@ def main():
             report.setdefault("execution_charges", []).append(row["charge"])
         report["accounting"] = {"authority_jobs": len(authority_rows), "authority_charge": sum(row["charge_bytes"] for row in authority_rows), "upload_jobs": len(upload_rows), "upload_charge": sum(row["charge_bytes"] for row in upload_rows), "execution_slots": len(store_ledger["records"]), "execution_record_charge": sum(row["charge"] for row in store_ledger["records"].values()), "store_header_reserve": 4096,
                                 "execution_total_with_header": 4096 + sum(row["charge"] for row in store_ledger["records"].values())}
+        if args.results:
+            # Stop the cache publisher before deliberate cache substitution. Its
+            # conflict policy is separate from Results authorization; do not
+            # provoke or conceal an unrelated running-worker history fault.
+            # The watch is tied to the worker's mount namespace. Finish and
+            # close it while that namespace still exists, before clean Wait.
+            private_json(evidence / "final-stage-events.json", watch.drain())
+            watch.close(); watch = None
+            launcher.send_signal(signal.SIGTERM)
+            worker_exit = launcher.wait(timeout=40)
+            check("worker_clean_wait_before_cache_substitution", worker_exit == 0)
+            before_reads = readonly_state()
+            private_json(evidence / "history-before-results-negatives.json", before_reads)
+            for label, original_result in original.items():
+                job = original_result["job"]
+                cache_path = worker_root / "results" / (job + ".json")
+                private_json(cache_path, {"job_id": job, "status": "succeeded", "release_status": "evaluated_passed", "pipeline_output": {"forged": True}}, replace=True)
+                code, raw = api(label + "-results-after-cache-substitution", results_port, ctx_a, "GET", "/v1/results/" + job)
+                check(label + "_mutable_cache_cannot_relabel_science", code == 200 and raw == original_result["http_result"] and before_reads == readonly_state())
+            # Only the independent signed-authorization inbox is changed by these
+            # negatives. Preserve upload/authority/execution histories untouched.
+            for label in ("copied_job", "tampered_signature", "missing"):
+                unknown_job = original["valid"]["job"] if label == "tampered_signature" else secrets.token_hex(8)
+                saved_authorization = None
+                if label != "missing":
+                    signed = json.loads(json.dumps(original["valid"]["accepted"]))
+                    if label == "tampered_signature":
+                        saved_authorization = (results_inbox / (unknown_job + ".json")).read_bytes()
+                        private_bytes(evidence / "signature-negative-original-authorization.json", saved_authorization)
+                        signed["signature"] = ("0" if signed["signature"][0] != "0" else "1") + signed["signature"][1:]
+                        private_json(evidence / "signature-negative-altered-authorization.json", signed)
+                    private_json(results_inbox / (unknown_job + ".json"), signed, replace=label == "tampered_signature")
+                code, _ = api("results-" + label, results_port, ctx_a, "GET", "/v1/results/" + unknown_job)
+                check("results_" + label + "_denied_history_preserved", code == 403 and before_reads == readonly_state())
+                if saved_authorization is not None:
+                    # Restore only the independent test inbox after preserving
+                    # both versions; producer histories were never changed.
+                    private_bytes(results_inbox / (unknown_job + ".json"), saved_authorization, replace=True)
+                    code, raw = api("results-signature-restored-control", results_port, ctx_a, "GET", "/v1/results/" + unknown_job)
+                    check("results_signature_negative_has_positive_control", code == 200 and raw == original["valid"]["http_result"])
+            anonymous = ssl.create_default_context(cafile=str(pki / "ca.crt"))
+            anonymous.minimum_version = anonymous.maximum_version = ssl.TLSVersion.TLSv1_3
+            anonymous.set_alpn_protocols(["http/1.1"])
+            anonymous_failed = False
+            try:
+                request(results_port, anonymous, "GET", "/v1/results/" + original["valid"]["job"])
+            except (OSError, http.client.HTTPException):
+                anonymous_failed = True
+            check("results_missing_certificate_tls_denied", anonymous_failed and before_reads == readonly_state())
+            stable_results_history = readonly_state()
+            private_json(evidence / "history-after-results-negatives.json", stable_results_history)
+            report["results_limits"] = {"connections": 4, "handlers": 2, "metadata_bytes": 64 << 10, "response_bytes": 16 << 20,
+                                        "same_uid": os.geteuid(), "deployed_role_isolation": False,
+                                        "cache_substitution_after_worker_wait": True}
         report["native_workspace_hashes"] = tree_hashes(host / "w")
         stable_history = retained(); report["config_hashes"] = tree_hashes(runtime / "config"); report["checks_completed"] = True
     except BaseException:
@@ -747,11 +905,16 @@ def main():
             if stable_history is not None:
                 final_history = retained(); private_json(evidence / "history-after-wait.json", final_history)
                 report["history_unchanged_after_wait"] = final_history == stable_history; cleanup_ok = cleanup_ok and report["history_unchanged_after_wait"]
+            if stable_results_history is not None:
+                final_results_history = readonly_state()
+                private_json(evidence / "all-history-after-results-wait.json", final_results_history)
+                report["all_results_history_unchanged_after_wait"] = final_results_history == stable_results_history
+                cleanup_ok = cleanup_ok and report["all_results_history_unchanged_after_wait"]
         except BaseException:
             cleanup_ok = False; private_bytes(evidence / "final-readback-failure.txt", traceback.format_exc().encode())
         report["cleanup_clean_wait"] = cleanup_ok; report["status"] = "passed" if report.get("checks_completed") and cleanup_ok else "failed"
         report["finished_at"] = datetime.now(timezone.utc).isoformat(); save()
-        print(json.dumps({"status": report["status"], "checks": len(report["cases"]), "passed": sum(case["passed"] for case in report["cases"]), "scope": "native_owner_worker_capsule"}))
+        print(json.dumps({"status": report["status"], "checks": len(report["cases"]), "passed": sum(case["passed"] for case in report["cases"]), "scope": "native_owner_results" if args.results else "native_owner_worker_capsule"}))
     return 0 if report["status"] == "passed" else 1
 
 

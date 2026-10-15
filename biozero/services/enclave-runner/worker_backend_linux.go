@@ -20,25 +20,19 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strings"
 	"syscall"
 	"time"
 
 	artifact "biozero/artifact-executor"
+	"biozero/enclave-runner/receiptprojection"
 )
 
 // This document is fixed operator configuration, mounted read-only to the
 // worker. It contains no Store paths, provider commands or Docker authority.
 // Its pins must describe the same profile selected by the broker operator.
-type workerProjectionPolicy struct {
-	SchemaVersion int                         `json:"schema_version"`
-	ProfileSHA256 string                      `json:"profile_sha256"`
-	PipelineMode  string                      `json:"pipeline_mode"`
-	CapsuleKind   string                      `json:"capsule_kind"`
-	SourcePins    map[string]capsuleSourcePin `json:"source_pins"`
-}
+type workerProjectionPolicy = receiptprojection.Policy
 
 type workerBridgeCall func(context.Context, string, artifact.BridgeRequestV2, *os.File) (artifact.BridgeResponse, *os.File, error)
 
@@ -104,44 +98,9 @@ func loadWorkerProjectionPolicy(ctx context.Context, path, profile, mode string)
 // Parse the already measured private bytes; the owner runtime must not reread an
 // asset between hash pin verification and decoding.
 func decodeWorkerProjectionPolicy(ctx context.Context, raw []byte, profile, mode string) (workerProjectionPolicy, error) {
-	var p workerProjectionPolicy
-	invalid := errors.New("worker_projection_policy_invalid")
-	if !workerCustodyHex(profile, 64) {
-		return p, invalid
-	}
-	seen, err := validateMetadataJSON(ctx, raw, reflect.TypeOf(p))
-	if err != nil || len(seen) != 5 || json.Unmarshal(raw, &p) != nil || p.SchemaVersion != 1 || p.ProfileSHA256 != profile || p.PipelineMode != mode || (mode != "stats" && mode != "variants") || (p.CapsuleKind != "native" && p.CapsuleKind != "docker") || p.SourcePins == nil {
-		return p, invalid
-	}
-	var fields map[string]json.RawMessage
-	if json.Unmarshal(raw, &fields) != nil {
-		return p, invalid
-	}
-	var pins map[string]json.RawMessage
-	if json.Unmarshal(fields["source_pins"], &pins) != nil {
-		return p, invalid
-	}
-	required := map[string]int64{"pipeline": 1 << 20, "resource_budget": 1 << 20, "analysis_executable": 4 << 20, "analysis_rules": 64 << 10}
-	optional := map[string]int64{"reference": 32 << 20, "analysis_panel": 32 << 20}
-	if mode == "variants" {
-		required["reference"], required["evaluator"], required["truth"] = 32<<20, 1<<20, 8<<20
-	}
-	for name, pin := range p.SourcePins {
-		limit, ok := required[name]
-		if !ok {
-			limit, ok = optional[name]
-		}
-		if !ok || !workerCustodyHex(pin.SHA256, 64) || pin.Bytes < 0 || pin.Bytes > limit {
-			return p, invalid
-		}
-		if _, ok := artifactObject(pins[name], "sha256", "bytes"); !ok {
-			return p, invalid
-		}
-	}
-	for name := range required {
-		if _, ok := p.SourcePins[name]; !ok {
-			return p, invalid
-		}
+	p, err := receiptprojection.ParsePolicy(ctx, raw, profile, mode)
+	if err != nil {
+		return workerProjectionPolicy{}, errors.New("worker_projection_policy_invalid")
 	}
 	return p, nil
 }

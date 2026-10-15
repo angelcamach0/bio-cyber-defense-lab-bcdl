@@ -407,7 +407,7 @@ func TestWorkerBackendAmbiguousMetadataFencesAdmissionButRecoversKnownReceipt(t 
 
 func TestWorkerBackendProjectionPolicyExactShapeAndBounds(t *testing.T) {
 	_, facts := receiptTestFixture("variants", true)
-	p := workerProjectionPolicy{1, facts.ProfileSHA256, "variants", "native", facts.ExpectedSourcePins}
+	p := workerProjectionPolicy{SchemaVersion: 1, ProfileSHA256: facts.ProfileSHA256, PipelineMode: "variants", CapsuleKind: "native", SourcePins: facts.ExpectedSourcePins}
 	raw, _ := json.Marshal(p)
 	path := filepath.Join(t.TempDir(), "policy.json")
 	if err := os.WriteFile(path, raw, 0600); err != nil {
