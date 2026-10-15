@@ -78,7 +78,7 @@ Optional nginx and Oracle deployment remain unverified. The later responder
 simulation receipt is described below; it does not establish effective response.
 Native success alone does not prove the container profile.
 
-Lía independently reproduced the native milestone from another temporary Git
+The native milestone was independently reproduced from another temporary Git
 checkout; see evidence/20261014T150823-057533Z-independent-checkout/public/.
 The snapshot provenance records127 hashes/modes and the older native manifest's
 119/127 Unicode-filename limitation. The current runner uses Git's NUL output.

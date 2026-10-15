@@ -33,7 +33,7 @@ No filename, DNA, free text diagnostics, local paths, client identity, certifica
 serial, keys or signatures are included. The existing result remains authoritative
 for execution and scientific release.
 
-## Durable handoff
+## Durable delivery
 
 `BIOZERO_SECURITY_EVENTS_DIR` enables a private worker outbox. Files are bounded
 to 64 KiB, regular, mode 0600 in a directory mode 0700. Publication uses a private

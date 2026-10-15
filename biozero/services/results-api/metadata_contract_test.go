@@ -24,7 +24,7 @@ func TestSharedMetadataContract(t *testing.T) {
 			Valid bool   `json:"valid"`
 		} `json:"cases"`
 	}
-	if err := json.Unmarshal(data, &contract); err != nil || contract.SchemaVersion != 1 || len(contract.Cases) != 54 {
+	if err := json.Unmarshal(data, &contract); err != nil || contract.SchemaVersion != 1 || len(contract.Cases) != 114 {
 		t.Fatalf("invalid shared contract: %v", err)
 	}
 	for _, c := range contract.Cases {

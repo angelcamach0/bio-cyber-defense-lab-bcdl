@@ -1,17 +1,21 @@
 # BioZero local threat model
 
-Date: 2026-10-14. Author/reviewer: Lía, engineering support and QA.
+Initial review:2026-10-14. Current capsule boundary review:2026-10-15, below.
 Inspection base: `afbb354b8406ce6095be402f9e31194896b2c284`, plus the current
 working tree at the initial review. The post-review section below records the
-subsequently executed security handoff; older receipts retain their own scope.
+subsequently executed security-event delivery; older receipts retain their own scope.
 
 This model covers the demonstrated local synthetic reviewer profile, the native
 experiment and the bounded regulatory research tools. It distinguishes inspected
-code from executed acceptance evidence. The [requirements and gates](../team/requirements-and-gates.md),
-[current status](../STATUS.md), [state decision](../decisions/001-job-states.md)
-and [network decision](../decisions/002-local-container-network.md) govern scope.
+code from executed acceptance evidence. The [current status](../STATUS.md),
+[state decision](../decisions/001-job-states.md) and
+[network decision](../decisions/002-local-container-network.md) govern scope.
 Changing the deployment, identities, data, mounts or event path requires a new
 review and acceptance run.
+
+The [current capsule boundary review](#protected-capsule-route-current-boundary-review)
+records the protected worker/broker/Store route and supersedes older execution-
+location descriptions without replacing their historical evidence.
 
 ## Trust boundaries
 
@@ -152,10 +156,10 @@ Update this model after an independently reviewed change to any boundary above.
 Record source snapshot, executed receipt, affected risk IDs and remaining limits;
 new code or a green historical test does not close a threat by itself.
 
-## Post-review security handoff evidence
+## Post-review security-event evidence
 
-Chiquis integrated Atlas's worker outbox, Vale's responder and the separate relay;
-Luci reviewed the canonical/identity/storage contracts and verified three fixes
+The worker outbox, responder and separate relay were integrated. Independent
+review of the canonical/identity/storage contracts verified three fixes
 (numeric-zero versus false, receipt-parent fsync and precise TLS negative tests).
 Native receipt `../evidence/20261014T165148-344656Z/public/` passed22 assertions,
 including12 security-event cases. The chain binds a persisted protected rejected
@@ -166,7 +170,7 @@ redelivery, conflict/authentication/strict-input rejection and no effective list
 Four-service Compose receipt
 `../evidence/20261014T164550-385353Z-reviewer-compose/public/` passed30 checks
 with exact outbox mount and worker network none. The earlier mount-allowlist
-verifier failure is preserved in STATUS. Lía's optional responder container receipt
+verifier failure is preserved in STATUS. The optional responder container receipt
 `../evidence/20261014T165334-020175Z-soc-container/public/` passed13 assertions
 and cleanup, including parent/result binding, HTTPS/authentication/restart replay,
 private receipt permissions, scoped TLS keys, container controls and loopback entry.
@@ -255,4 +259,101 @@ advance TM-06 source-byte/terms visibility. Complete published size/MD5 and loca
 SHA pins were verified within a separate50MiB ledger, without changing the model
 transfer ledger. Descriptive decoding does not establish genomic REF/liftover,
 effect mapping, context or training independence. Raw rows remain private and
-zero biological loci have been inferred; those scientific gates remain open.
+zero biological loci had been inferred at that acquisition checkpoint; subsequent
+evaluation and its unchanged scientific limitations are recorded below.
+
+## Protected capsule route: current boundary review
+
+Updated2026-10-15 UTC, published implementation4e9e119. This section supersedes
+older descriptions of execution location and missing retained-artifact limits;
+the earlier observations retain their own source and experimental scope.
+
+```mermaid
+flowchart LR
+  U[Individual mTLS upload] --> C[Ciphertext and mutable job spool]
+  C --> V[Worker verifies anchored ciphertext, signature and authenticated decryption]
+  V --> T[Verified plaintext FD in bounded private tmpfs]
+  V --> J[Durable worker custody]
+  T -->|Fixed v2 Unix FD protocol| H[Trusted host broker and fixed profile]
+  J --> H
+  H --> P[Native or Docker provider: pipeline, evaluator and detection]
+  P -->|Provider quiescence and exports| Q[Trusted coordinator: export fence, proof and commit]
+  Q --> S[Retained artifact Store]
+  S -->|Confirmed receipt FD| V
+  V --> R[Projected private result; owner check at results API]
+```
+
+The host broker, Store, configured sources and any Docker daemon remain trusted.
+Neither a profile digest nor a Unix peer UID authenticates an individual tenant
+or attests the host. Worker custody binds immutable job facts to one execution;
+it does not make the authorization owner immutable. TM-02 therefore remains open.
+Compromised shared-UID/privileged writers remain outside this boundary.
+
+Protected worker acceptance passed25native checks and30three-service Compose
+checks, both with the native capsule provider. Independent retained-state
+readback passed78/35. See [the pinned evidence](../evidence/20261015-protected-capsule-worker/public/README.md).
+The new route verifies actual crypto facts, preserves ciphertext/plaintext hashes,
+requires committed receipt projection and recovers lost publication without
+resubmission. Unknown running work, unsafe metadata and uncertain transport or
+durable state fence new admission. A clean-stop recovery does not establish
+worker/broker crash, cancellation, lost ACK or safe operator reconciliation.
+
+The native launcher checks a32MiB/4096inode-unit plaintext tmpfs, zero capabilities
+and isolated network namespace, but retains access to the trusted host filesystem tree;
+host files and any filesystem credentials remain within that trusted boundary.
+It is not a host-file sandbox. In Compose the worker instead receives explicit
+role mounts, no Store/Docker socket and network none. The Docker capsule provider
+has separate component acceptance for a128MiB/4096inode-unit workspace,64MiB files,
+caps-zero/no_new_privs, read-only mounts/root and observed cgroup limits. Subsequent
+[protected Docker-provider acceptance](../evidence/20261015-protected-docker-capsule-worker/public/README.md)
+passed57assertions and52independent readback checks with actual crypto, science,
+authorization and clean-stop/result recovery. Three capsule configurations were
+observed while created; helper kernel records were obtained during execution.
+The observer's die/destroy events are separate from provider/coordinator wait,
+export fencing and proof authority. Subsequent
+[postcommit fault acceptance](../evidence/20261015-protected-postcommit-faults/public/README.md)
+adds downstream response loss26/41 and whole worker-container SIGKILL/restart32/45
+actual/independent checks. Each has one Submit/capsule and query-only recovery of
+unchanged artifacts/proofs/custody/charges. Simultaneous namespace/tmpfs references
+prove a new empty plaintext filesystem on container restart; temporarily retaining
+the old mount tree is measurement authority, not secure erasure. Subsequent
+[broker/cancellation evidence](../evidence/20261015-broker-cancel-recovery/public/README.md)
+adds committed-only broker socket recovery (31 actual/48 independent checks) and
+operator active cancellation of a waiting lifecycle fixture (17/49). A verified
+dead own child, pinned socket/pidfd, unchanged complete committed history, rejected
+identical restart and directory fsync precede replacement. This is explicit fixture
+operation, not a production stale-socket or pending-state recovery service. Socket
+unlink is not conditional by inode; cooperative host/same-UID writers remain trusted.
+The proxy holds the worker response through the outage, so unavailable-broker query
+retries and actual upstream ACK-write failure are not demonstrated. Cancel retains
+three physical original before-state files and rechecks them before the frame;
+this is not an adversarial atomic transaction across files. Failure withholds
+science, fences exports and retains the slot/actual metadata charge. No client
+cancellation API follows. Active broker/capsule death, process-only death retaining
+plaintext, storage/removal faults and uncertain-state reconciliation remain open.
+No hardware-enclave, independent principal identity or complete filesystem quota
+follows from either provider's resource controls.
+
+TM-01 is narrower but not closed: retained artifacts have a1GiB/64slot Store and
+64MiB export bound; worker/broker journals each have separate1MiB limits plus one
+replacement. Reservations and uncertain history are retained without implicit
+refund, retry, adoption or deletion. These are logical bounds, not complete
+principal/result/event/cache/physical-spool/retention quotas. TM-03 gains bounded,
+anchored receipt projection and a shared114-case metadata corpus. Trust in the
+fixed broker/provider remains essential: the worker codec does not independently
+recheck every mount option or compare the Docker receipt's native-helper digest
+to a separately supplied helper pin. Provider/helper checks and the executable-
+derived profile cover that configured execution; do not attribute those checks
+to the codec or claim independent attestation.
+
+TM-04/05/06/08 remain open for host/identity/key separation, production key
+lifecycle, dependency/image build/distribution/license closure and concurrent
+queue/lease behavior. The current image is an exact cached local ID, without a
+verified reproducible build. No persistent cloud deployment or effective SOC
+containment is established. API loopback publishing does not deny bridge egress.
+
+Later regulatory work completed100frozen evaluation cases with finite identical
+repeats, sign agreement61/100 and Spearman0.1840864086408641. This is descriptive
+GBR/LCL-to-GM12878 transfer, without proven head-training holdout, LD independence,
+matched-scale biological accuracy or clinical validity. The comparable FP32/
+QNNPACK economic no-go is unchanged. See [biological evidence](../experiments/005-biological-evaluation.md).

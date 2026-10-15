@@ -72,27 +72,28 @@ type detectionRules struct {
 
 // resultRecord captures the processed output persisted for results-api.
 type resultRecord struct {
-	SchemaVersion        int             `json:"schema_version"`
-	ErrorCode            string          `json:"error_code,omitempty"`
-	ErrorMessage         string          `json:"error_message,omitempty"`
-	SecurityMode         string          `json:"security_mode"`
-	PipelineMode         string          `json:"pipeline_mode"`
-	JobID                string          `json:"job_id"`
-	Status               string          `json:"status"`
-	ProcessedAt          string          `json:"processed_at"`
-	UploadSHA256         string          `json:"upload_sha256"`
-	ProcessedSHA256      string          `json:"processed_sha256"`
-	SizeBytes            int64           `json:"size_bytes"`
-	Decrypted            bool            `json:"decrypted"`
-	DecryptionError      string          `json:"decryption_error,omitempty"`
-	SignatureValid       bool            `json:"signature_valid"`
-	SignatureError       string          `json:"signature_error,omitempty"`
-	PipelineOutput       json.RawMessage `json:"pipeline_output,omitempty"`
-	PipelineError        string          `json:"pipeline_error,omitempty"`
-	ScientificEvaluation json.RawMessage `json:"scientific_evaluation,omitempty"`
-	ReleaseStatus        string          `json:"release_status"`
-	Detection            detectionResult `json:"detection"`
-	ClientCertSerial     string          `json:"client_cert_serial,omitempty"`
+	SchemaVersion        int                `json:"schema_version"`
+	ErrorCode            string             `json:"error_code,omitempty"`
+	ErrorMessage         string             `json:"error_message,omitempty"`
+	SecurityMode         string             `json:"security_mode"`
+	PipelineMode         string             `json:"pipeline_mode"`
+	JobID                string             `json:"job_id"`
+	Status               string             `json:"status"`
+	ProcessedAt          string             `json:"processed_at"`
+	UploadSHA256         string             `json:"upload_sha256"`
+	ProcessedSHA256      string             `json:"processed_sha256"`
+	SizeBytes            int64              `json:"size_bytes"`
+	Decrypted            bool               `json:"decrypted"`
+	DecryptionError      string             `json:"decryption_error,omitempty"`
+	SignatureValid       bool               `json:"signature_valid"`
+	SignatureError       string             `json:"signature_error,omitempty"`
+	PipelineOutput       json.RawMessage    `json:"pipeline_output,omitempty"`
+	PipelineError        string             `json:"pipeline_error,omitempty"`
+	ScientificEvaluation json.RawMessage    `json:"scientific_evaluation,omitempty"`
+	ReleaseStatus        string             `json:"release_status"`
+	Detection            detectionResult    `json:"detection"`
+	ClientCertSerial     string             `json:"client_cert_serial,omitempty"`
+	ArtifactExecution    *artifactExecution `json:"artifact_execution,omitempty"`
 }
 
 // detectionResult summarizes scoring, verdict, and detection signals.
@@ -142,6 +143,16 @@ type alignmentStats struct {
 ///
 /// Example: `go run .`
 func main() {
+	if err := runWorker(); err != nil {
+		log.Print("worker startup or shutdown failed")
+		os.Exit(1)
+	}
+}
+
+func runWorker() (runErr error) {
+	if err := validateWorkerExecutionSelection(); err != nil {
+		return err
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 	dataDir := envOr("BIOZERO_DATA_DIR", "./data")
@@ -165,8 +176,23 @@ func main() {
 	mustMkdirAll(resultsDir)
 	mustMkdirAll(decryptedDir)
 
-	// Load detection rules once and apply defaults.
-	rules := loadRules(rulesPath)
+	backend, err := newWorkerCapsuleBackend(ctx, dataDir, decryptedDir)
+	if err != nil {
+		// An uncertain constructor can retain lock descriptors until exit. Do
+		// not discard it and continue through the legacy execution path.
+		return err
+	}
+	var rules detectionRules
+	if backend != nil {
+		ctx = context.WithValue(ctx, workerBackendContextKey{}, backend)
+		defer func() {
+			if err := backend.Close(); err != nil && runErr == nil {
+				runErr = err
+			}
+		}()
+	} else {
+		rules = loadRules(rulesPath)
+	}
 	interval, err := time.ParseDuration(pollSeconds + "s")
 	if err != nil {
 		// Fallback to a safe polling interval if parsing fails.
@@ -181,7 +207,7 @@ func main() {
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			return
+			return nil
 		case <-timer.C:
 		}
 	}
@@ -216,12 +242,21 @@ func processJobs(jobsDir, uploadDir, resultsDir, decryptedDir string, rules dete
 	processJobsContext(context.Background(), jobsDir, uploadDir, resultsDir, decryptedDir, rules, privateKeyPath, signerCertPath, pipelinePath, referencePath, jobKey, pipelineTimeout)
 }
 func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, decryptedDir string, rules detectionRules, privateKeyPath, signerCertPath, pipelinePath, referencePath, jobKey string, pipelineTimeout time.Duration) {
+	backend := capsuleBackendFromContext(ctx)
+	if backend == nil && workerBackendSelected() {
+		log.Print("worker execution deferred: worker_artifact_backend_unavailable")
+		return
+	}
+	if backend != nil {
+		backend.refreshPending(ctx)
+	}
 	reconcileSecurityEvents(ctx, resultsDir)
 	entries, err := metadataEntries(ctx, jobsDir)
 	if err != nil {
 		log.Print("worker metadata error: metadata_jobs_scan_failed")
 		return
 	}
+	if backend != nil { backend.fenceUntrackedRunning(ctx, entries, jobsDir, resultsDir) }
 	for _, entry := range entries {
 		if ctx.Err() != nil {
 			return
@@ -265,31 +300,64 @@ func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, dec
 		}
 		result := resultRecord{SchemaVersion: 1, ReleaseStatus: "withheld", JobID: job.JobID, UploadSHA256: job.SHA256, ClientCertSerial: job.ClientCertSerial,
 			SecurityMode: envOr("BIOZERO_SECURITY_MODE", "protected"), PipelineMode: envOr("BIOZERO_PIPELINE_MODE", "stats")}
+		publish := true
+		wasRunning := job.Status == "running"
+		if backend != nil {
+			if backend.sticky {
+				continue
+			}
+			_, found, err := backend.custody.Lookup(job.JobID)
+			if err != nil {
+				backend.sticky = true
+				continue
+			}
+			// Do not turn a queued upload into an untracked running job while
+			// another input still has unresolved custody.
+			if !found && !wasRunning && (backend.admissionBlocked || len(backend.pending) != 0) {
+				continue
+			}
+		}
 		func() {
 			defer func() {
 				if recovered := recover(); recovered != nil {
+					if backend != nil {
+						backend.sticky = true
+						publish = false
+						log.Print("worker execution deferred: worker_artifact_internal_failure")
+						return
+					}
 					result.Status = "failed"
 					result.ErrorCode = "runner_panic"
 					result.ErrorMessage = "job processing interrupted by internal failure"
 					log.Printf("job panic: %v", recovered)
 				}
 			}()
-			if job.Status == "running" {
+			if wasRunning && backend == nil {
 				result.Status = "failed"
 				result.ErrorCode = "runner_interrupted"
 				result.ErrorMessage = "previous runner stopped during execution; explicit resubmission required"
 				return
 			}
-			job.Status = "running"
-			job.StartedAt = time.Now().UTC().Format(time.RFC3339)
-			if err := writeJobRecord(jobPath, job); err != nil {
-				result.Status = "failed"
-				result.ErrorCode = "job_write_failed"
-				result.ErrorMessage = "cannot persist running state"
+			if !wasRunning {
+				job.Status = "running"
+				job.StartedAt = time.Now().UTC().Format(time.RFC3339)
+				if err := writeJobRecord(jobPath, job); err != nil {
+					result.Status = "failed"
+					result.ErrorCode = "job_write_failed"
+					result.ErrorMessage = "cannot persist running state"
+					return
+				}
+			}
+			if backend != nil {
+				publish = backend.process(ctx, job, wasRunning, &result, uploadDir, decryptedDir, privateKeyPath, signerCertPath, jobKey, pipelineTimeout)
 				return
 			}
 			executeJob(ctx, job, &result, uploadDir, decryptedDir, rules, privateKeyPath, signerCertPath, pipelinePath, referencePath, jobKey, pipelineTimeout)
 		}()
+		if !publish {
+			log.Print("worker execution deferred: worker_artifact_recovery_pending")
+			continue
+		}
 		result.ProcessedAt = time.Now().UTC().Format(time.RFC3339)
 		result, resultJSON, err := boundedResultRecord(result)
 		if err != nil {
@@ -326,6 +394,10 @@ func executeJob(ctx context.Context, job jobRecord, result *resultRecord, upload
 		result.Status = status
 		result.ErrorCode = code
 		result.ErrorMessage = message
+	}
+	if workerBackendSelected() || capsuleBackendFromContext(ctx) != nil {
+		fail("failed", "worker_artifact_backend_required", "configured capsule execution requires the durable worker dispatcher")
+		return
 	}
 	if result.SecurityMode != "protected" && result.SecurityMode != "demo" {
 		fail("failed", "invalid_security_mode", "security mode must be protected or demo")

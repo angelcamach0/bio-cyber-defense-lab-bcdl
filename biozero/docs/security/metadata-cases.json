@@ -325,6 +325,366 @@
       "kind": "result",
       "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"\",\"size_bytes\":0,\"decrypted\":false,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"pipeline_output\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}",
       "valid": false
+    },
+    {
+      "name": "artifact_valid_receipt_failed",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": true
+    },
+    {
+      "name": "artifact_valid_stats_unassessed",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"succeeded\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"unassessed\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": true
+    },
+    {
+      "name": "artifact_valid_evaluated_retained",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"variants\",\"job_id\":\"abcd1234\",\"status\":\"succeeded\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"evaluated_passed\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10},\"normalized_vcf\":{\"sha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"bytes\":1},\"variants_vcf\":{\"sha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"bytes\":1},\"variants_vcf_index\":{\"sha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"bytes\":1}}}}",
+      "valid": true
+    },
+    {
+      "name": "artifact_valid_empty_failure",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"\",\"receipt_bytes\":0,\"files\":{}}}",
+      "valid": true
+    },
+    {
+      "name": "artifact_missing_schema_version",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_null_schema_version",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":null,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_missing_profile_sha256",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_null_profile_sha256",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":null,\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_missing_store_id",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_null_store_id",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":null,\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_missing_lease_id",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_null_lease_id",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":null,\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_missing_manifest_sha256",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_null_manifest_sha256",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":null,\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_missing_receipt_sha256",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_null_receipt_sha256",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":null,\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_missing_receipt_bytes",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_null_receipt_bytes",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":null,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_missing_files",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_null_files",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":null}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_null_binding",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":null}",
+      "valid": false
+    },
+    {
+      "name": "artifact_alias",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}},\"Store_ID\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_extra",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}},\"path\":\"/private/store\"}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_schema_bool",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":true,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_schema_float",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1.0,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_profile_uppercase",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_store_wrong_length",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_receipt_mismatch_hash",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_receipt_mismatch_bytes",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":11,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_receipt_oversized",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":16777217,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_receipt_zero",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":0,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_file_bool_bytes",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":true}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_file_negative",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":-1}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_file_missing_bytes",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\"}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_file_null",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":null}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_file_extra",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10,\"state\":\"verified\"}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_file_alias",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10,\"SHA256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\"}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_unknown_id",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10},\"alignment_sam\":{\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"bytes\":1}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_orphan_derived",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"variants\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10},\"normalized_vcf\":{\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"bytes\":1}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_total_oversized",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"variants\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10},\"normalized_vcf\":{\"sha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"bytes\":41943040},\"variants_vcf\":{\"sha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"bytes\":41943040},\"variants_vcf_index\":{\"sha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"bytes\":1}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_empty_success",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"succeeded\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"unassessed\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"\",\"receipt_bytes\":0,\"files\":{}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_unassessed_failure",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"unassessed\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_evaluated_without_variants",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"succeeded\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"evaluated_passed\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_processed_with_binding",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"processed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_legacy_with_binding",
+      "kind": "result",
+      "json": "{\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"processed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_duplicate_binding_field",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_duplicate_file_field",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10,\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_security_mode",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"demo\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_signature_valid",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":false,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_decrypted",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":false,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_decryption_error",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}},\"decryption_error\":\"decrypt_failed\"}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_signature_error",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}},\"signature_error\":\"signature_invalid\"}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_upload_sha256",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_processed_sha256",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_size_bytes",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":-1,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_pipeline_mode",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"unknown\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_processed_size_exceeded",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":26214401,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_pipeline_byte_count",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}},\"pipeline_output\":{\"byte_count\":11}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_pipeline_hash",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10}}},\"pipeline_output\":{\"sha256\":\"3333333333333333333333333333333333333333333333333333333333333333\"}}",
+      "valid": false
+    },
+    {
+      "name": "artifact_envelope_stats_with_vcf",
+      "kind": "result",
+      "json": "{\"schema_version\":1,\"security_mode\":\"protected\",\"pipeline_mode\":\"stats\",\"job_id\":\"abcd1234\",\"status\":\"failed\",\"processed_at\":\"\",\"upload_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"processed_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"size_bytes\":10,\"decrypted\":true,\"signature_valid\":true,\"release_status\":\"withheld\",\"detection\":{\"score\":0,\"reason\":\"\"},\"artifact_execution\":{\"schema_version\":1,\"profile_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"store_id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"lease_id\":\"cccccccccccccccccccccccccccccccc\",\"manifest_sha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"receipt_sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"receipt_bytes\":10,\"files\":{\"execution_receipt\":{\"sha256\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"bytes\":10},\"normalized_vcf\":{\"sha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"bytes\":1},\"variants_vcf\":{\"sha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"bytes\":1},\"variants_vcf_index\":{\"sha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"bytes\":1}}}}",
+      "valid": false
     }
   ]
 }

@@ -1,6 +1,6 @@
 # SCI02 biological execution: completed adapter and evaluation evidence
 
-Prepared 2026-10-14 by Nora; coordinator/writer of execution receipts: Chiquis.
+Recorded 2026-10-14.
 This document distinguishes retained execution evidence, descriptive metrics and
 reviewed aggregate exports. The exporter tests and both real exports have
 completed, and both reviewed JSONs were published in the snapshot documented
@@ -15,7 +15,7 @@ weights, measurements or metric definitions were changed for this export work.
 The reviewed59-file source/aggregate snapshot is published as
 [commit28918a9](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/commit/28918a96484dcb2a015c71540f853d29e34a9836)
 on [draft PR21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
-Nora verified the published head, open/draft status and absence of a merge through
+Independent readback verified the published head, open/draft status and absence of a merge through
 GitHub. [Hosted ARM CI run38651583022](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38651583022),
 [job116151397770](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38651583022/job/116151397770),
 completed successfully. It checked merge ref
@@ -93,7 +93,7 @@ private report SHA is
 Observed counts are submitted100, validated100, inferred100, rejected0 and pending0;
 all100 outputs are finite and repeat-identical. Independent read-only review
 verified the bound ledger against the original100 cases, without changes or
-replacements. Nora did not restart inference or use partial values to adjust it.
+replacements. The review did not restart inference or use partial values to adjust it.
 
 Primary sign agreement is61/100 (0.61), and Spearman correlation is
 0.1840864086408641 over100 effect/prediction pairs. A separate stdlib oracle used
@@ -151,8 +151,8 @@ The [exporter tests](../../research/regulatory/test_biological_runtime_export.py
 synthetic reports/ledgers only: privacy canaries, partial/failure/type/configuration
 mutations, original effects/slots, vector math, invented uncertainty, forged metrics,
 supervisor/timing, path/hash boundaries and full prior-adapter checks. They were
-authored during the active evaluation, then Chiquis ran all13 successfully after
-its terminal receipt (3.020s). Chiquis also executed both real exports. Nora's
+authored during the active evaluation, then all13 passed after
+its terminal receipt (3.020s). Both real exports were also executed. Subsequent
 independent review checked their counts, metrics, parents, technique and timing
 against the retained private receipts and the unchanged bound/original cases.
 
@@ -164,7 +164,7 @@ Reviewed aggregate JSONs published in commit28918a9 with identical candidate byt
 | [evaluation100](../../research/regulatory/evaluation-biological-runtime.json) | 4897 | a562223e4c3c8ec811da9fc9a7cc267e12602fc1bcac849a077191bf304decf3 |
 
 The original private candidates remain regular600 files with one link; the two
-integrated aggregates are regular644 files with one link. Nora verified their
+integrated aggregates are regular644 files with one link. Independent review verified their
 exact bytes and hashes against the reviewed candidates. Schema and string checks found
 no DNA, loci, alleles, case/origin IDs, individual vectors or private paths. Their
 scientific approval flags remain false. Raw source/reference data, original

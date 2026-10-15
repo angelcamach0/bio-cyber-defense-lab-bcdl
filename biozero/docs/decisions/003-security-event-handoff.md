@@ -1,6 +1,6 @@
 # Decision 003: durable local events before response enforcement
 
-Date: 2026-10-14. Owners: Chiquis, Atlas, Vale. Review: Luci and Lía.
+Date: 2026-10-14.
 
 The original platform roadmap includes SOC telemetry and effective response.
 The existing ZeroResponder stub could accept unauthenticated alerts when its

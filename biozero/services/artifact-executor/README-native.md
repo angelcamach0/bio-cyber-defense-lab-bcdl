@@ -3,7 +3,9 @@
 Observed locally on2026-10-14, host UID/GID1000 and Linux ARM64. NativeProvider is
 implemented in this standalone module and has one actual synthetic pipeline/store
 acceptance. It is not installed in enclave-runner or the container worker. The
-container provider and installed-worker integration remain pending. The subsequent
+installed-worker integration remains pending. The Docker provider now has its own
+acceptance, and subsequent [complete analysis](README-analysis-integration.md)
+covers both profiles through v2 broker and host service. The subsequent
 [actual native recovery tests](README-native-recovery.md) and
 [Unix composition acceptance](README-native-unix.md) have their own source/evidence scope.
 
@@ -73,7 +75,7 @@ used a synthetic original-input digest and separately verified plaintext; it did
 not exercise TLS, signature/decryption entry, the real Unix client or the installed
 worker. Its ACK callback was a local test callback, not a network delivery claim.
 
-Nora's separate helper acceptance passed21/21 tests, including two actual namespace
+Separate helper acceptance passed21/21 tests, including two actual namespace
 tests, with zero skips. It verified tool capabilities zero/NNP, closure of FD3/4,
 receipt FD survival after sender/namespace exit and aggregate exhaustion with
 multiple individually permitted files: capsule_workspace_full/failed/withheld,

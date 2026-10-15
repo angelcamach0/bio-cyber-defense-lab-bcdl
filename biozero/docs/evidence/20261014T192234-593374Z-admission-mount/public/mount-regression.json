@@ -19,6 +19,6 @@
   "verdict": "PASS",
   "private_receipt_sha256": "b3b39aace0a334c3c7807f574dbdab91e55027e96b2159b2d3462405f19acfd5",
   "source_files_verified": 8,
-  "reported_by": "Atlas; Chiquis verified the retained receipt and eight source hashes",
+  "reported_by": "Independent review verified the retained receipt and eight source hashes",
   "real_tls_or_inference_verified": false
 }

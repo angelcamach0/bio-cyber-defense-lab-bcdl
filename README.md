@@ -62,29 +62,49 @@ see [local reviewer setup](biozero/infra/compose/README.md). Real Firefox accept
 passed23 UI/TLS/session-race checks with zero JavaScript errors. The planned Oracle
 deployment remains pending. ZeroResponder is optional simulation.
 
-The implementation and curated evidence are published in [draft PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
-[Hosted ARM CI](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38587738514)
-passed unit/PKI checks, the scientific repeat and the protected native experiment.
+The initial implementation and curated evidence were merged through [PR #21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21) on2026-10-14.
+The [protected worker](biozero/services/enclave-runner/README-worker-backend.md)
+now verifies encrypted signed inputs, stages verified plaintext in bounded tmpfs,
+and submits through the v2 FD broker. Fresh native25-check and three-service
+Compose30-check acceptance cover science, authorization and committed-result
+recovery using the native capsule provider. Separate protected Docker-provider
+acceptance now passed57checks and52independent retained-evidence checks, including
+actual capsule configuration/kernel observations and exact artifact accounting.
+The worker projects confirmed receipts
+without invoking pipeline/evaluator/detection tools itself. Native execution trusts
+the host filesystem; its namespaces do not establish host-file or same-UID isolation.
+The standalone [container capsule provider](biozero/services/artifact-executor/README-container.md)
+has separate quota and lifecycle acceptance. Integrated crash/cancel/lost-ACK
+reconciliation and a reproducible image build remain pending. Pinned analysis executes inside both
+providers through the broker, and the compiled
+[host service](biozero/services/artifact-executor/README-service.md) has actual
+native/Docker science, detection, restart and visible cleanup-failure acceptance.
+The earlier provider tests used synthetic crypto facts; the new worker acceptance
+performs actual signature/decryption checks. See
+[protected acceptance](biozero/docs/evidence/20261015-protected-capsule-worker/public/README.md),
+[complete analysis scope](biozero/services/artifact-executor/README-analysis-integration.md)
+and the current status for the
+source and publication scope of this subsequent delivery.
+[Hosted ARM CI for98f2f89](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38661813114)
+passed unit/PKI checks, the scientific repeat and the protected native experiment;
+subsequent source has its own checks in the current PR.
 
 Reports separate execution status from scientific release: evaluated_passed,
 withheld or unassessed. A completed process alone does not approve scientific results.
 
-## Project and team
+## Project documentation
 
 - [Implementation status](biozero/docs/STATUS.md)
-- [Agent workflow](AGENTS.md)
-- [Team runbook and daily research](biozero/docs/team/runbook.md)
-- [Requirements, evidence and next gates](biozero/docs/team/requirements-and-gates.md)
-- [Active Notion notebook](https://app.notion.com/p/3ef7dff9bf6c817cb6d0d6d48b68a9d4)
+- [Executive summary](biozero/docs/EXECUTIVE_SUMMARY.md)
+- [Requirements, evidence and next gates](biozero/docs/requirements-and-gates.md)
 - [Project flow guide](biozero/docs/PROJECT_FLOW_GUIDE.md)
+- [Regulatory evaluation](biozero/docs/experiments/005-biological-evaluation.md)
 
-The coordinator integrates science, security, engineering, and their support
-reviewers. Daily hosted research records source changes separately from code
-implementation. The regulatory-recomputation question remains a feasibility pilot.
-SCI02 now has an offline normalized-window FP32 head adapter and a frozen
-GM12878 ATAC-seq protocol. One public-reference/artificial-ALT control passed
-strict loading and repeated inference; ten/hundred measured biological loci
-remain pending authorized data. See [the adapter setup](biozero/research/regulatory/README.md).
+The regulatory pilot completed a frozen100-case descriptive baseline: sign
+agreement61/100 and Spearman0.1840864086408641. Biological accuracy, head-training
+holdout and clinical usefulness remain unverified. The prior comparable economic
+no-go remains unchanged. See [the adapter setup](biozero/research/regulatory/README.md)
+for source access, pinned protocols, methods and limitations.
 
 ## License
 

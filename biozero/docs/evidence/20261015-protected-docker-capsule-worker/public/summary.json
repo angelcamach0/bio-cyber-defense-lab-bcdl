@@ -1,0 +1,368 @@
+{
+  "accepted_cases": 57,
+  "binary_pins": {
+    "artifact-broker": {
+      "bytes": 5130512,
+      "sha256": "4f5da6194301525a36654720885e03bf4fed370b461d186f5ea7f37730a249f9"
+    },
+    "capsule-analysis": {
+      "bytes": 3566444,
+      "sha256": "cd15b4c284961ad0d18c6b4f70b07c3277f36f3809dffc39dfa1c0a4c1c6087e"
+    },
+    "enclave-runner": {
+      "bytes": 6762143,
+      "sha256": "877c8dd7978f6a51bc445b520178d089a5a4e5633c96e967e465ce38a312b8b6"
+    },
+    "results-api": {
+      "bytes": 9026902,
+      "sha256": "5854ddce365cabb248b8d1f710dcc292ff6a47e3ea6714a8b3f917ae2ae1c85c"
+    },
+    "upload-api": {
+      "bytes": 9220557,
+      "sha256": "eaa2aa6999e2d708fe27a9c7cd77cf9038eba7d9a3c19d2a84e677c12088d9ed"
+    },
+    "uploader-cli": {
+      "bytes": 8925233,
+      "sha256": "3571bb520bda8455d75a270c6091808a14b33933eb7752b4f23423e6d8b98f3e"
+    }
+  },
+  "binary_reuse": {
+    "current_production_go_module_inputs_verified": 51,
+    "original_build_vcs": "333995f dirty",
+    "originals_and_private_copies_unchanged": true,
+    "rebuilt": false,
+    "scope": "Correspondence to earlier accepted bytes and unchanged production inputs; no bitwise rebuild or dependency closure claim."
+  },
+  "case_verdicts": [
+    {
+      "case": "exact_cached_image_without_build_or_pull",
+      "passed": true
+    },
+    {
+      "case": "profile_without_store_or_provider_creation",
+      "passed": true
+    },
+    {
+      "case": "api_project_bridge_with_loopback_default",
+      "passed": true
+    },
+    {
+      "case": "container_controls_and_exact_mounts_upload",
+      "passed": true
+    },
+    {
+      "case": "container_controls_and_exact_mounts_results",
+      "passed": true
+    },
+    {
+      "case": "container_controls_and_exact_mounts_worker",
+      "passed": true
+    },
+    {
+      "case": "docker_observer_subscription_real_upload_barrier",
+      "passed": true
+    },
+    {
+      "case": "worker_plaintext_tmpfs_actual_kernel_guards",
+      "passed": true
+    },
+    {
+      "case": "protected_three_snp_1",
+      "passed": true
+    },
+    {
+      "case": "ciphertext_and_plaintext_hashes_1",
+      "passed": true
+    },
+    {
+      "case": "receipt_context_science_and_pins_1",
+      "passed": true
+    },
+    {
+      "case": "actual_detection_and_1171_mapped_reads_1",
+      "passed": true
+    },
+    {
+      "case": "four_artifacts_receipt_and_proof_1",
+      "passed": true
+    },
+    {
+      "case": "observed_evaluated_retained_vcf_hash_1",
+      "passed": true
+    },
+    {
+      "case": "worker_did_not_materialize_unbounded_outputs_1",
+      "passed": true
+    },
+    {
+      "case": "nonowner_cannot_spoof_header_1",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_schema_helper_and_keeper_valid_1",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_identity_caps_network_and_fsize_valid_1",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_actual_workspace_and_readonly_sources_valid_1",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_actual_cgroup_limits_valid_1",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_exact_context_and_custody_valid_1",
+      "passed": true
+    },
+    {
+      "case": "docker_retained_proof_manifest_and_artifacts_valid_1",
+      "passed": true
+    },
+    {
+      "case": "protected_three_snp_2",
+      "passed": true
+    },
+    {
+      "case": "ciphertext_and_plaintext_hashes_2",
+      "passed": true
+    },
+    {
+      "case": "receipt_context_science_and_pins_2",
+      "passed": true
+    },
+    {
+      "case": "actual_detection_and_1171_mapped_reads_2",
+      "passed": true
+    },
+    {
+      "case": "four_artifacts_receipt_and_proof_2",
+      "passed": true
+    },
+    {
+      "case": "observed_evaluated_retained_vcf_hash_2",
+      "passed": true
+    },
+    {
+      "case": "worker_did_not_materialize_unbounded_outputs_2",
+      "passed": true
+    },
+    {
+      "case": "nonowner_cannot_spoof_header_2",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_schema_helper_and_keeper_valid_2",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_identity_caps_network_and_fsize_valid_2",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_actual_workspace_and_readonly_sources_valid_2",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_actual_cgroup_limits_valid_2",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_exact_context_and_custody_valid_2",
+      "passed": true
+    },
+    {
+      "case": "docker_retained_proof_manifest_and_artifacts_valid_2",
+      "passed": true
+    },
+    {
+      "case": "repeat_exact_three_snp_callset",
+      "passed": true
+    },
+    {
+      "case": "invalid_fastq_withheld_with_custody",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_schema_helper_and_keeper_invalid",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_identity_caps_network_and_fsize_invalid",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_actual_workspace_and_readonly_sources_invalid",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_actual_cgroup_limits_invalid",
+      "passed": true
+    },
+    {
+      "case": "docker_receipt_exact_context_and_custody_invalid",
+      "passed": true
+    },
+    {
+      "case": "docker_retained_proof_manifest_and_artifacts_invalid",
+      "passed": true
+    },
+    {
+      "case": "unsigned_upload_reaches_verifier",
+      "passed": true
+    },
+    {
+      "case": "unsigned_rejected_before_any_custody",
+      "passed": true
+    },
+    {
+      "case": "missing_client_certificate_rejected_with_live_tls",
+      "passed": true
+    },
+    {
+      "case": "worker_clean_stop_before_recovery",
+      "passed": true
+    },
+    {
+      "case": "restart_lost_publication_same_lease_without_execution",
+      "passed": true
+    },
+    {
+      "case": "docker_exact_three_capsules_order_and_no_restart_execution",
+      "passed": true
+    },
+    {
+      "case": "docker_live_image_mounts_and_host_controls_invalid",
+      "passed": true
+    },
+    {
+      "case": "docker_die_destroy_and_retained_quiescence_invalid",
+      "passed": true
+    },
+    {
+      "case": "docker_live_image_mounts_and_host_controls_valid_1",
+      "passed": true
+    },
+    {
+      "case": "docker_die_destroy_and_retained_quiescence_valid_1",
+      "passed": true
+    },
+    {
+      "case": "docker_live_image_mounts_and_host_controls_valid_2",
+      "passed": true
+    },
+    {
+      "case": "docker_die_destroy_and_retained_quiescence_valid_2",
+      "passed": true
+    },
+    {
+      "case": "docker_retained_charge_exact_three_commits",
+      "passed": true
+    }
+  ],
+  "custody": {
+    "committed_records": 3,
+    "lost_publication": "Same lease/artifacts/scientific/detection result, no new execution or charge",
+    "record_charges_bytes": [
+      13989,
+      23633,
+      23636
+    ],
+    "record_charges_total_bytes": 61258,
+    "retained_artifact_files": 9,
+    "retained_slots": 3,
+    "store_header_reserve_bytes": 4096,
+    "store_total_charged_bytes": 65354,
+    "unsigned_input": "No extra reservation, custody binding or capsule"
+  },
+  "docker_observation": {
+    "all_filtered_events": 15,
+    "capsule_exit_codes": [
+      0,
+      0,
+      1
+    ],
+    "capsule_lifecycle_event_count": 12,
+    "capsules": 3,
+    "capsules_removed_by_provider": true,
+    "config_snapshot_states": [
+      "created",
+      "created",
+      "created"
+    ],
+    "event_bytes": 12104,
+    "event_sequence": [
+      "create",
+      "start",
+      "die",
+      "destroy"
+    ],
+    "observer_error": null,
+    "observer_joined": true,
+    "observer_returncode": 143,
+    "scope": "Actual daemon configuration snapshots while created plus retained helper kernel observations during execution. Die/destroy events do not replace provider wait/inspect or coordinator proof authority."
+  },
+  "ended_at": "2026-10-15T03:08:15.358504+00:00",
+  "image_built_or_pulled": false,
+  "image_id": "sha256:1ca8e95c2f5679ab2001f856549c634f0b9daeeeb1492b8610814b96cf30fa7d",
+  "independent_readback": {
+    "failed": 0,
+    "passed": 52,
+    "scope": "Retained source/binary/profile, ciphertext/plaintext, actual files/proofs/custody/accounting, daemon snapshots/events and current exact-ID read-only object state; no pipeline replay or post-termination kernel remeasurement."
+  },
+  "limits": [
+    "Native/Docker host, daemon, configured sources and same-UID writers remain trusted; no attestation or hardware TEE.",
+    "Image/tools/license/build/distribution closure not established by cached image ID.",
+    "Actual integrated crash/cancel/lost-ACK, ambiguous storage/attach/removal and operator reconciliation remain separate open gates.",
+    "Immutable owner TM02, principal/full retention/physical-spool quotas, queues/multiworker, effective SOC and verified free cloud delivery remain open.",
+    "API publishing is loopback; API bridge egress is not denied. Worker and analysis capsule network are none.",
+    "Current synthetic SNP/detection results do not establish genotype, indel, WGS, biological or clinical validity.",
+    "Public documentation and aggregates were updated after runtime acceptance; they are not retroactively part of the392-file snapshot."
+  ],
+  "profile_sha256": "8d245fc4a9c6eb63cd4b07f1db8abc9bd74f16e28d60108d0e11a8a996f734de",
+  "provider": "docker",
+  "receipt_sha256": {
+    "acceptance": "aae6238ab96e53888aefa005f3edfe27d8465185b7e4b5d11813e2bb2aa0787d",
+    "binary_source_correspondence": "e6d9aabfa0ad933e4c853b720a57c5cfc6426f5d4a00d04e11649fddbe4b1931",
+    "independent_readback": "92bfc7044c986a8ddc3e8bb0984a04830dee0453e2a423e2e14aca610b27989c"
+  },
+  "runtime_source": {
+    "base_commit": "4e9e119f590219ea234374092b7c84da77ca77e5",
+    "dirty": true,
+    "file_count": 392,
+    "unchanged_during_run": true
+  },
+  "schema_version": 1,
+  "science": {
+    "each_valid_run": {
+      "alignment_records": 1171,
+      "detection_score": 0.7,
+      "detection_verdict": "medium",
+      "fn": 0,
+      "fp": 0,
+      "mapped_reads": 1171,
+      "precision": 1,
+      "recall": 1,
+      "tp": 3
+    },
+    "invalid": "failed/withheld, no scientific evaluation, one execution receipt; independent analysis capture may execute.",
+    "per_run_hash_invariant": "observed=evaluated=retained normalized VCF",
+    "repeat": "Normalized SNP allele sets equal; complete VCF byte identity across runs is not asserted.",
+    "valid_runs": 2
+  },
+  "scope": "Actual individual-mTLS/signature/decryption worker entry and Docker capsule provider; three app containers and three distinct analysis capsules.",
+  "shutdown": {
+    "app_container_exits": {
+      "results": 143,
+      "upload": 143,
+      "worker": 0
+    },
+    "apps_stopped_and_preserved": true,
+    "host_broker_exit": 0
+  },
+  "started_at": "2026-10-15T03:07:59.826079+00:00",
+  "status": "passed"
+}

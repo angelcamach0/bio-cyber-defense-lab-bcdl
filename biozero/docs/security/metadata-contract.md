@@ -1,7 +1,7 @@
 # Job and result metadata boundary
 
-Date: 2026-10-14. Contract owners: Chiquis, Atlas and Vale. QA: Lía; independent
-security review is separate from implementation. Native acceptance receipt
+Date: 2026-10-14. Independent security review is separate from implementation.
+Native acceptance receipt
 `../evidence/20261014T175423-175221Z/public/` passed 53 checks; the rebuilt
 four-service receipt `../evidence/20261014T175423-180461Z-reviewer-compose/public/`
 passed 30 checks. Historical receipts retain their original scope.
@@ -120,3 +120,88 @@ metadata, certificates, IDs, paths or sentinel contents.
 TM-01 global admission/storage budgets and TM-02 authenticated immutable owner
 provenance remain separate adopted work. The shared host/UID is still trusted.
 These changes do not make every worker file read immune to blocking or tampering.
+
+## Optional retained-artifact binding
+
+The later protected-worker integration adds optional `artifact_execution` to the
+existing result schema1. Its absence preserves the prior serialization and parser
+contract. It is forbidden on legacy `processed` records. A present value must be
+an object, with every field below present exactly once; null, aliases, unknown
+fields, booleans/fractions in integer fields and duplicate nested keys fail:
+
+- `schema_version`: integer1.
+- `profile_sha256` and `manifest_sha256`:64 lowercase hexadecimal characters.
+- `store_id` and `lease_id`:32 lowercase hexadecimal characters.
+- `receipt_sha256`:64 lowercase hexadecimal characters, or the empty string only
+  for an empty failed commit; `receipt_bytes`: integer0–16MiB.
+- `files`: object containing only `execution_receipt`, `normalized_vcf`,
+  `variants_vcf` and `variants_vcf_index`. Each value has exactly `sha256`
+  (64 lowercase hexadecimal characters) and `bytes` (integer0–64MiB). The total
+  is at most64MiB. The three VCF objects are either all present or all absent.
+
+The receipt hash and length must equal the corresponding file entry. A present
+receipt has positive length. An absent receipt requires an empty file map,
+empty receipt hash, zero receipt bytes, execution `failed` and release `withheld`.
+An `evaluated_passed` binding requires `succeeded`, a receipt and all three VCF
+objects. Other failed/incomplete executions remain withheld; stats can remain
+unassessed. These metadata checks validate references, not content or custody;
+only the receipt codec and broker/Store validation establish their binding.
+
+## Capsule receipt projection
+
+The Linux worker codec consumes the already-held bounded receipt descriptor; it
+never reopens a path reported by a terminated capsule or reruns tools. It repeats
+length/SHA256 checks and requires a schema2 committed bridge response and a
+canonical manifest matching the expected job, original upload and fixed profile.
+The receipt's processed-input hash/length and six verifier-context facts must
+match durable expected facts. Those facts are caller-supplied information, not
+cryptographic proof. Source pins must match the configured mode, provider and
+explicit expected pin map, including analysis executable/rules and optional panel.
+
+Native and Docker receipt shapes are selected explicitly. Duplicate keys, aliases,
+unknown/missing envelope fields, invalid types, excessive depth, invalid UTF-8
+and non-finite numbers fail. Recorded capabilities/no_new_privs, workspace limits
+and provider-specific observations are checked; this parsing does not replace
+provider Wait, export fencing or the Store's proof. Raw stdout must decode to the
+same payload as its capture. Pipeline/evaluator statuses must agree with exits;
+release is reconstructed from pipeline, evaluation and analysis, then compared
+with both receipt outcome and manifest. A successful exit alone grants no release.
+
+Scientific approval requires positive TP, zero FP/FN, precision/recall1, empty
+discrepancy lists and equal observed/evaluated/retained normalized-VCF hashes.
+Stats remain unassessed. Analysis failures or incomplete captures remain
+failed/withheld even when evaluation already passed, preserving the retained
+artifacts. A genuine committed empty failure projects no pipeline, evaluation or
+detection. The result envelope can identify unavailable detection explicitly;
+its placeholder is not a measured score or a scientific result.
+
+The private owner result preserves pipeline counts, available versions, tools,
+warnings, fastp summaries and typed detection signals, including private alignment
+targets. It removes raw capture stdout/stderr, kernel observations, namespace
+input/output directories and unretained alignment paths. Retained VCF outputs
+become artifact IDs, never usable local paths. Paths embedded in diagnostic text
+are replaced; evaluator discrepancy arrays become counts rather than exposed
+alleles/loci. This is private result projection, not a reviewed public aggregate
+export and not authorization to download an artifact.
+
+The shared synthetic corpus now has114 cases (the original54 unchanged, plus60
+binding cases), with both service guards fixed to that denominator. Component
+codec tests cover semantic mutations after rehashing, capture disagreement,
+provider shapes, privacy, failure withholding, framing/binding and cancellation.
+These additions do not extend the historical53/30-check acceptance receipts above;
+fresh integrated native/Compose and owner/lifecycle acceptance remain separate.
+
+A result with this binding must also carry coherent protected-entry metadata:
+`security_mode: protected`, valid signature and successful decryption flags,
+empty corresponding error strings, lower-hex64 original/processed hashes,
+processed size0–25MiB and a known stats/variants mode. Stats cannot carry VCF
+exports or evaluated approval. If the projected pipeline includes `byte_count`
+or `sha256`, they must equal that processed size/hash. These checks are conditional
+on a binding; historical results without one retain their prior valid shapes.
+They do not independently reverify a signature or decrypt any payload.
+
+Native receipt observations cover capability/no_new_privs and FSIZE fields, not
+a Docker-style mount/statfs/cgroup observation. Docker has its own recorded
+mount/statfs/cgroup shape and limits. Fastp extension maps remain private after
+path redaction; they are not a public allowlist. The fixed evaluator invocation
+has no `--repeat`; repeated-callset evidence requires a separate execution/profile.

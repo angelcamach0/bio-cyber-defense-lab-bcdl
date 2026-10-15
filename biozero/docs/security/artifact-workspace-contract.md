@@ -1,9 +1,9 @@
 # TM01 artifact workspace and retained export contract
 
-Status: implementation contract accepted by Chiquis on 2026-10-14; phase A is
+Status: implementation contract accepted on 2026-10-14; phase A is
 implemented and tested. Phase B has a validated standalone Go storage/framing core
 plus private provider preflights. A Unix listener/client and scoped input/coordinator
-composition are independently reviewed by Vale and have passed standalone
+composition have independent review and have passed standalone
 test/vet/race acceptance. See the
 [server addon](../../services/artifact-executor/README-server.md) and
 [coordinator addon](../../services/artifact-executor/README-coordinator.md).
@@ -13,9 +13,19 @@ Subsequent native provider cancellation/timeout/PID1 and keeper-death tests pass
 including immediate pending restart fencing; see
 [recovery scope](../../services/artifact-executor/README-native-recovery.md) and
 [real Unix composition](../../services/artifact-executor/README-native-unix.md).
-Container provider and worker integration remain pending: no phase B
-artifact ledger, server or retained-export quota is installed in the worker.
-Atlas authored the base contract; Chiquis integrates these additions with independent review.
+The explicitly configured host ContainerProvider now has separate actual Unix/
+synthetic/store, aggregate byte/inode and lifecycle acceptance; see
+[Docker module evidence](../../services/artifact-executor/README-container.md),
+[quota evidence](../../services/artifact-executor/README-container-quota.md) and
+[recovery evidence](../../services/artifact-executor/README-container-recovery.md).
+Worker integration remains pending: no phase B artifact ledger, server or
+retained-export quota is installed in the protected worker. The cached-image
+acceptance does not establish a reproducible image build or distribution.
+A separate worker FD broker and durable job-to-lease journal now have standalone
+storage/channel acceptance; see [broker scope](../../services/artifact-executor/README-broker.md).
+The extracted analysis CLI preserves detection within a future configured capsule
+boundary; its compiled standalone acceptance is separate from worker integration.
+Neither component is installed in the protected worker yet.
 
 This contract complements admission/input-retention and bounded metadata. An input
 quota, a per-file limit, a free-space sensor, and a finite list of expected files do
@@ -67,8 +77,9 @@ The standalone artifact-executor module implements Store.Open/Reserve/Begin/Expo
 Prepare/RecordQuiescence/Commit/Acknowledge and bounded request framing. Unix peer
 authentication, scoped-reference registration and coordinator composition have
 executed standalone tests. Native execution has one module-level synthetic
-acceptance plus helper aggregate-quota checks. Container execution and worker
-integration remain unimplemented. No production quota claim follows from this
+acceptance plus helper aggregate-quota checks. Container execution now has separate
+actual synthetic, quota and recovery evidence. Worker integration remains
+unimplemented. No production quota claim follows from this
 standalone library or static review.
 
 1. `ArtifactStore.Open(policy)` takes an exclusive lifetime flock and validates a
@@ -192,8 +203,10 @@ closed until explicit safe reconciliation. A restart must be denied immediately
 by flock or pending journal, including the interval before kernel cleanup ends.
 The tested Unix listener/coordinator are not production-accepted or installed;
 native module export/proof and configured native lifecycle have actual acceptance,
-while container lifecycle and installed worker integration remain pending, and
-capability preflight does not approve it. The
+and container lifecycle now has actual cancel/timeout/keeper-death acceptance.
+Installed worker integration, explicit operator reconciliation and injected
+attach/removal/storage failures remain pending; a capability preflight does not
+approve these. The
 private host-keeper prototype uses existing sudo Docker authority. It does not
 claim a sandboxed/no-privilege host keeper; caps-zero/no_new_privs observations
 apply to the capsule. A trusted host orchestrator with Docker authority remains
@@ -227,8 +240,11 @@ experimental guard's behavior, not implemented artifact storage.
 The Docker receipts used reviewer image
 sha256:1ca8e95c2f5679ab2001f856549c634f0b9daeeeb1492b8610814b96cf30fa7d,
 UID/GID1000, cap_drop ALL, no_new_privileges, default seccomp unchanged, read-only
-root, no network, init, memory512MiB and pids128. All phase B Docker test
-containers were removed and their absence checked. Actual empty-file counts vary with inode accounting;
+root, no network, init, memory512MiB and pids128. All Docker containers from those
+earlier preflight receipts were removed and their absence checked. Later provider
+failed-create and keeper-death histories deliberately retain their Created/stopped
+owned objects and pending journals; they are separate fixtures and are not
+implicitly adopted or erased. Actual empty-file counts vary with inode accounting;
 tests require available inode units zero and the next regular file denied.
 
 The container-keeper receipt pins coordinator.py and capsule.py. Worker SIGKILL

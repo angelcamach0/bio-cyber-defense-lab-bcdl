@@ -744,6 +744,13 @@ func (s *Store) Commit(lease string) error {
 func (s *Store) Acknowledge(lease string, callback func() error) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.acknowledgeLocked(lease, callback)
+}
+
+// acknowledgeLocked retains the same durable gate and actual-write semantics.
+// A trusted composition can check additional custody under this same lock before
+// entering it; predicates must not race a later Store transition.
+func (s *Store) acknowledgeLocked(lease string, callback func() error) error {
 	if e := s.ready(); e != nil {
 		return e
 	}

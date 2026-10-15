@@ -130,3 +130,110 @@ The current four-service run separately passed30 controls in
 `20261014T164550-385353Z-reviewer-compose/public/`, including the exact outbox mount.
 Both receipts are independently reviewed; the earlier mount-verifier failure is
 preserved in STATUS. There is no automatic relay service or effective containment.
+
+## Active cancellation and explicit committed-broker recovery
+
+These are separate opt-in local Linux ARM64 scenarios. Use host UID/EUID/GID 1000,
+the exact cached image
+`sha256:1ca8e95c2f5679ab2001f856549c634f0b9daeeeb1492b8610814b96cf30fa7d`,
+and the six existing verified
+service executables. Check their hashes and production-source correspondence
+against their build receipt before reuse. Neither command builds or pulls an
+image, compiles acceptance service binaries, downloads data or runs a model.
+The broker-recovery scenario additionally requires Python os.pidfd_open and
+kernel pidfd support; it fails explicitly if that capability is unavailable.
+Host/daemon and cooperative same-UID trust remain part of the boundary.
+
+```sh
+python3 biozero/infra/compose/run_capsule_cancellation.py \
+  --run-dir "$PWD/.biozero/active-cancel-NEW" \
+  --binaries-dir /absolute/existing/verified/bin
+
+python3 biozero/infra/compose/run_broker_recovery.py \
+  --run-dir "$PWD/.biozero/committed-broker-recovery-NEW" \
+  --binaries-dir /absolute/existing/verified/bin
+```
+
+Each command requires a new private root and selects the real Docker capsule
+provider with the fixed cached image. Source, configuration/profile, executable
+and supplied-input pins belong to that run. Existing failed attempts, stopped
+application objects, retained history and charges are preserved. Do not reset,
+adopt or refund history to admit a replacement execution.
+
+### Active cancellation
+
+The protected entry still uses individual mTLS, signing and encryption. A
+separately pinned lifecycle pipeline reads the verified input, writes a bounded
+private readiness marker and waits with a finite deadline. It intentionally
+produces no scientific result. The harness reads the marker through the exact
+inspected capsule PID's proc root, using no-follow bounded regular-file checks
+and matching Docker identity before/after; it does not exec another process
+inside the capsule.
+
+Before Cancel, the runner requires the active Store record's complete reservation,
+linked broker journal, verified worker custody and absence of a terminal result.
+It preserves the ORIGINAL bytes of all three metadata files as private 0600
+checkpoints, with bounded no-follow reads, stable metadata, hashes, file fsync,
+readback equality to the validated JSON states and directory fsync. It rechecks
+all three current files immediately before sending the real V2 Cancel frame.
+This makes the reservation-to-commit transition auditable without reconstructing
+an earlier state after the event.
+
+Cancel is a local operator action on the existing broker channel, not a public
+cancellation API or a new client authorization capability. Submit remains open;
+neither request is half-closed. The gate is a complete Cancel send after actual
+activity, followed before the provider deadline by failed/withheld status,
+artifact_cancelled, zero retained exports and a proof created after provider
+wait/export closure. The observed 17-check run also received CancelRequested=true;
+ACK observation is recorded separately and is not inferred from request_sent.
+The contract permits a raced/missing ACK only when the independent causal final
+state is verified. No Submit is retried to obtain a better transport result.
+
+The terminal manifest/proof and its one slot/actual metadata charge remain
+retained; terminal failure is not a refund. Scientific evaluation and pipeline
+outputs are absent, detection is unavailable, and no scientific approval follows.
+The unchanged custody retains the original ciphertext and verified plaintext
+hashes separately. A/B result authorization remains enforced.
+
+### Broker death after commit
+
+The fixed proxy holds the real completed Submit response only AFTER receiving
+its full upstream frame and EOF. With that worker response still held, the
+operator fixture pins the known live broker process/socket, exact executable and
+configuration, fixed profile and complete committed history. It SIGKILLs only
+that child and requires Wait=-9. Starting the same binary/configuration without
+socket reconciliation returns 1 with the actual generic message
+artifact_service_start_failed. This observation does not establish a specific
+internal error code.
+
+The explicit operator procedure may retire ONLY the previously pinned socket
+for this fresh owned fixture. It requires pidfd-confirmed death, refusal of new
+connections to that socket, unchanged complete committed Store/journal/custody,
+valid artifacts/proofs/accounting, an empty provider workspace and the actual
+negative startup result. It checks identities again immediately before unlink
+and synchronizes the parent directory. It does not remove a ledger, workspace,
+anchor, plaintext file, retained object or charge. Directory/socket descriptors
+and pidfd checks do not remove the cooperative-host assumption: unlinkat itself
+is not an atomic inode-conditional operation against a malicious same-UID writer.
+
+Starting the same broker again creates a verified replacement socket at the
+same path/profile. Only then does the proxy discard the held downstream response;
+the worker recovers through real status/receipt queries using the same lease,
+artifacts, proof, scientific result and charge. Recorded process exits are -9
+for the killed broker, 1 for the unreconciled startup and 0 for the recovered
+broker after clean shutdown. All created processes are waited and logs retained.
+The proxy remains held throughout the outage, so this does not demonstrate worker
+query retries during broker unavailability or an upstream ACK-write failure.
+
+The broker run passed 31 controls, the newer physical-checkpoint cancellation run
+passed 17, and the positive default Docker baseline passed 57. Their respective
+receipts retain their exact source snapshots; a change to one runner is not
+silently attributed to an earlier run. Independent readbacks passed 48/49/52 respectively; final make passed 294 Python
+cases (292 passed, two helper opt-ins skipped) and eight Go modules test/vet. See
+the [public bundle and exact source delta](../../docs/evidence/20261015-broker-cancel-recovery/public/README.md).
+
+These checks do not establish pending-execution/plaintext reconciliation, broker
+death while a capsule is active, capsule death, a production stale-socket repair
+service, immutable ownership, full image/build closure, clinical accuracy or the
+complete lifecycle gate. Unknown pending history still blocks restart; no
+implicit cleanup, replay or quota release is authorized.

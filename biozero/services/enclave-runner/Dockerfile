@@ -1,8 +1,10 @@
 # Enclave runner container: builds Go binary and installs pipeline tools.
 FROM golang:1.26-alpine AS build
-WORKDIR /src
-COPY go.mod ./
-COPY main.go security_events.go metadata.go job_lifecycle.go output_budget.go ./
+WORKDIR /src/enclave-runner
+# Build with biozero/services as context: the worker imports the local executor
+# client and keeps that dependency separate from its own module.
+COPY artifact-executor/ /src/artifact-executor/
+COPY enclave-runner/ /src/enclave-runner/
 RUN CGO_ENABLED=0 go build -o /out/enclave-runner .
 
 FROM ubuntu:24.04

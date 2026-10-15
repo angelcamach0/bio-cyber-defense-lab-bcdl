@@ -1,7 +1,7 @@
 # BioZero project flow: implemented profile and remaining gates
 
 Updated 2026-10-14. This guide describes the measured local synthetic profile.
-The [requirements matrix](team/requirements-and-gates.md) preserves the wider
+The [requirements matrix](requirements-and-gates.md) preserves the wider
 Notion roadmap and distinguishes implementation from proposed capabilities.
 
 ```mermaid

@@ -317,7 +317,7 @@ func TestWorkerSignalExitsWithFIFOJobMetadata(t *testing.T) {
 	worker := exec.Command(executable, "-test.run=^TestWorkerSignalHelper$")
 	worker.Env = append(os.Environ(), "BIOZERO_TEST_WORKER_HELPER=1", "BIOZERO_DATA_DIR="+f.root,
 		"BIOZERO_PIPELINE_PATH="+f.pipeline, "BIOZERO_RULES_PATH="+filepath.Join(f.root, "absent-rules"),
-		"BIOZERO_SECURITY_MODE=protected", "BIOZERO_SECURITY_EVENTS_DIR=", "BIOZERO_POLL_SECONDS=0.01")
+		"BIOZERO_SECURITY_MODE=protected", "BIOZERO_EXECUTION_BACKEND=legacy", "BIOZERO_SECURITY_EVENTS_DIR=", "BIOZERO_POLL_SECONDS=0.01")
 	stderr, err := worker.StderrPipe()
 	if err != nil {
 		t.Fatal(err)
@@ -386,7 +386,7 @@ func TestSharedMetadataContract(t *testing.T) {
 			Valid bool   `json:"valid"`
 		} `json:"cases"`
 	}
-	if err := json.Unmarshal(data, &corpus); err != nil || corpus.SchemaVersion != 1 || len(corpus.Cases) == 0 {
+	if err := json.Unmarshal(data, &corpus); err != nil || corpus.SchemaVersion != 1 || len(corpus.Cases) != 114 {
 		t.Fatal("shared authoritative corpus unavailable or invalid", err)
 	}
 	for _, entry := range corpus.Cases {
@@ -405,5 +405,40 @@ func TestSharedMetadataContract(t *testing.T) {
 				t.Fatalf("valid=%v expected=%v error=%v", err == nil, entry.Valid, err)
 			}
 		})
+	}
+}
+
+func TestMetadataArtifactBindingRoundTripAndAbsentCompatibility(t *testing.T) {
+	before := validResultBytes(t)
+	original, err := readResultContext(context.Background(), metadataFixture(t, before))
+	if err != nil {
+		t.Fatal(err)
+	}
+	after, err := json.Marshal(original)
+	if err != nil || !bytes.Equal(before, after) {
+		t.Fatal("binding-absent v1 serialization changed", err)
+	}
+	binding := artifactExecution{SchemaVersion: 1, ProfileSHA256: strings.Repeat("a", 64), StoreID: strings.Repeat("b", 32), LeaseID: strings.Repeat("c", 32), ManifestSHA256: strings.Repeat("d", 64), ReceiptSHA256: strings.Repeat("e", 64), ReceiptBytes: 5, Files: map[string]artifactFile{"execution_receipt": {SHA256: strings.Repeat("e", 64), Bytes: 5}}}
+	original.ArtifactExecution = &binding
+	original.Status = "failed"
+	original.ReleaseStatus = "withheld"
+	original.SecurityMode = "protected"
+	original.PipelineMode = "stats"
+	original.Decrypted = true
+	original.SignatureValid = true
+	original.DecryptionError = ""
+	original.SignatureError = ""
+	original.UploadSHA256 = strings.Repeat("1", 64)
+	original.ProcessedSHA256 = strings.Repeat("2", 64)
+	original.SizeBytes = 0
+	raw, _ := json.Marshal(original)
+	parsed, err := readResultContext(context.Background(), metadataFixture(t, raw))
+	if err != nil || parsed.ArtifactExecution == nil || parsed.ArtifactExecution.ReceiptSHA256 != binding.ReceiptSHA256 {
+		t.Fatal("valid binding lost", err)
+	}
+	// Typed pointer recursion must not allow encoding/json's case-insensitive path.
+	bad := bytes.Replace(raw, []byte(`"profile_sha256"`), []byte(`"Profile_SHA256"`), 1)
+	if _, err := readResultContext(context.Background(), metadataFixture(t, bad)); err == nil {
+		t.Fatal("pointer struct alias accepted")
 	}
 }
