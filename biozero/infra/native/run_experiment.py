@@ -195,7 +195,7 @@ def main():
         worker_process = start("enclave-runner", worker_settings)
 
         def submit(path, label):
-            argv = [str(binaries / "uploader-cli"), "--file", str(path), "--client-id", "researcher-a",
+            argv = [str(binaries / "uploader-cli"), "--protocol", "legacy", "--file", str(path), "--client-id", "researcher-a",
                     "--upload-url", upload_url + "/upload", "--results-url", results_url + "/results",
                     "--mtls-cert", str(pki / "clients/researcher-a.crt"), "--mtls-key", str(pki / "clients/researcher-a.key"),
                     "--ca-cert", str(pki / "clients/ca.crt"), "--server-cert", str(pki / "clients/decrypt.crt"),

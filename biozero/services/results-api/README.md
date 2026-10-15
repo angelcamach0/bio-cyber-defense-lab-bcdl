@@ -1,5 +1,37 @@
 # Results API
 
+## Explicit owner-v1 route
+
+`GET /v1/results/{job_id}` verifies TLS1.3 mTLS against the actual connection and
+checks the signed acceptance's external pin/scope/job/profile/mode and exact leaf
+before querying the dedicated status/receipt reader. It never consults legacy
+job/result caches, opens Store or runs science. Full status/receipt bindings must
+agree, then the same projector used by the worker constructs the private DTO.
+Execution success and scientific release remain distinct.
+
+```sh
+BIOZERO_RESULTS_PROTOCOL=owner-v1 \
+BIOZERO_OWNER_RESULTS_CONFIG=/absolute/private/results.json \
+go run .
+```
+
+Configuration is closed and hash-pinned. Legacy Results environment settings
+cannot be mixed into this route. Startup creates no directories and fails closed
+before legacy initialization. `/healthz` is authenticated liveness without inbox
+or broker IO. Fixed bounds are four connections/two result handlers,64 KiB metadata,
+30 s processing/5 s final write and16 MiB full serialized response. Native policy is
+private same-UID storage/sockets; it does not establish deployed role separation.
+
+See the [full contract and configuration](../../docs/security/ownership-results-contract.md),
+[native83 evidence](../../docs/evidence/20261015-owner-results/public/README.md) and
+[reproduction](../../docs/runbooks/reproduce.md). Gateway/UI, deployed isolation
+and integrated active-job fault scope remain gates.
+
+## Legacy route
+
+The following endpoint, metadata and environment instructions describe the
+separately selected historical route; they do not grant owner-v1 authorization.
+
 `GET /results/{job_id}` authenticates the job owner before opening the result.
 Protected mode requires verified mTLS, certificate CN matching `client_id`, and
 its decimal certificate serial matching `client_cert_serial`. Headers do not

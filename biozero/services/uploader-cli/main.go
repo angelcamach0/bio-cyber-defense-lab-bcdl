@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Uploader CLI: prepares payloads (optional encryption/signing), uploads to the
-// upload-api, and polls results-api for completion; used by the UI and simulator.
+// Uploader CLI: chooses durable owner-v1 authority/input delivery or explicitly
+// selected legacy upload/result compatibility. Transport is not execution.
 package main
 
 import (
@@ -52,23 +52,28 @@ type resultsResponse struct {
 ///
 /// Throws [FatalInputError] when required flags or TLS config are invalid.
 ///
-/// Example: `go run ./main.go --file sample.fastq --client-id researcher-1`
+/// Example: `go run . --protocol legacy --file sample.fastq --client-id researcher-1`
 func main() { os.Exit(runCLI()) }
 
-func runCLI() int {
-	filePath := flag.String("file", "", "path to file to upload")
-	uploadURL := flag.String("upload-url", "http://localhost:8081/upload", "upload endpoint")
-	resultsURL := flag.String("results-url", "http://localhost:8082/results", "results endpoint base")
-	clientID := flag.String("client-id", "", "client identifier")
-	pollSeconds := flag.Int("poll-seconds", 2, "poll interval seconds")
-	maxPollErrors := flag.Int("max-poll-errors", 5, "max consecutive poll errors before exit")
-	waitTimeout := flag.Duration("wait-timeout", 12*time.Minute, "total result polling deadline")
-	mtlsCert := flag.String("mtls-cert", "", "client TLS cert (PEM)")
-	mtlsKey := flag.String("mtls-key", "", "client TLS key (PEM)")
-	caCert := flag.String("ca-cert", "", "CA cert bundle (PEM)")
-	serverCert := flag.String("server-cert", "", "server cert for encrypting payload (PEM)")
-	signKey := flag.String("sign-key", "", "client private key for signing payload (PEM)")
-	flag.Parse()
+func runCLI() int { return runUploader(os.Args[1:], os.Stdout, os.Stderr) }
+
+func runLegacyCLI(args []string) int {
+	flags := flag.NewFlagSet("uploader --protocol legacy", flag.ContinueOnError)
+	filePath := flags.String("file", "", "path to file to upload")
+	uploadURL := flags.String("upload-url", "http://localhost:8081/upload", "upload endpoint")
+	resultsURL := flags.String("results-url", "http://localhost:8082/results", "results endpoint base")
+	clientID := flags.String("client-id", "", "client identifier")
+	pollSeconds := flags.Int("poll-seconds", 2, "poll interval seconds")
+	maxPollErrors := flags.Int("max-poll-errors", 5, "max consecutive poll errors before exit")
+	waitTimeout := flags.Duration("wait-timeout", 12*time.Minute, "total result polling deadline")
+	mtlsCert := flags.String("mtls-cert", "", "client TLS cert (PEM)")
+	mtlsKey := flags.String("mtls-key", "", "client TLS key (PEM)")
+	caCert := flags.String("ca-cert", "", "CA cert bundle (PEM)")
+	serverCert := flags.String("server-cert", "", "server cert for encrypting payload (PEM)")
+	signKey := flags.String("sign-key", "", "client private key for signing payload (PEM)")
+	if err := flags.Parse(args); err != nil || flags.NArg() != 0 {
+		return 1
+	}
 	if *waitTimeout <= 0 || *pollSeconds <= 0 || *maxPollErrors < 0 {
 		fmt.Fprintln(os.Stderr, "invalid polling configuration")
 		return 1

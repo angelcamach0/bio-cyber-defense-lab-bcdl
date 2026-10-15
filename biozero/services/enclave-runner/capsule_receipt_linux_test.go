@@ -22,15 +22,15 @@ func receiptTestCapture(payload any, code int) map[string]any {
 func receiptTestFixture(mode string, panel bool) (map[string]any, capsuleReceiptFacts) {
 	pins := map[string]capsuleSourcePin{}
 	for _, key := range []string{"pipeline", "resource_budget", "analysis_executable", "analysis_rules"} {
-		pins[key] = capsuleSourcePin{strings.Repeat("a", 64), 1}
+		pins[key] = capsuleSourcePin{SHA256: strings.Repeat("a", 64), Bytes: 1}
 	}
 	if mode == "variants" {
 		for _, key := range []string{"reference", "evaluator", "truth"} {
-			pins[key] = capsuleSourcePin{strings.Repeat("b", 64), 1}
+			pins[key] = capsuleSourcePin{SHA256: strings.Repeat("b", 64), Bytes: 1}
 		}
 	}
 	if panel {
-		pins["analysis_panel"] = capsuleSourcePin{strings.Repeat("c", 64), 1}
+		pins["analysis_panel"] = capsuleSourcePin{SHA256: strings.Repeat("c", 64), Bytes: 1}
 	}
 	facts := capsuleReceiptFacts{JobID: strings.Repeat("1", 16), UploadSHA256: strings.Repeat("2", 64), ProfileSHA256: strings.Repeat("3", 64), ProcessedSHA256: strings.Repeat("4", 64), ProcessedBytes: 10, AnalysisContext: artifact.AnalysisContext{OriginalName: "private.fastq", ProcessedSizeBytes: 10, Decrypted: true, SignatureValid: true}, Mode: mode, CapsuleKind: "native", ExpectedSourcePins: pins}
 	state := map[string]any{"pid": 1, "uid": 0, "gid": 0, "rlimit_fsize": []int{64 << 20, 64 << 20}, "NoNewPrivs": "1", "namespaces": map[string]string{"user": "user:[1]", "mnt": "mnt:[2]", "pid": "pid:[3]", "net": "net:[4]"}}

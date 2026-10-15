@@ -1,0 +1,113 @@
+{
+  "causal_scope": {
+    "actual_oaep_material_bytes": 44,
+    "aes_gcm_aad": "exact canonical signed context",
+    "copied_ciphertext_negative": "pure measured Finalize + signature/VerifyAcceptance fixture, not durable Store/HTTP; B signs measured copied bytes and valid acceptance verifies; actual GCM under B AAD rejects",
+    "oaep_label": "empty",
+    "original_go_file_descriptors_observed_closed_by_gc": 2,
+    "own_sigkill_waitstatus_cases": 3,
+    "pre_reserve_intent_and_pre_finalize_phase_physically_observed": true,
+    "raw_cloexec_flock_survives_gc": true,
+    "recovery_only_get_no_ciphertext_resend": true,
+    "response_loss_before_forward_and_after_successful_authority_response": true,
+    "rsa_pss_salt_bytes": 32,
+    "sigkill_phases": [
+      "prepared",
+      "finalizing",
+      "uncertain"
+    ],
+    "uncertain_cold_open_rejects_without_repair": true
+  },
+  "evidence_limits": [
+    "These tests physically check their temporary fixtures, which the Go framework later cleans. Retained outputs/pins/source copies are not retained client acceptance workspaces.",
+    "The test-only downstream proxy uses the fixed A identity on two real mTLS legs; it is not a production identity relay and does not simulate an authority ACK Write error.",
+    "Synthetic tests reuse a dual-EKU server/client leaf. Worker encryption key is separate; deployed key/mount isolation is unproven.",
+    "Prepare uses explicit caller time; fresh Finalize uses real transport time. Historical accepted verification has no caller-selected clock.",
+    "Get recovery retains canonical verified acceptance, not unknown bytes of the lost Finalize response.",
+    "Client buffering and application bounds are not filesystem reservations, hard deadlines inside arbitrary Reader.Read, or deployed sandboxing.",
+    "Current upload-generated job ID, gateway post-upload persistence, worker/broker/Results contracts remain unintegrated.",
+    "No standalone client CLI, retained CLI build, Docker/models/dataset execution, deployment, scientific approval or full TM02 closure is established."
+  ],
+  "final_make": {
+    "exit_code": 0,
+    "go_modules_tests_vet": 9,
+    "python_passed": 292,
+    "python_skipped": 2,
+    "python_total": 294,
+    "source_files": 453,
+    "source_unchanged": true,
+    "stderr_sha256": "3f5431ba1239d7a83d7a63f6253deb0457c1cdfcc81a417cc8a594a1427586fd",
+    "stdout_sha256": "49e8ba7bac164efe2b6619fa999cf61a5149632787b6d94e09664e09ea4b2874"
+  },
+  "focused_operation_payload": {
+    "counts": {
+      "biozero/ownership-authority": {
+        "pass_subcase": 45,
+        "pass_top": 11,
+        "skip_top": 1
+      }
+    },
+    "exit_code": 0,
+    "go_module_inputs": 26,
+    "helper_parent_skips": 1,
+    "principal_pass": 11,
+    "subcase_pass": 45
+  },
+  "focused_transport": {
+    "counts": {
+      "biozero/ownership-authority": {
+        "pass_subcase": 39,
+        "pass_top": 8
+      }
+    },
+    "exit_code": 0,
+    "inventory_files": 26,
+    "inventory_includes_readme": true,
+    "principal_pass": 8,
+    "subcase_pass": 39
+  },
+  "full_module_race": {
+    "counts": {
+      "biozero/ownership-authority": {
+        "pass_subcase": 318,
+        "pass_top": 69,
+        "skip_top": 5
+      },
+      "biozero/ownership-authority/cmd/ownership-authority": {
+        "pass_top": 4,
+        "skip_top": 1
+      }
+    },
+    "exit_code": 0,
+    "go_module_inputs": 26,
+    "stdout_sha256": "e24ac87f3d699df9fb33dc0f0fc47e975e984a0e51455d989637baab6797dc06"
+  },
+  "outcome": "verified durable shared client and payload component; direct CLI/gateway adapters and full TM02 remain pending",
+  "post_runtime_delta": {
+    "after_final_race_and_make": "runtime Go unchanged; five technical docs and this four-file aggregate",
+    "after_operation_focused": "one explanatory Go comment; verified by reconstructing its exact earlier comment bytes and matching original hash"
+  },
+  "preserved_weaker_attempt": {
+    "correction": "separate actual TLS/Store fixtures; production quota unchanged",
+    "outcome": "initial focused fixture failed after active quota masked wrong-pin gate",
+    "retained_files": "two source copies and limitation note; execution only in tool transcript, no original captured stdout/snapshot receipt"
+  },
+  "receipt_sha256": {
+    "ownership-client-final-make:make.stderr": "3f5431ba1239d7a83d7a63f6253deb0457c1cdfcc81a417cc8a594a1427586fd",
+    "ownership-client-final-make:make.stdout": "49e8ba7bac164efe2b6619fa999cf61a5149632787b6d94e09664e09ea4b2874",
+    "ownership-client-final-make:summary.json": "b015e0ff63ffca355d02b58dfea7520d70a962887985a63c1abd28b0144c8186",
+    "ownership-client-final-race:summary.json": "1370b3c2607317b47c69edd923869f81337821db727b9ef84e8b530d4e3999c7",
+    "ownership-client-final-race:test.jsonl": "e24ac87f3d699df9fb33dc0f0fc47e975e984a0e51455d989637baab6797dc06",
+    "ownership-client-final-race:test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ownership-client-operation-checks:summary.json": "a090314e9c674f95d6c235635c1aaf22f05d616272f8aade48f89f0149ec977a",
+    "ownership-client-operation-checks:test.jsonl": "28e9e66bfb6c8effd00a218ae8d1efb50b9814a59f4f292202eb365aa64ba832",
+    "ownership-client-operation-checks:test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ownership-client-preliminary:client_http_linux.go": "03c1448ec216744b984d8f4d185a915de2cc8efc930b3ce3a5147379c3b8b108",
+    "ownership-client-preliminary:client_http_linux_test.go": "96456a62e0408bbda31ed69bd97d022b15e41fb25039e9e69d0479648a3e68bf",
+    "ownership-client-preliminary:limitation.json": "e49c62972baf6cd8ba508e732f61cf7f8832a819e9f4c17a7d8931c1fb9a4e5c",
+    "ownership-http-client-focused:report.json": "bd64ca7be23c21fa3fca717d948ada6db3c7e9eaa4bd70f89d23ecb681b421bf",
+    "ownership-http-client-focused:stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ownership-http-client-focused:stdout.jsonl": "aba30c8b4b58cc12ab5eb42651dd971b035fb8fcf005082fe57e468cd36ea28f"
+  },
+  "schema_version": 1
+}

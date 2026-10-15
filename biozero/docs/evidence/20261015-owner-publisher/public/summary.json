@@ -1,0 +1,164 @@
+{
+  "authorization": {
+    "automatic_no_post_retry_scope": "Causal instrumented/component sender/Upload tests; native snapshots do not measure application request counts.",
+    "dedicated_producer_ca_and_distinct_rsa_roles": true,
+    "negative_results_scope": "Separate fixture inbox and owned Results process after original Wait0; same endpoint, TLS identity, pin, policy and scope.",
+    "normal_positive_fixture_copies": false,
+    "publication_ack_scope": "A complete valid signed single-link inbox may authorize Results before publisher ACK. Upload lifecycle job visibility waits for its retained published receipt plus fresh ciphertext checks. Publication/ACK is neither execution nor scientific approval.",
+    "publisher_inbox_preserved_through_results_negatives": true
+  },
+  "baseline_commit": "71c3e1823e864be3387c964c6e4c3212011520f3",
+  "build_provenance": {
+    "executables": 11,
+    "fresh_compiled_for_variants": 11,
+    "historical_complete_goroot_and_fips_tree_measured": false,
+    "same_binary_bytes": true,
+    "same_go_module_inputs": true,
+    "same_runtime_source_snapshots": true,
+    "stats_exact_verified_reuse": 11
+  },
+  "component_race": {
+    "added_limits_and_changed_context": {
+      "principal_tests": 2,
+      "report_sha256": "9970a10b4318557dd815ae8dd609a1428496cabffee9860db079678cf2c53b17",
+      "scope": "Exact added test-only file; remaining Go inputs identical to full-module run.",
+      "subtests": 5
+    },
+    "counts_are_not_native_or_additive_scopes": true,
+    "full_authority_module": {
+      "principal_tests": 156,
+      "report_sha256": "9e106f25ce0344e7fdeb1574aa21b3002244556f5ee5386a97e19528fb8d0b42",
+      "scope": "Production current; precedes one added test-only limits file.",
+      "subtests": 583
+    }
+  },
+  "date": "2026-10-15",
+  "dirty_at_runtime": true,
+  "final_make": {
+    "go_modules_test_and_vet": 9,
+    "python_cases": 294,
+    "python_passed": 292,
+    "python_skipped": 2,
+    "report_sha256": "0afa00afc36ebb622f9ad6c184de3ac9538abff6f378d316a54a1506b847696a",
+    "scope": "Final frozen-source repository make after both native runs, before later documentation/public exports; not native/Firefox replay.",
+    "source_unchanged": true,
+    "status": "passed"
+  },
+  "independent_readback": {
+    "auditor_sha256": "a7e3dc18d4b413a121d91380a441a8447ab5f337e3da49b1640917bb654b23b8",
+    "controls": 495,
+    "earlier_auditor_counts_not_additive": [
+      283,
+      484
+    ],
+    "failed_auditor_attempts": 0,
+    "report_sha256": "9c4a89f29ee47020390795cb778466942058129604ffa7ad57f45d54ddbe4b5e",
+    "scope": "independent automatic-publication public-key-only retained readback; no services, Go, builds, network, plaintext, private keys or science reruns",
+    "status": "passed"
+  },
+  "limitations": [
+    "Trusted same-UID host; no deployed role UID/key/mount/network isolation.",
+    "Configured limits and component retention/active-admission tests do not establish maximum-load or physical resource quota acceptance.",
+    "Controlled component death/barriers and clean native restarts do not close arbitrary active V3 failures, upstream ACK-write or operator reconciliation.",
+    "Synthetic normalized SNP presence only; no genotype, indel, WGS, clinical or novelty approval.",
+    "Same-environment source/binary reuse; no image closure, complete historical GOROOT/FIPS measurement, cross-host or deployment acceptance.",
+    "No model inference or changes to earlier regulatory biological/economic conclusions.",
+    "TM02 and the full project requirements remain open."
+  ],
+  "native_acceptance": {
+    "stats": {
+      "accounting": {
+        "authority_charge": 79036416,
+        "authority_jobs": 3,
+        "execution_record_charge": 12594,
+        "execution_slots": 2,
+        "execution_total_with_header": 16690,
+        "store_header_reserve": 4096,
+        "upload_charge": 79921344,
+        "upload_jobs": 3
+      },
+      "actual_firefox_rendering": true,
+      "all_results_history_unchanged_after_wait": true,
+      "controls": 216,
+      "go_module_input_count": 206,
+      "per_owner_retained_job_counts": [
+        1,
+        2
+      ],
+      "publication_accounting": {
+        "retained_bytes": 626688,
+        "retained_jobs": 3,
+        "run_charge": 208896,
+        "source_upload_logical_charge": 79921344
+      },
+      "report_sha256": "6abe2214c6e46589b4d02585f46d8f1f62b638bece203b66be97f9504cff4f9e",
+      "service_instances_clean_wait_zero": 11,
+      "source_count": 573,
+      "source_unchanged": true,
+      "status": "passed"
+    },
+    "variants": {
+      "accounting": {
+        "authority_charge": 131727360,
+        "authority_jobs": 5,
+        "execution_record_charge": 61025,
+        "execution_slots": 4,
+        "execution_total_with_header": 65121,
+        "store_header_reserve": 4096,
+        "upload_charge": 133202240,
+        "upload_jobs": 5
+      },
+      "actual_firefox_rendering": true,
+      "all_results_history_unchanged_after_wait": true,
+      "controls": 310,
+      "go_module_input_count": 206,
+      "per_owner_retained_job_counts": [
+        1,
+        4
+      ],
+      "publication_accounting": {
+        "retained_bytes": 1044480,
+        "retained_jobs": 5,
+        "run_charge": 208896,
+        "source_upload_logical_charge": 133202240
+      },
+      "report_sha256": "2283df37f0fcbf6544796767defb257519aa6dae94c708d71c5fd4efb7b75eaf",
+      "service_instances_clean_wait_zero": 11,
+      "source_count": 573,
+      "source_unchanged": true,
+      "status": "passed"
+    }
+  },
+  "preserved_attempts": [
+    {
+      "description": "First receiver catalogue decoder rejected bounded collection before initialization; retained and corrected with closed ledger decoder.",
+      "report_sha256": "4af0a87cc451b9206a483545c0b264f935ad8c8f9165223951cd92d8ab3635de",
+      "status": "failed"
+    },
+    {
+      "description": "Stale pre-format draft pin stopped copy; subsequent selection ran zero tests and verifies no limits. Retained; final pin verified and seven actual test/subtest events passed separately.",
+      "report_sha256": "2331a10869a906cd5c3cb18e21da5cb0ed4d41ff59ff3034129aa536481a2cd4",
+      "status": "non_acceptance"
+    }
+  ],
+  "schema_version": 1,
+  "scientific_scope": {
+    "stats": {
+      "gateway_scientific_metric_cards": 0,
+      "release": "unassessed",
+      "status": "succeeded",
+      "valid_runs": 2,
+      "variant_assessment": false
+    },
+    "variants": {
+      "copied_ciphertext": "signed authorization published; rejected before new execution custody",
+      "invalid_input": "failed/withheld",
+      "per_run_false_negative": 0,
+      "per_run_false_positive": 0,
+      "per_run_mapped_sam_records": 1171,
+      "per_run_true_positive": 3,
+      "valid_runs": 3
+    }
+  },
+  "scope": "Actual automatic signed-authorization publication from canonical Upload schema2 for direct CLI and Gateway; synthetic native variants/stats and Firefox on a trusted same-UID host."
+}

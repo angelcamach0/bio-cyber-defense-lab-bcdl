@@ -3,7 +3,12 @@
 Polls job records, verifies signatures and encryption in protected mode, executes
 the explicit pipeline mode, and persists execution and scientific-release states.
 
-## Config
+The explicitly selected [owner-v1 worker](README-owner-worker.md) has its own
+closed configuration and custody, verifies signed acceptance/body/envelope/AAD,
+and projects confirmed V3 broker receipts. Its cache and SOC behavior differ from
+the historical loop below. See [native owner evidence](../../docs/evidence/20261015-owner-worker-execution/public/README.md).
+
+## Historical protocol config
 - `BIOZERO_DATA_DIR` (default `./data`)
 - `BIOZERO_RULES_PATH` (default `../../bio/reference-db/rules.json`)
 - `BIOZERO_POLL_SECONDS` (default `2`)

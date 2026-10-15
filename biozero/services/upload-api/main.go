@@ -254,6 +254,9 @@ func (handler *uploadAdmissionHandler) ServeHTTP(w http.ResponseWriter, r *http.
 }
 
 func main() {
+	if dispatchOwnerUpload() {
+		return
+	}
 	addr := envOr("BIOZERO_UPLOAD_ADDR", ":8081")
 	dataDir := envOr("BIOZERO_DATA_DIR", "./data")
 	certPath := os.Getenv("BIOZERO_TLS_CERT")

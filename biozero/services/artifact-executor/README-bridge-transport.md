@@ -164,3 +164,11 @@ now asserts that refusal and unchanged ledger/journal bytes. The failed log is
 preserved alongside the corrected ordinary/race/vet logs under the private
 `.biozero/bridge-v2-checks-20261015T005815.199358Z/` evidence root. No production
 guard was weakened. The earlier v1 receipts above remain scoped to their source.
+
+## Separate owner protocol
+
+The explicitly selected [owner V3 broker](README-owner-broker.md) verifies a signed
+canonical acceptance through a second read-only FD and uses separate V3 history.
+It does not migrate the V1/V2 protocol described above. The
+[owner execution contract](../../docs/security/ownership-execution-contract.md)
+and its source-specific native evidence define that additional scope.

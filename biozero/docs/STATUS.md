@@ -1,9 +1,63 @@
 # BioZero implementation status
 
-Updated2026-10-15 UTC. Branch: `biozero/container-capsule-provider`.
+Updated2026-10-15 UTC. Working branch: `biozero/authenticated-ownership`, based on
+the `biozero/container-capsule-provider` milestone at 77a4e03.
 [PR22](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/22) is a draft
 above [merged PR21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
+[PR23](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/23) is the current ownership draft.
 No production deployment is established.
+Latest increment: [automatic signed authorization publication](#automatic-signed-authorization-publication).
+
+## Automatic signed authorization publication
+
+The canonical Upload schema2 path now publishes already-signed owner acceptances
+through a separate mTLS service before exposing lifecycle jobs. Both direct CLI
+and Gateway use that path. A dedicated producer CA and exact leaf pins separate
+the producer from owner/server RSA keys. Sender intent precedes its sole POST;
+a lost response permits a known GET only. Pending work retains its charge and
+raw custody; cold Open never publishes or completes it. Schema1 keeps its
+historical closed configuration, context and charge. See the
+[publication contract](security/ownership-publication-contract.md).
+
+Fresh actual Firefox/native variants passed310/310 controls; fresh stats passed
+216/216 using the same eleven binary bytes with explicit verified reuse. Both
+573-file source snapshots and206Go/module inputs are identical. Each run joined
+eleven owned service instances with Wait0, including clean publisher and Upload
+restarts and a separate Results instance for negative fixtures. Positive
+Results authorizations were read from actual publisher output without fixture
+copies. Negative Results testing changed only a separate fixture inbox after
+original Results Wait0, retaining endpoint/TLS/pin/policy and primary publisher
+history unchanged.
+
+Three synthetic valid variant inputs, including direct CLI, each yielded
+TP3/FP0/FN0 and1,171 mapped SAM records; invalid FASTQ stayed failed/withheld.
+Two stats inputs succeeded/unassessed. Copied ciphertext was legitimately signed
+and published for its new owner, then rejected before new execution custody.
+Gateway does not adopt direct-CLI jobs into its run registry. Variants retains
+five authority/Upload/publisher promises and four execution slots; stats retains
+three promises and two slots. Publisher charges208,896logical bytes per promise;
+Upload separately adds three96KiB journal steps plus64bytes to its previous
+body/metadata charge. These are distinct logical accounts, not physical quotas.
+
+Full authority-module race passed156principal tests/583subtests. A subsequent
+added test-only file passed2principal/5subtests for active admission and changed
+cold trust contexts; all other Go inputs match the full-module run. Final make
+passed294Python cases (292passed/two skipped) and uncached tests/vet in nine Go
+modules with unchanged source. The empty-selection attempt is retained as
+non-acceptance, and the earlier catalogue decoder failure remains failed.
+Independent retained readback passed495/495 controls, including public signatures,
+Upload/publisher contexts, accounting, exact receipt/projection/Firefox and
+post-Wait file identity. Hosted CI for this publication has its own scope; earlier
+CI does not approve this new source.
+
+[Public aggregate and source/binary pins](evidence/20261015-owner-publisher/public/README.md)
+record the final readback and publication scope. Documentation/public exports
+follow the runtime source snapshots. Fresh eleven-target compilation and
+same-environment reuse do not measure the complete historical GOROOT/FIPS tree,
+image closure or cross-host reproducibility. Same-UID host trust, deployed
+role/key/mount/network separation, physical/principal resource closure,
+maximum-load scope, active V3 failures/reconciliation and TM02 remain open.
+The regulatory biological and economic conclusions are unchanged.
 
 ## Protected synthetic experiment
 
@@ -21,9 +75,8 @@ recursive build failed after adding analysis/CLI subpackages. The failed
 [CI38660550112](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38660550112)
 at commit0dd7384 remains preserved: unit/PKI and scientific repeat passed, but
 protected-service startup was never reached. After the selector correction, fresh
-local protected native acceptance passed all78assertions. Its private receipt is
-`.biozero/bridge-buildfix-native-20261015T003540.421150Z/`; source pins and cleanup
-remain scoped to that run. The correction's own
+local protected native acceptance passed all78assertions. Its original receipt
+remains retained privately; source pins and cleanup remain scoped to that run. The correction's own
 [CI38661813114](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38661813114)
 passed at98f2f89. Subsequent source needs its own CI; that result is not reused.
 
@@ -257,7 +310,7 @@ The following earlier component receipts retain their original source scope:
 Earlier standalone host binary:5,128,722 bytes, SHA256
 `c6cea629b14cafc4abc4cda69a4d8db60f5de569cf89036e4460e2f156f57194`.
 That source inventory was unchanged throughout its build/make/race acceptance.
-Private receipts: `.biozero/broker-service-final-checks-20261015T011527.352455Z/`.
+Original build/make/race receipts remain retained privately.
 No actual acceptance service remains running after its authoritative process Wait.
 
 The earlier [CI38657120252](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38657120252)
@@ -265,6 +318,316 @@ passed for bba2637. It does not approve later source. Hosted CI skips provider
 kernel opt-ins, biological models, Compose and Firefox. Each new published source
 requires its own CI and exact-scope acceptance. Failed/weaker receipts and pending
 charges remain preserved; no model or dataset was rerun to repair the build.
+
+## Authenticated ownership protocol component
+
+A new independent [ownership protocol library](../services/ownership-authority/README.md)
+implements the cryptographic foundation in [ADR 004](decisions/004-authenticated-ownership.md).
+It derives identity from real verified TLS leaf certificates, checks a pinned
+Ed25519 challenge and same-leaf RSA-PSS manifest, derives owner/job/nonce/profile
+AAD and measures actual ciphertext. It does not start a server or change the
+existing upload, worker, broker or Results route. TM02 remains open.
+
+Two private synthetic real-mTLS probes reproduced current Results weaknesses:
+mutable owner reassignment and copied result relabeling. No existing-service fix
+is inferred. The new library passed 10 top-level/72 subcases with race detection;
+an independent exported-API caller passed one top-level/12 subcases, including
+actual GCM rejection after another valid client re-signed copied ciphertext.
+Finalize measures those signed bytes; only mandatory worker AAD enforcement can
+reject their decryption in the real route. RSA-OAEP envelope measurement remains
+an integration gate. See the [exact evidence and source pins](evidence/20261015-ownership-protocol/public/README.md).
+
+Final make passed 294 Python cases (292 passed, two kernel opt-ins skipped) and
+uncached test/vet in nine Go modules on an unchanged 420-file snapshot. After the
+successful child/log/source-after/summary, the wrapper failed while recording a
+handle; its exception is preserved without rerunning successful checks. Documents
+and aggregates added after acceptance are distinguished. No service/image build,
+Docker acceptance or biological model run establishes integration here.
+
+The following component extends this protocol. Direct/gateway clients,
+worker/broker verification and protected receipt-based result projection remain
+pending. Full same-job reassignment, cross-job ciphertext replay and result
+relabel negatives must pass on the integrated protected route before closing TM02.
+
+## Durable ownership registry component
+
+The Linux Store now reserves full slots/bytes before a body, generates job/nonce,
+persists the exact manifest before reading and signs measured acceptance before
+returning it. Its externally pinned genesis/policy and signed bounded ledger
+prevent implicit enrollment or relabeling of history. Exact accepted replay
+returns the original bytes without reading or resigning; known read rejection,
+expiry, process death and acceptance retain the full charge. Quotas aggregate
+renewed credentials by configured namespace/CN while ownership stays exact-leaf.
+
+Historical verification revalidates the authority signature, original leaf,
+challenge, manifest, complete binding and original decision time against the
+external Store scope. Decision time follows ciphertext verification; durable
+commit follows and is not asserted to finish before challenge expiry. There is
+no caller-provided historical clock and no retroactive expiry of accepted work.
+
+Independent exported-API acceptance used actual HTTPS/mTLS with the same client
+credentials across separate processes. One principal test and two cases passed:
+SIGKILL after durable acceptance followed by byte-identical cold replay/nonowner
+denial/zero Reader calls, and SIGKILL inside the first Reader followed by rejected
+cold Open. Actual WaitStatus proved both deaths. Physical signed ledger, owner
+fingerprint, full 131,136-byte charge and all original Store files remained
+unchanged on cold readback. The replay supplied a time 24 hours ahead; it did not
+wait 24 hours. No HTTP Finalize endpoint or failed network ACK write was tested.
+
+The independent run and full make each fixed the same 430-file source snapshot.
+Make passed 294 Python cases (292 passed, two opt-ins skipped) and uncached
+test/vet in nine Go modules. A later change only strengthens the Store GC fixture:
+its predecessor retained a deferred receiver and could not prove last-reference
+loss. Both receipts remain preserved; production Go source is unchanged. The
+corrected fixture verifies actual closure of the three os.File descriptors while
+the separate raw CLOEXEC flock remains live. Its full module/race/vet passed
+34 principal tests and 176 subcases. After adding the public external reproduction
+fixture, default module tests/vet passed the same 34/176 with two explicit opt-ins
+skipped; the new fixture passed one principal/two subcases under race, with its
+parent helper skipped. Production Go stayed unchanged. Exact results and source
+delta are recorded in the [public aggregate](evidence/20261015-ownership-store/public/README.md).
+
+Defaults retain 64/16 jobs, 512/128 MiB global/principal charges, 2/1 active
+reserved-or-reading jobs and 25 MiB plus 131,072 bytes per reservation. The ledger
+and one replacement are each bounded to 8 MiB. Unknown/pending history fails
+unchanged; a sticky live writer retains its raw lock until process exit. A crash
+after marker unlink but failed parent sync need not preserve the marker, so
+universal cold rejection at that boundary is not claimed. No automatic refund,
+retry, repair, migration, hostile-host protection or antirollback is implemented.
+
+At that registry snapshot, this was an unintegrated library: no retained
+service/image artifacts were rebuilt and no Docker/model acceptance ran. Go checks
+compiled temporary test/service fixtures. The next component adds authority ingress;
+deployed isolation, envelope/AAD enforcement, worker/broker binding and
+receipt-based release remain dependencies. Existing services still have the reproduced
+TM02 weaknesses. See the [contract](../services/ownership-authority/README.md) and
+[ADR 004](decisions/004-authenticated-ownership.md); the full gate remains open.
+
+## Ownership authority ingress component
+
+The Linux authority now serves HTTPS/mTLS Reserve, streaming Finalize and owner-only
+readback. A closed private configuration pins the signing key, TLS assets, policy
+and external genesis scope. Initialization is exclusive and separate from serving;
+startup never adopts history. Literal loopback, TLS 1.3, eight connections, four
+handlers, bounded metadata and real read/write deadlines limit ingress. Protected
+response delivery runs under the Store preflight/mutex; failed Write/Flush latches
+the live writer. Shutdown stops admission and drains before healthy Store close;
+a retained terminal error cannot be cleared by a second Shutdown.
+
+The corrected HTTP fixture passed eight principal tests/26 subcases. Its initial
+helper used a client absolute URL for a server request, causing three failures and
+shadowing other negatives; that original weaker run is retained. The correction
+uses a relative target and valid control, without changing production for that
+helper error. Full module ordinary/race/vet then passed 50 principal tests/234
+subcases plus four CLI tests, with explicit external/helper skips. Those checks
+pin 19 inputs; a later test-only addition has its own 20-input race acceptance.
+
+That service-process acceptance verifies signed durable commit before an actual
+TCP RST and delegated Write error, full retained charge, sticky live failure and
+repeated Shutdown denial. A second process is denied while that writer lives.
+Only after SIGKILL and confirmed WaitStatus does a fresh process reopen the same
+trusted scope: owner GET and metadata-only Finalize return the original acceptance,
+the other leaf gets 403, and SIGTERM exits cleanly with all history unchanged.
+This uses the actual service API in owned test processes with transport
+instrumentation. It is separate from the standalone CLI acceptance.
+
+One retained ARM64 CLI binary was explicitly built, then tested through independent
+Python TLS 1.3/mTLS clients. Fresh genesis exits zero; reinitialization exits nonzero
+without changing history. Two serving starts over the original accepted history
+return identical owner readback/metadata-only replay and exit zero on SIGTERM.
+The fixture reuses a dual-EKU server/client leaf; deployed client/server key
+separation is not established. The independent public-key-only review passes
+39 controls without rerunning acceptance or opening private keys.
+
+Final make passed 294 Python cases (292 passed/two kernel opt-ins skipped) and
+uncached test/vet in nine Go modules on an unchanged 442-file snapshot. Four
+technical documents and the public aggregate were updated afterward; production
+Go stayed unchanged. No Docker image, capsule acceptance, dataset acquisition or
+biological model ran in this increment. Temporary Go fixture compilation and the
+one retained service build have separate receipts. See the
+[exact scopes and source pins](evidence/20261015-ownership-authority/public/README.md).
+
+This completes a locally verified authority component, not TM02. Upload/gateway,
+worker/broker and Results still use their previous contracts. Deployed key/mount
+isolation, actual OAEP-envelope comparison/GCM AAD enforcement, protected receipt
+projection and integrated substitution negatives remain pending. Scientific and
+economic conclusions below are unchanged.
+
+## Durable shared ownership client component
+
+The new verified HTTPS/mTLS client performs one explicit Reserve, Finalize or Get
+call, without redirects, demo fallback or automatic network retries. Its private
+operation workspace persists the original request identity before Reserve, the
+original challenge and one encrypted payload before Finalize, then a finalizing
+phase before the network call. Records are append-only and bounded; unknown files,
+transaction markers or changed context fail unchanged. Ambiguous IO keeps the raw
+lifetime flock even after both Go file descriptors are collected.
+
+A lost Reserve response permits only an explicit same-token action. A lost
+Finalize response is recovered through Get of the already-known job; no method
+resends ciphertext or starts execution. A direct acceptance retains its raw bytes;
+Get recovery stores the canonical verified signed object. Both are compared with
+the original challenge/manifest/leaf/body/envelope. Prepare uses explicit caller
+time; fresh Finalize independently enforces its real transport clock.
+
+The payload helper defines AES-GCM body/tag plus RSA-OAEP-SHA256 key32/nonce12,
+empty OAEP label and mandatory signed-context AAD. Actual ciphertext and decoded
+envelope digests are checked before unwrap. In the pure measured-protocol/signature
+fixture, B really signs copied ciphertext and obtains authority acceptance; GCM Open under
+B's context fails. This proves the helper gate, not integration into the worker.
+
+Focused transport tests passed eight principal/39 subcases; an initial shared
+quota fixture could shadow wrong-pin verification and is preserved as source plus
+transcript-only limitation. Corrected isolated fixtures have original captured
+stdout/stderr. Payload/operation focused tests passed eleven principal/45 subcases
+on the first run. Three owned SIGKILL/WaitStatus cases cover prepared readback,
+query-only finalizing recovery and rejection of uncertain history; the last also
+observes both original file descriptors closed with the raw CLOEXEC lock live.
+All these fixture directories are temporary. Retained source pins/logs do not
+constitute a retained client acceptance workspace or standalone client execution.
+
+Full module race passed 69 principal tests/318 subcases and four CLI tests with
+five ownership opt-in/helper skips and one CLI helper skip. It pinned 26 Go/module
+inputs unchanged. Final make passed 294 Python cases (292 passed/two kernel opt-ins
+skipped) and ordinary test/vet in nine Go modules on an unchanged 453-file snapshot.
+Five technical documentation updates and the four-file client aggregate follow
+that snapshot. No runtime Go changed after race/make; the earlier focused operation
+snapshot differs only by a later explanatory comment. No retained CLI build,
+Docker/model execution, dataset acquisition or existing-workspace cleanup ran in
+this increment. See the [client contract](security/ownership-client-contract.md)
+and [reviewed source scopes](evidence/20261015-ownership-client/public/README.md).
+
+This is the dependency for direct CLI/gateway adapters. The old upload creates
+another job ID and gateway only persists its run after upload; neither is activated
+as owner-v1. Authority network/key/mount isolation, actual worker/broker enforcement,
+protected result projection and integrated substitutions remain pending. TM02 and
+the full roadmap stay open; scientific/economic conclusions remain unchanged.
+
+## Owner-v1 CLI and upload delivery adapter
+
+The explicit owner-v1 CLI now connects authority operations to a separate upload
+spool while retaining the original signed job ID. Client input/config intent
+precedes Reserve; separate operation/delivery journals retain two ciphertext
+copies (approximately50MiB maximum combined). Deliver publishes intent before
+its sole POST. A lost response is recovered only through a known-job GET; local
+status verifies both journals without network. The new upload service verifies
+external pin/scope, exact owner leaf, decoded OAEP envelope and measured body,
+charges its full maximum-body promise before reading ciphertext, and retains
+charges for delivered/rejected/uncertain entries. Cold pending history stays
+fenced. It has no authority signing key or worker decrypt key in its configuration.
+
+Corrected focused tests passed ingress/delivery26 principal/109 subcases,
+CLI11/18, selector2/3 and worker gate1/2. The initial subprocess barrier incorrectly
+stopped metadata reads before the intended body read; the original failed run and
+source remain preserved. Only that test barrier changed. Full race then passed
+146 principal/543 subcases across three modules (including four authority-command
+tests), with ten explicit opt-in/helper skips. The136 repository Go/module inputs
+were identical in focused/race and retained runtime acceptance.
+
+A fresh native acceptance built four pinned executables: authority, upload API,
+uploader and an independent stdlib-only payload inspector. All27 controls passed
+actual TLS1.3/mTLS with separate server/client EKUs, trusted genesis scope,
+signed-ID preservation, bounded exact frame/body/envelope, and A200/B403 on both
+services. The inspector opened the CLI's actual OAEP/GCM ciphertext with canonical
+signed-context AAD and matched the synthetic input; changed AAD failed. This
+inspects emitted payload bytes, not a worker's ownership enforcement.
+
+A test TLS relay received the complete upstream upload receipt and dropped it
+before writing downstream HTTP bytes. Cold CLI recovery made only GET, preserving
+both server histories and exactly26,345,472 charged bytes in each single-record
+store. Both owned service processes exited zero on SIGTERM/Wait, with history
+unchanged; binaries, private keys, journals, ledgers and original logs are retained
+privately. Independent public-key-only retained-evidence review passed57 controls
+without rerunning acceptance or opening private keys/plaintext. This response-loss
+acceptance is separate from the unit fixture's
+actual upstream TCP RST/delegated write failure, SIGKILL and cold replay. Those
+unit fixture directories were temporary and were cleaned by the test framework.
+
+Final make passed294 Python cases (292 passed/two kernel opt-ins skipped) and
+ordinary test/vet in nine Go modules over an unchanged474-file snapshot, identical
+to runtime acceptance. An earlier captured make inherited umask077, which made
+two historical unsafe-permission fixtures safe and failed their negative checks;
+that original run remains preserved. The capture runner corrected only its child
+umask to the ordinary022, without changing production/test sources. Later status,
+requirement/decision/threat documentation and the public bundle are separate from
+that snapshot. See the [public evidence](evidence/20261015-owner-upload-delivery/public/README.md)
+and [delivery contract](security/ownership-delivery-contract.md).
+
+Delivered means transport only. The legacy-selected worker rejects owner-v1 before
+legacy decryption/custody; a valid legacy signature cannot bypass the algorithm
+gate. Gateway, worker/broker acceptance-hash/AAD enforcement, receipt-based Results,
+deployed keys/mounts/network and integrated substitutions remain open under TM02.
+No Docker/image build, capsule analysis, model/dataset acquisition, deployment or
+scientific recomputation ran in this increment. The broader roadmap and prior
+scientific/economic conclusions are unchanged.
+
+## Owner-v1 worker and V3 broker execution
+
+The explicitly selected owner-v1 worker independently verifies signed acceptance,
+external pin/scope, actual ciphertext and decoded OAEP envelope, then authenticates
+GCM with mandatory signed-context AAD before plaintext staging or verified custody.
+It records canonical acceptance/credential/original-upload/processed-input facts
+before its sole Submit. The separate V3 broker receives two RO FDs, independently
+verifies canonical acceptance and preserves owner/context bindings before Reserve.
+It trusts the worker for the GCM-to-plaintext relationship and has no decrypt key.
+V1/V2 history is never adopted. Query-only recovery ignores mutable terminal jobs
+and result caches. Receipt projection is one shared package with the same source,
+science, detection and release rules; the owner cache is observability only.
+
+Fresh retained native acceptance passed53/53controls. Actual authority/CLI/upload,
+worker launcher, V3 broker and native capsules processed two valid synthetic
+three-SNP inputs with TP3/FP0/FN0 and1,171mapped SAM records each; the invalid FASTQ
+committed failed/withheld with only its execution receipt. Both valid normalized
+SNP callsets matched truth and each other. Nine exported files, manifests, keeper
+proofs, receipt/source/context hashes and actual read-only receipt FDs matched.
+The worker's actual tmpfs was32MiB/4096inode units with noexec/nosuid/nodev,
+NoNewPrivs1 and all capability sets zero. Native host files/same-UID writers remain
+trusted; this is not deployed key/mount isolation or hardware attestation.
+
+B obtained a legitimate mTLS challenge/acceptance after signing an exact copy of
+A's ciphertext and envelope. Transport delivered it, but the worker emitted its
+generic rejection without any observed tmpfs mutation or new worker/broker/Store
+record. Inotify had three positive staging controls; physical B input/binding
+facts matched and all execution-history bytes stayed identical. A separate real
+OAEP/GCM inspector opened the copied bytes with A's AAD and failed with B's AAD.
+The worker's particular GCM error is inferred from these controls and verified
+code order; it is not a specific error code observed in the process log.
+All four admitted inputs retain105,381,888logical bytes in EACH authority/upload
+store. Three execution slots retain42,922record bytes plus4,096header reserve,
+47,018total. These logical charges do not cap the complete physical filesystem.
+Four owned services ended with SIGTERM/Wait0 and unchanged execution-history bytes.
+
+Independent public-key-only readback passed96controls without rerunning execution
+or reading private keys/input plaintext; a separate five-control attribution
+review verified retained source copies and the later test-only change. Full race
+passed264principal/877subcases across artifact/worker modules with13explicit
+kernel/ownership skips. Runtime and race pin the same156Go/module inputs.
+Final make passed294Python (292passed/two opt-ins skipped), uncached ordinary Go
+tests and vet in nine modules over502unchanged source files. Its only delta from
+runtime is three keyed-field spellings in one receipt test: the extraction made
+SourcePin an external alias and vet refused the prior unkeyed literals. Values,
+assertions and production Go are unchanged; no runtime rebuild/repetition was
+needed for that test syntax. Post-validation documentation/exports are separate.
+
+Original failed/weaker receipts remain retained. Initial focused fixtures used
+subsecond authority time; the first race used private roots without explicit0700
+under ordinary umask022. The first native run passed18controls and real3SNP
+execution before a verifier used analysis instead of analysis_capture. Its eight
+retained binaries were reused only after exact source/hash/metadata checks in a
+fresh run with new stores and journals; no old execution was reset or adopted.
+The first make stopped at the unkeyed test vet error; its original source/logs
+remain. Temporary Go fixtures are distinct from the retained native workspaces.
+See [public evidence and source attribution](evidence/20261015-owner-worker-execution/public/README.md),
+[execution contract](security/ownership-execution-contract.md),
+[worker configuration](../services/enclave-runner/README-owner-worker.md) and
+[owner broker](../services/artifact-executor/README-owner-broker.md).
+
+TM02 remains open: authoritative owner Results before private bytes, a dedicated
+read-only broker channel, Gateway/UI and result/owner-substitution negatives,
+deployed key/network/mount separation and fresh V3 lifecycle fault acceptance.
+The owner loop does not automatically run the legacy SOC outbox. No image build,
+Docker acceptance, model inference, dataset acquisition or deployment ran in this
+increment. Regulatory scientific/economic conclusions and the full roadmap remain.
 
 ## Regulatory feasibility
 
@@ -292,3 +655,102 @@ hashes, without DNA, rows, case IDs, vectors or weights. See
    controls and the final documented deliverables under the free-only constraint.
 
 The full technical scope remains in [requirements and gates](requirements-and-gates.md).
+
+
+## Owner-v1 receipt-based Results and dedicated reader
+
+The explicitly selected Results API authorizes the live mTLS certificate leaf
+against externally pinned signed acceptance before querying private execution.
+It has no legacy jobs/results/Store root or worker/authority private-key setting.
+A separate status/receipt-only broker socket preserves owner/scope/input/profile
+and full commit bindings. It cannot Submit, Cancel or ACK. Worker and Results
+share policy parsing and the same scientific receipt projector.
+
+Fresh same-UID native acceptance passed83/83 controls. Distinct owner leaves with
+equal CN/serial produced A200/B403 despite forged headers. Two real three-SNP
+runs gave TP3/FP0/FN0 and1,171 mapped SAM records each; invalid FASTQ stayed
+failed/withheld. Worker, dedicated read-only receipt FD and HTTPS Results bound
+the same retained receipt and projection. Cache substitution after clean worker
+Wait could not relabel results. Missing/copied-job authorization, a modified
+signature on the same job and a missing TLS client certificate were denied.
+The signature negative also has a restored-inbox positive control.
+
+Five services ended SIGTERM/Wait0. All authority/upload/Store/broker/worker history
+bytes stayed unchanged across Results reads/negatives and final Wait. Authority
+and upload each retain105,381,888 logical bytes across four promises. Three Store
+records retain42,924 bytes plus4,096 header reserve=47,020 bytes. Physical spool and
+per-principal quotas remain separate gates.
+
+The original run passed all83 checks and five clean service exits, but was overall
+failed because its final inotify drain followed worker mount teardown. Its exact
+receipt/logs/binaries/state remain retained. The corrected observer closes before
+worker termination. Nine original executables were explicitly reused only after
+all172 initial/final Go/module inputs and binary hash/size/mode/UID/link/stable-copy
+checks. The successful run has new profile/genesis/runtime/history; it neither
+adopts old state nor silently recompiles on a reuse mismatch.
+
+Independent retained-evidence review passed147 controls without rerunning
+acceptance or reading private keys/input plaintext. Input-plaintext fixture
+sources remain recorded pins rather than independently rehashed. Full ordinary
+artifact/worker/Results race passed311 principal/1,155 subcases with14 explicit test
+skips. Its147 dependency inputs match the runtime subset. Final make passed294
+Python (292 passed/two skipped), uncached tests/vet in nine modules. Runtime has
+523 source files and172 Go/module inputs. Final make differs only in two test files: one added
+`defer cancel()` in a Results lifecycle test after vet detected its cleanup gap,
+and an explicit post-listen readiness marker for an existing Python reconciliation
+fixture that had raced bind/chmod against listen. Production Go/Python is unchanged; scientific and reconciliation checks remain
+intact. A fresh full Results race also
+verifies that final test source. Later document edits/exports have separate pins.
+All failed/weaker test, audit, native and make attempts remain retained.
+
+Causal component tests separately verify kernel-observed receipt reads: matching
+bindings read, otherwise-valid crossed tuples do not. Actual HTTPS reset after
+projection stays local. The reader's final trusted FD-check failure is typed and
+fences custody under locks even with concurrent cancellation; write/cancel faults
+preserve healthy custody. These temporary component fixtures are not relabeled
+as the retained native run or as integrated active-job fault acceptance.
+
+See [public evidence](evidence/20261015-owner-results/public/README.md) and the
+[Results contract](security/ownership-results-contract.md). Same-UID native host
+trust remains. At this Results milestone, Gateway/UI was still pending; see
+the later Gateway section below. Deployed UID/key/mount/network separation, full
+V3 fault/operator reconciliation, maximum-load/active-job fault acceptance and
+the rest of TM02/requirements remain open. No image build, model inference, dataset
+acquisition, regulatory recomputation or deployment ran in this increment.
+
+## Owner-v1 Gateway and actual Firefox UI
+
+The explicitly selected Gateway now binds browser sessions to individual pinned
+TLS reviewer leaves and durable signed authority operations. Closed private
+configuration, intent-before-network idempotency, retained logical promises,
+session epoch guards at the final write, typed Results projection and cold
+query-only startup keep transport state separate from scientific commit/release.
+Logout or a lost browser response neither refunds nor automatically retries work.
+Nonblocking custody checks distinguish busy from healthy or corrupted state.
+
+Actual Firefox/native variants passed116/116 controls; separate stats passed67/67.
+Independent offline retained-evidence review passed824/824. Two valid variants
+each had TP3/FP0/FN0 and1,171mapped SAM records; invalid FASTQ remained
+failed/withheld. Stats showed succeeded/unassessed, no variant assessment and no
+scientific metric cards. Both modes compared retained receipt, dedicated reader,
+direct Results, typed Gateway and actual renderer/DOM, with A/B denial,
+copied-ciphertext rejection, signed-inbox/cache negatives and restart/relogin.
+Each run retained all history and charges after seven service instances Wait0.
+
+Runtime snapshots have548sources/188Go-module inputs and identical ten binary
+bytes; only the stats fixture Python rules derivation differs. Nine executables
+were reused under checked dependency closures and one Gateway rebuilt after the
+foreign-operation404 correction. Historical complete GOROOT/FIPS-tree immutability
+was not measured. Public documents were added after native acceptance. Original
+failed native, stats-setup, verifier and auditor receipts remain preserved.
+Separate full Gateway race passed145 test/subtest events; authority race528.
+Final publication/CI must be checked on the new published tree, not inherited
+from the earlier Results milestone.
+
+See [reviewed aggregate/source pins](evidence/20261015-owner-gateway/public/README.md),
+[Gateway contract](security/ownership-gateway-contract.md) and the
+[runbook](runbooks/reproduce.md). Same-UID host trust and fixture provisioning of
+the Results authorization inbox remain explicit. Deployed authorization publisher,
+role/key/mount/network isolation, maximum-load/physical/principal quotas, active
+V3 fault/operator reconciliation, legacy decommissioning and the complete TM02
+and project requirements remain open. No model inference or deployment ran.

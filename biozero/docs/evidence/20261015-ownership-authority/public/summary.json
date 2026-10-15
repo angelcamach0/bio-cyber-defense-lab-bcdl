@@ -1,0 +1,188 @@
+{
+  "actual_cli": {
+    "binary_bytes": 9772144,
+    "binary_sha256": "e3df014d14d842214fa15c0eaf2d7683ce6f5255a8f8ae4e8b02cca7012ab23a",
+    "build_exit_code": 0,
+    "build_flags": [
+      "-trimpath",
+      "-buildvcs=false"
+    ],
+    "driver": "independent Python standard-library verified TLS1.3/mTLS",
+    "fresh_and_repeated_init_exit_codes": [
+      0,
+      1
+    ],
+    "go_version": "go version go1.26.7 (Red Hat 1.26.7-2.el9_8) linux/arm64",
+    "original_history_unchanged": true,
+    "owned_serving_exit_codes": [
+      0,
+      0
+    ],
+    "owner_readback_and_metadata_only_finalize_identical": true,
+    "scope": "separate fresh genesis/no-adoption and two starts over original process-acceptance history; no new payload/analysis"
+  },
+  "build_and_execution_scope": {
+    "datasets_acquired": false,
+    "docker_images_built": false,
+    "docker_or_capsule_acceptance_run": false,
+    "go_tests_compile_temporary_fixtures": true,
+    "models_run": false,
+    "retained_authority_cli_binaries_built": 1
+  },
+  "corrected_http": {
+    "exit_code": 0,
+    "failures": 0,
+    "input_files": 13,
+    "passed_principal_tests": 8,
+    "passed_subcases": 26,
+    "scope": "focused named-file HTTP tests; service config/CLI excluded",
+    "skips": 0
+  },
+  "final_make": {
+    "exit_code": 0,
+    "go_modules_test_and_vet": 9,
+    "python_passed": 292,
+    "python_skipped": 2,
+    "python_total": 294,
+    "source_files": 442,
+    "source_unchanged": true,
+    "stderr_sha256": "56578c8dcc2c3c8200c6beeb822aa7f972585dc249a1315d8ba2450f7c8e5a37",
+    "stdout_sha256": "39326b650e8c9342ec71ba8050a5ddd87d152a2858eb073d9a6078a6be4777a7"
+  },
+  "independent_review": {
+    "acceptance_rerun": false,
+    "failed": 0,
+    "passed": 39,
+    "private_key_files_opened": false,
+    "scope": "public-key cryptography, physical history, pins, accounting and original-driver evidence"
+  },
+  "limitations": [
+    "Synthetic service/CLI fixture reuses a dual-EKU RSA server/client leaf; deployed client/server key separation is not proven.",
+    "Application authorization-before-Read does not mean zero kernel/TLS buffering or zero final net/http drain.",
+    "Successful Write/Flush is not proof of peer receipt.",
+    "The envelope digest is an authenticated client declaration; actual OAEP envelope comparison/unwrap and GCM AAD enforcement remain consumer gates.",
+    "Local component evidence does not integrate or fix the existing upload/gateway/worker/broker/Results contracts.",
+    "Deployed authority key/mount isolation, rotation/migration, integrated substitution negatives and full TM02 remain pending.",
+    "No antirollback, hostile-host protection, scientific approval or automatic refund/retry/repair is established."
+  ],
+  "module_checks": [
+    {
+      "argv": [
+        "go",
+        "test",
+        "-json",
+        "-count=1",
+        "./..."
+      ],
+      "counts_by_package": {
+        "biozero/ownership-authority": {
+          "pass_subcase": 234,
+          "pass_top": 50,
+          "skip_top": 2
+        },
+        "biozero/ownership-authority/cmd/ownership-authority": {
+          "pass_top": 4,
+          "skip_top": 1
+        }
+      },
+      "exit_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "ec7e94eb49de1c534b7e8bef7f61c160e11868ad17f37281bc86f5d9fd80b283"
+    },
+    {
+      "argv": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "exit_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=1",
+        "./..."
+      ],
+      "counts_by_package": {
+        "biozero/ownership-authority": {
+          "pass_subcase": 234,
+          "pass_top": 50,
+          "skip_top": 2
+        },
+        "biozero/ownership-authority/cmd/ownership-authority": {
+          "pass_top": 4,
+          "skip_top": 1
+        }
+      },
+      "exit_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "cf947cb8deaaa01c60a70ec25c346d3d398cb5d264871aedd49500da07ece9ef"
+    }
+  ],
+  "outcome": "locally verified authority component; end-to-end TM02 remains open",
+  "preserved_weaker_attempts": {
+    "cause": "client absolute URL used in direct server-request helper; other transport negatives could be shadowed",
+    "correction": "relative target plus valid control; no production correction for this fixture error",
+    "diagnostic_test_exit_code": 1,
+    "earlier_engineering_focused_checks": "tool transcript only; not original captured file/snapshot receipts",
+    "failed_metadata_subcases": 3,
+    "initial_http_exit_code": 1
+  },
+  "private_receipt_sha256": {
+    "cli_build_receipt": "d9aeb1ed37d07ac339d8c377d2220eb472e2c9b97301b882b194aa40bae65999",
+    "cli_driver": "28b9d700af982308ce1b12bc617f029412d4b1c07c450a0ad6c04089d53a42a0",
+    "cli_summary": "044be7dc6d9fe9164f47a4f536a33e58af104c8dd65efb0b8dbcd7637c379cd7",
+    "corrected_http_log": "857faf4fcb6206d877e162f33e27a32d2646d2ed370bc89d6ff39b9f780456b5",
+    "corrected_http_summary": "ec87eb85873698e19b82f3bde25e628d7abc182d70d6f583affeb771fbab3b03",
+    "final_make_stderr": "56578c8dcc2c3c8200c6beeb822aa7f972585dc249a1315d8ba2450f7c8e5a37",
+    "final_make_stdout": "39326b650e8c9342ec71ba8050a5ddd87d152a2858eb073d9a6078a6be4777a7",
+    "final_make_summary": "f836cefc2325f331efed66e8d3aedfe4f5b3a26c6608d84feb3988537ba9aa4f",
+    "independent_attempt": "1ad631b01d540fb7796f50e365e8e6ec3403d0fc5e769aa8a919e94bcb9f4759",
+    "independent_review": "da3442e678996cfdb1c4210760b07257e37e7c5b373b0a43f690754f6c6590db",
+    "independent_stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "independent_stdout": "b58c8150cf37a4d8bfda1c59f0ef6e9fcf3e72bb85371f7f95d6e240f6ab15af",
+    "independent_verifier": "2261b24d0565a6dc9ed67329c095669cd40df6fa38e812133752ad79d7896f5a",
+    "initial_http_diagnostic_log": "968a1093e1dbbfe34d18dda125f4edf739e68ed8307ee6d2f398652e9ae30664",
+    "initial_http_log": "947431c1e00a7ac415c4068dda9da63e9b03e4f96ec2c3804f3ca20e92eb9e91",
+    "initial_http_summary": "3c9975d50fbed467efee048c291e5b3dbfddef8c8bf69e8393ea41815a468eef",
+    "initial_http_test_source": "a648c6112605526ac367152696b5f32736c89ef3896c84615d662f75ebc071af",
+    "module_report": "29d89f60732435c4a681ba966d0a10c7cb917ad4e0deb20797a8aea47b01b5d3",
+    "process_log": "dd994c1db5e19fd95e59423d185ca02b45bf236ed8095ab8b89f09cf1277e33d",
+    "process_summary": "491641c0b8ecdaec59abcc280e10c831ec6b979028e270b5c8fdaab47335ec86"
+  },
+  "schema_version": 1,
+  "service_process": {
+    "actual_delegated_write_error_bytes": 0,
+    "actual_mtls": true,
+    "actual_tcp_rst": true,
+    "clean_sigterm_exit": 0,
+    "cold_owner_get_and_metadata_only_finalize_identical": true,
+    "exit_code": 0,
+    "helper_parent_skips": 1,
+    "live_failure_sticky": true,
+    "nonowner_status": 403,
+    "original_history_unchanged": true,
+    "owned_sigkill_waitstatus_verified": true,
+    "passed_principal_tests": 1,
+    "passed_subcases": 1,
+    "race": true,
+    "retained_charge_bytes": 131136,
+    "scope": "service API in owned test processes with transport Write instrumentation; not standalone CLI",
+    "second_live_writer_denied": true,
+    "shutdown_denied_twice": true,
+    "signed_commit_verified_before_write": true
+  },
+  "source_scope": {
+    "final_make_files": 442,
+    "module_inputs": 19,
+    "post_make_document_count": 4,
+    "post_make_public_bundle_files": 4,
+    "process_and_cli_inputs": 20,
+    "unchanged_during_each_execution": true
+  }
+}

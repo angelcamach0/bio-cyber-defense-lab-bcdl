@@ -1,0 +1,165 @@
+{
+  "baseline_commit": "6f01cb7ec2d7dbee1b461c82a14bd6fedf57339d",
+  "build_provenance": {
+    "all_ten_compiled_current_snapshot": false,
+    "executables": 10,
+    "fresh_gateway_executables": 1,
+    "historical_complete_goroot_and_fips_tree_measured": false,
+    "original_reused_executables": 9,
+    "verified_build_report_sha256": "a98dedc07377f54c7ab8727b22b940f4c130536256976cc18896a02c46dee9c9"
+  },
+  "component_race": {
+    "authority_pass_events_including_subtests": 528,
+    "authority_report_sha256": "05c5b7fbc050a1fb9647f25816436b0196574e110470ca641f5c2a793cc80530",
+    "gateway_pass_events_including_subtests": 145,
+    "gateway_report_sha256": "586efbb2875e63887ecc789096fc0657e2eb0705baad3d31c12f0b020fd970b4",
+    "scope": "Component fixtures, separate from native/browser controls."
+  },
+  "cross_run_attribution": {
+    "different_full_source_paths": [
+      "biozero/infra/native/run_owner_worker.py"
+    ],
+    "reason": "Stats-only fixture derives rules with threat_panel_fasta empty; production Go/UI unchanged. Documentation added after runtime.",
+    "same_188_go_module_inputs": true,
+    "same_binary_bytes": true
+  },
+  "date": "2026-10-15",
+  "dirty_at_runtime": true,
+  "independent_readback": {
+    "controls": 824,
+    "report_sha256": "3501b64ef47a56ae3e7dbbe2f79e8078ddd052b281adbf6ea07eadd80c7fa291",
+    "scope": "Offline retained evidence, source/binary provenance, public signatures, custody, scientific receipt, real renderer/DOM, accounting and post-Wait history; no science rerun.",
+    "status": "passed"
+  },
+  "limitations": [
+    "Trusted same-UID host; deployed UID/key/mount/network isolation unverified.",
+    "Results inbox receives an exact already-signed acceptance through fixture provisioning; autonomous deployed publisher unverified.",
+    "Configured bounds are not maximum-load or physical quota acceptance.",
+    "No arbitrary active-job death, upstream ACK-write or operator repair closure.",
+    "Synthetic normalized allele presence only; no genotype, indel, WGS, clinical or novelty approval.",
+    "No image closure, cross-host reproducibility, model inference or deployment acceptance.",
+    "Firefox delayed-response isolation is post-fetch UI evidence; server prewrite guards have separate component evidence."
+  ],
+  "native_acceptance": {
+    "stats": {
+      "accounting": {
+        "authority_charge": 52690944,
+        "authority_jobs": 2,
+        "execution_record_charge": 6297,
+        "execution_slots": 1,
+        "execution_total_with_header": 10393,
+        "store_header_reserve": 4096,
+        "upload_charge": 52690944,
+        "upload_jobs": 2
+      },
+      "actual_firefox_rendering": true,
+      "controls": 67,
+      "go_module_input_count": 188,
+      "history_unchanged_after_wait": true,
+      "report_sha256": "b11d126c094544cb413fa457958944f002b9c76feed0cfdc4aad137581d720d5",
+      "service_instances_clean_wait_zero": 7,
+      "source_count": 548,
+      "source_unchanged": true,
+      "status": "passed"
+    },
+    "variants": {
+      "accounting": {
+        "authority_charge": 105381888,
+        "authority_jobs": 4,
+        "execution_record_charge": 42922,
+        "execution_slots": 3,
+        "execution_total_with_header": 47018,
+        "store_header_reserve": 4096,
+        "upload_charge": 105381888,
+        "upload_jobs": 4
+      },
+      "actual_firefox_rendering": true,
+      "controls": 116,
+      "go_module_input_count": 188,
+      "history_unchanged_after_wait": true,
+      "report_sha256": "d12a391f102ed4e97fb81cd1a265a51465d93654ca7fd2fbbb2ab8bd77b30d84",
+      "service_instances_clean_wait_zero": 7,
+      "source_count": 548,
+      "source_unchanged": true,
+      "status": "passed"
+    }
+  },
+  "preserved_attempts": [
+    {
+      "description": "Foreign operation returned503 instead of opaque404;36/37 controls passed; failed receipt retained.",
+      "report_sha256": "2ca226d74cea2663d8d016c5ba2524d5acf8aaa3c29056aaa8d26788467d7eb1",
+      "status": "failed"
+    },
+    {
+      "description": "Build verifier rejected exact external certified FIPS standard-library closure before replacement compile.",
+      "report_sha256": "dc27379c4c2899b10e8fe0efe1f37b65907635d60c9dfabcf23b0dd814b9277e",
+      "status": "failed"
+    },
+    {
+      "description": "Stats profile correctly rejected enabled panel dependency before service/science startup;9 setup controls were not runtime acceptance.",
+      "report_sha256": "9102556fbb6e4a1a03b89ce97291e1374dc62ff4f32f360566444557b81b2c6c",
+      "status": "failed"
+    }
+  ],
+  "preserved_auditor_failures": [
+    {
+      "cause": "metadata-body pairing",
+      "native_evidence_changed": false,
+      "partial_passed_controls": 293,
+      "partial_total_controls": 294,
+      "report_sha256": "c5f2b8df6e932038ac9dad8a83d064795c0e72dc82c3ef5d9758a4e3a03edfb0",
+      "status": "failed"
+    },
+    {
+      "cause": "journal filename schema",
+      "native_evidence_changed": false,
+      "partial_passed_controls": 345,
+      "partial_total_controls": 345,
+      "report_sha256": "7337e844e4f18ce0ebca1a14b84fcc90c3258b2352d8373dd40bd498479fac02",
+      "status": "failed"
+    },
+    {
+      "cause": "commit field schema",
+      "native_evidence_changed": false,
+      "partial_passed_controls": 362,
+      "partial_total_controls": 362,
+      "report_sha256": "1158789b5b5312ff96f4d95f15633c595293c51b895a70cb810f14263107abbb",
+      "status": "failed"
+    },
+    {
+      "cause": "encrypted filename guard",
+      "native_evidence_changed": false,
+      "partial_passed_controls": 436,
+      "partial_total_controls": 436,
+      "report_sha256": "9caf9e1afe0db58eb58152e968e10d6884abd9750d39bc8cd55c0b83c942ebb3",
+      "status": "failed"
+    },
+    {
+      "cause": "nested build provenance schema",
+      "native_evidence_changed": false,
+      "partial_passed_controls": 459,
+      "partial_total_controls": 459,
+      "report_sha256": "ad34cbe04a47c8b9cdbb8e2a24765f51f1d4ab9f9881eeec50dd6554b3ca1722",
+      "status": "failed"
+    }
+  ],
+  "schema_version": 1,
+  "scientific_scope": {
+    "stats": {
+      "release": "unassessed",
+      "scientific_metric_cards": 0,
+      "status": "succeeded",
+      "valid_runs": 1,
+      "variant_assessment": false
+    },
+    "variants": {
+      "invalid_input": "failed/withheld",
+      "per_run_false_negative": 0,
+      "per_run_false_positive": 0,
+      "per_run_mapped_sam_records": 1171,
+      "per_run_true_positive": 3,
+      "valid_runs": 2
+    }
+  },
+  "scope": "Separate owner-v1 HTTPS Gateway and actual Firefox UI with synthetic variants and stats; same-UID trusted-host native acceptance."
+}

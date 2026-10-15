@@ -118,6 +118,9 @@ type Gateway struct {
 }
 
 func main() {
+	if handled, code := ownerGatewayMain(); handled {
+		os.Exit(code)
+	}
 	path := os.Getenv("BIOZERO_REVIEWER_CONFIG")
 	if path == "" {
 		log.Fatal("BIOZERO_REVIEWER_CONFIG is required")

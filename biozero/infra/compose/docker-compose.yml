@@ -20,13 +20,15 @@ services:
         max-size: 5m
         max-file: '2'
     build:
-      context: ../../services/upload-api
+      context: ../../services
+      dockerfile: upload-api/Dockerfile
     environment:
       BIOZERO_DATA_DIR: /data
       BIOZERO_TLS_CERT: /pki/server.crt
       BIOZERO_TLS_KEY: /pki/server.key
       BIOZERO_TLS_CA: /pki/ca.crt
       BIOZERO_UPLOAD_ADDR: :8081
+      BIOZERO_UPLOAD_PROTOCOL: legacy
       BIOZERO_RATE_LIMIT: 60
       BIOZERO_MAX_UPLOAD_BYTES: 26214400
       BIOZERO_ADMISSION_GLOBAL_JOBS: ${BIOZERO_ADMISSION_GLOBAL_JOBS:-64}
@@ -235,7 +237,8 @@ services:
         max-size: 5m
         max-file: '2'
     build:
-      context: ../../services/reviewer-gateway
+      context: ../../services
+      dockerfile: reviewer-gateway/Dockerfile
     environment:
       BIOZERO_REVIEWER_CONFIG: /config/config.json
     ports:

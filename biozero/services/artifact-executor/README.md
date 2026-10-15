@@ -4,7 +4,10 @@ This standalone module implements durable storage/framing, a Unix listener/clien
 a scoped-input registry/coordinator, a native namespace provider and an explicitly
 configured host Docker provider. The [host service command](README-service.md)
 has compiled native/Docker acceptance, without a persistent production deployment.
-It is not installed in the protected worker. Separate module acceptance ran the synthetic
+The protected worker has [separate integrated acceptance](../enclave-runner/README-worker-backend.md),
+and the explicitly selected [owner V3 broker](README-owner-broker.md) has
+[source-specific owner acceptance](../../docs/evidence/20261015-owner-worker-execution/public/README.md).
+Earlier separate module acceptance ran the synthetic
 three-SNP pipeline and evaluator, without running a trained model. See
 [native evidence](README-native.md), [Docker evidence](README-container.md),
 [coordinator ordering](README-coordinator.md), [Unix channel](README-server.md)
@@ -14,8 +17,8 @@ A new standalone [worker FD broker](README-broker.md) adds a separate strict
 submit/status/cancel/receipt protocol and durable job-to-lease binding. Separate v2
 persists verified-caller context for pinned capsule analysis; v1 remains unchanged.
 [Combined acceptance](README-analysis-integration.md) now covers broker plus actual
-providers/analysis and the compiled service. Protected-worker integration remains
-required; earlier receipts retain their original separate scope.
+providers/analysis and the compiled service. Protected-worker and owner-V3
+acceptance have their own snapshots; earlier receipts retain their original scope.
 
 `Open(ctx, root, policy)` requires Linux, private root mode0700, files0600 owned by
 the effective UID, descriptor-anchored no-follow traversal and same-filesystem
@@ -60,7 +63,8 @@ request/write/run deadlines and cancellation on channel closure. The local regis
 binds a separately verified plaintext FD to its reserved lease. ReceiveInput bounds
 a generic plaintext transfer to25MiB and compares exact length/hash; it opens no
 paths. Generic Reader cancellation cannot interrupt a blocked read; callers need
-a separately supervised transport. Worker integration remains pending.
+a separately supervised transport. Protected-worker integration is documented
+separately; that scope is not inferred from this generic Reader API.
 
 Trusted keeper proof is a local API, not authenticated by this library itself.
 The provider/orchestrator must establish actual capsule completion, close export
@@ -77,5 +81,5 @@ are documented in README-native.md. Docker opt-ins separately cover the real Uni
 composition, aggregate byte/inode exhaustion and cancel/timeout/keeper death; see
 [quota scope](README-container-quota.md) and
 [recovery scope](README-container-recovery.md). They require the exact cached image
-and compatible local kernel/daemon. Image build reproducibility and protected
-worker integration remain pending; default/hosted tests skip kernel opt-ins.
+and compatible local kernel/daemon. Image build reproducibility remains pending;
+protected-worker acceptance has a separate scope. Default/hosted tests skip kernel opt-ins.

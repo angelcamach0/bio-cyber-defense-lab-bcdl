@@ -114,3 +114,11 @@ journal, and an active fake provider that must cancel/complete while preserving
 its charged committed history. Evidence remains private under
 `.biozero/broker-service-closefix-20261015T011348.151626Z/`. Prior source receipts
 remain preserved and are not relabeled as validation of this correction.
+
+## Separate owner protocol
+
+The explicitly selected [owner V3 broker](README-owner-broker.md) verifies a signed
+canonical acceptance through a second read-only FD and uses separate V3 history.
+It does not migrate the V1/V2 protocol described above. The
+[owner execution contract](../../docs/security/ownership-execution-contract.md)
+and its source-specific native evidence define that additional scope.

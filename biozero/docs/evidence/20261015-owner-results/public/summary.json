@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-15",
+  "scope": "Owner-v1 HTTPS Results and dedicated read-only V3 broker channel with same-UID native synthetic execution. No Gateway, deployed role isolation or clinical approval.",
+  "provenance": {
+    "baseline_commit": "af6e3a5af76a21ee8f70208fccd9d7e117948afc",
+    "dirty_at_runtime": true,
+    "runtime_source_count": 523,
+    "runtime_all_go_module_inputs": 172,
+    "race_dependency_input_count": 147,
+    "all_race_inputs_match_runtime": true,
+    "production_sources_unchanged_since_runtime": true,
+    "final_test_only_delta": [
+      "biozero/infra/compose/test_broker_socket_reconcile.py",
+      "biozero/services/results-api/owner_config_linux_test.go"
+    ],
+    "post_validation_existing_document_count": 7
+  },
+  "native_acceptance": {
+    "status": "passed",
+    "controls": 83,
+    "report_sha256": "f7812480179aee07a81fd9b27b0b2e61cf40a98c95212793ad0373b181d9810b",
+    "executable_count": 9,
+    "binary_pins": {
+      "artifact-owner-read-broker": {
+        "sha256": "1392ec3002776237ff3db6af1f18f9602f0d7c2a91003f04a1184646bb169560",
+        "bytes": 7505824
+      },
+      "capsule-analysis": {
+        "sha256": "d3860c268473561c7f596c01f17ed410be028fcb7a7624fadf3e88951b24a72e",
+        "bytes": 3566444
+      },
+      "enclave-runner": {
+        "sha256": "7a1245cc187ab36e56d475f9dd6d31b5568505de03963928318c0f651c148981",
+        "bytes": 7736272
+      },
+      "ownership-authority": {
+        "sha256": "f4722daac9d1dbdc6c0493f6465b1ed05478f6d6f0753c06217e8e137c411258",
+        "bytes": 9301357
+      },
+      "payload-inspector": {
+        "sha256": "fd6f417a8b460911319b5995965f48412ba9dc7e7cb6be3104e9209ec2b08e8f",
+        "bytes": 4255461
+      },
+      "results-api": {
+        "sha256": "5b6ee9e39be29408cf10c4ebe475ce07b744acaaf2dff044331a548694f906a5",
+        "bytes": 9839527
+      },
+      "upload-api": {
+        "sha256": "b19948f970e5403d049c1a7a72792eecf3e3352bfb4cd05eb38cbade2c2fec70",
+        "bytes": 9590506
+      },
+      "uploader-cli": {
+        "sha256": "2d402b64d2ef500d66b94efa9b0764640bd9b6c0d537f4b8b5341592c6735969",
+        "bytes": 9361569
+      },
+      "worker-scope": {
+        "sha256": "4788077b323f25e4f77cc5e087f3400b7c4734c896d34dcfec4e1cf3003253c3",
+        "bytes": 4033674
+      }
+    },
+    "build_mode": "explicit_verified_reuse",
+    "new_builds_in_successful_attempt": 0,
+    "original_build_attempt_report_sha256": "ed3207a4799d670b928ec5cc669d705e53a9957f9bac8d924849f1d2591f3ed0",
+    "original_attempt_status": "failed",
+    "new_runtime_profile_genesis_and_history": true,
+    "results": {
+      "valid_projections": 2,
+      "invalid_failed_withheld": 1,
+      "worker_dedicated_reader_and_https_same_retained_receipt": true,
+      "distinct_tls_leaves_equal_cn_serial": true,
+      "other_leaf_denied_despite_forged_headers": true,
+      "copied_job_denied": true,
+      "tampered_signature_same_job_denied_with_restored_positive_control": true,
+      "missing_authorization_denied": true,
+      "missing_client_certificate_tls_denied": true,
+      "cache_substitution_cannot_relabel_science": true,
+      "cache_substitution_after_clean_worker_wait": true,
+      "all_five_history_byte_snapshots_unchanged": true
+    },
+    "science": {
+      "reference_bases": 6000,
+      "known_snps": 3,
+      "tp_each_valid": 3,
+      "fp_each_valid": 0,
+      "fn_each_valid": 0,
+      "mapped_sam_records_each_valid": 1171,
+      "normalized_snp_callsets_equal": true,
+      "scope": "Synthetic normalized SNP presence only; no genotype/indel/WGS/clinical accuracy."
+    },
+    "accounting": {
+      "authority_jobs": 4,
+      "authority_charge": 105381888,
+      "upload_jobs": 4,
+      "upload_charge": 105381888,
+      "execution_slots": 3,
+      "execution_record_charge": 42924,
+      "store_header_reserve": 4096,
+      "execution_total_with_header": 47020
+    },
+    "service_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "all_history_bytes_unchanged_after_wait": true
+  },
+  "independent_readback": {
+    "status": "passed",
+    "controls": 147,
+    "report_sha256": "681582089da767f6b55033e887c5317d5237601bd788a8f4f8f563bb3eb9cb10",
+    "final_test_attribution_report_sha256": "e612a81269ab355cc61c7323fc9f871634e75b91f1442874be8f67bb6500c18c",
+    "scope": "Retained public-key-only evidence review without acceptance rerun, private key or input-plaintext reads; skipped input plaintext source files remain pinned rather than independently rehashed.",
+    "final_test_attribution_controls": 8,
+    "preserved_audit_attempt_index_sha256": "e875dbab6ab9269de9b0badfe12de68eda5c5b1d78666afb30f92edb1436d395"
+  },
+  "race": {
+    "status": "passed",
+    "principal_tests": 311,
+    "subcases": 1155,
+    "explicit_test_skips": 14,
+    "modules": [
+      "artifact-executor",
+      "enclave-runner",
+      "results-api"
+    ],
+    "report_sha256": "a16d516292fd4903b8f448e26b9ba5bf309af238b69cf803cd222e1452c81eea",
+    "scope": "Full ordinary module race suites; provider/kernel opt-ins remain separate. Ownership-authority is a pinned dependency, not an additional race suite in this capture."
+  },
+  "post_cleanup_results_race": {
+    "status": "passed",
+    "principal_tests": 23,
+    "subcases": 216,
+    "report_sha256": "a417a623b6dc3459356512e4012af99412677c0a71a4c15c2aea8ef92c4ebecd",
+    "scope": "Full Results module race on final test cleanup source; other production inputs unchanged."
+  },
+  "make": {
+    "status": "passed",
+    "python_cases": 294,
+    "python_passed": 292,
+    "python_skipped": 2,
+    "go_modules": [
+      "biozero/services/artifact-executor",
+      "biozero/services/enclave-runner",
+      "biozero/services/ownership-authority",
+      "biozero/services/results-api",
+      "biozero/services/reviewer-gateway",
+      "biozero/services/upload-api",
+      "biozero/services/uploader-cli",
+      "biozero/services/zeroresponder",
+      "biozero/simulated-adversary"
+    ],
+    "source_count": 523,
+    "source_unchanged": true,
+    "report_sha256": "0f408998bbef7f289ec1d75a986d602dfd3560dfe1ffacc811071d51cd5dfca1",
+    "scope": "Uncached ordinary tests and vet in nine modules; separate from retained native acceptance and optional providers."
+  },
+  "preserved_attempts": [
+    {
+      "kind": "initial_make_vet",
+      "report_sha256": "8e286c4e94fb3b456a9d7a4e44490f696e77aa29f3672115ff85d8aa778bdd51",
+      "reason": "Vet found missing context cancel cleanup in a lifecycle test; defer cancel added without production or assertion changes."
+    },
+    {
+      "kind": "second_make_fixture_race",
+      "report_sha256": "04d1565c74926a7e232b24ba7ce8134e523a6bb98738a3ddcc3d2e4ab40875d6",
+      "reason": "Existing Python fixture treated bind/chmod as readiness before listen; explicit post-listen child marker now closes the startup race. Reconciliation production checks unchanged."
+    },
+    {
+      "kind": "first_native",
+      "report_sha256": "ed3207a4799d670b928ec5cc669d705e53a9957f9bac8d924849f1d2591f3ed0",
+      "controls_passed": 83,
+      "service_exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "reason": "Final inotify drain followed deliberate worker Wait and lost its tmpfs watch. Overall failed receipt retained; watcher lifetime corrected and exact nine binaries reused in fresh state."
+    },
+    {
+      "kind": "first_reader_tests",
+      "reason": "Strict EOF equality rejected wrapped io.EOF; production errors.Is correction preserved byte/FD/error checks."
+    },
+    {
+      "kind": "causal_tuple_control",
+      "report_sha256": "cb67fe3ab1a54b5fbae932cfc08262ec37f4a973f5b47658c4f4c433916c2136",
+      "reason": "Positive IN_ACCESS succeeded, but error-code string assertion assumed compact JSON; test now parses the error DTO."
+    }
+  ],
+  "limits": [
+    "Same-UID private directories/sockets trust host files and shared UID; no deployed key/mount/network separation or attestation.",
+    "Broker verifies signed ciphertext/envelope facts but trusts the worker for authenticated-plaintext relationship.",
+    "Causal unit tests separately cover reader storage fencing versus write/cancel faults, stale delivery snapshots and actual HTTPS reset after projection. Their test directories are temporary; native evidence remains retained.",
+    "Native acceptance does not exercise maximum connection/handler/response loads, injected EIO or simultaneous active-job HTTP failure. Their full integrated fault scope remains open.",
+    "Managed logical charges are not full physical/principal spool quotas; unknown pending history is not retried/refunded/adopted.",
+    "Gateway/UI, full V3 lifecycle/operator reconciliation, image closure/AMD64, broader biological evaluation and final delivery gates remain open.",
+    "No Docker/image build, model inference, dataset acquisition, regulatory recomputation or deployment ran."
+  ]
+}

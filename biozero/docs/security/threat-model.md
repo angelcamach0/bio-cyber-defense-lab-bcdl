@@ -357,3 +357,66 @@ repeats, sign agreement61/100 and Spearman0.1840864086408641. This is descriptiv
 GBR/LCL-to-GM12878 transfer, without proven head-training holdout, LD independence,
 matched-scale biological accuracy or clinical validity. The comparable FP32/
 QNNPACK economic no-go is unchanged. See [biological evidence](../experiments/005-biological-evaluation.md).
+
+## Owner delivery adapter boundary
+
+The explicit owner-v1 CLI/upload transport verifies externally pinned signed
+acceptance, exact leaf DER and actual ciphertext/envelope before publishing the
+original signed job ID. The private spool keeps full charges and refuses pending
+recovery unchanged. Its unsigned ledger and TLS ACK are fabricable by a
+compromised upload/host; consumers must independently verify signed context and
+remeasure bytes. The retained27-control native response-loss acceptance and
+separate unit TCP-RST/SIGKILL controls do not establish deployed key separation,
+worker/broker AAD/acceptance-hash enforcement, Results authorization or scientific
+release. TM02 remains open. See the
+[delivery contract](ownership-delivery-contract.md).
+
+## Owner worker and V3 broker boundary
+
+The explicit owner worker verifies signed external pin/scope/job/profile and
+actual envelope/ciphertext before mandatory AAD decryption, Stage and custody.
+V3 passes canonical acceptance separately from plaintext and binds its owner facts
+before artifact Reserve. Broker trusts the worker's verified plaintext/context;
+it has no decryption key or original envelope. Query-only recovery ignores mutable
+terminal jobs/cache. Shared receipt projection validates retained science/source
+facts before that process releases its stage. Owner cache is observability only;
+the legacy SOC outbox does not automatically apply to the owner loop.
+
+[Native53 and independent96 controls](../evidence/20261015-owner-worker-execution/public/README.md)
+cover valid/repeat/invalid synthetic execution and real B acceptance over copied A
+ciphertext rejected without staging or new execution state. The generic worker
+log does not expose its specific GCM error; the causal AAD inspector and exact
+input/source controls support that inference. Full authority/upload promises and
+all prior failed/weaker work remain retained. Logical sidecar/journal/artifact
+bounds are not a complete physical filesystem quota.
+
+TM02 remains open for owner authorization before private Results bytes, a separate
+status/receipt-only reader socket, Gateway/UI and integrated owner/result relabel
+negatives, plus deployed UID/mount/network/key separation. Actual owner-V3
+response-loss, upstream ACK failure, execution-time broker death, process-only
+plaintext recovery and uncertain-storage operator reconciliation need their own
+acceptance. Same-host UID/root/provider/CA/authority/worker/broker trust, image build
+closure, physical/per-principal quotas, retention and attestation remain explicit.
+See the [execution contract](ownership-execution-contract.md).
+
+
+## Owner Results and dedicated reader boundary
+
+The explicit owner-v1 route now verifies signed acceptance/external pin/scope and
+exact live TLS leaf before broker access. A dedicated status/receipt-only channel
+has no Submit/Cancel/ACK authority. Full durable status/receipt facts precede the
+shared scientific projection; unsigned caches cannot relabel release. Actual
+[native83 and independent review](../evidence/20261015-owner-results/public/README.md)
+cover real equal-CN/serial distinct-leaf A/B denial, copied job, changed signature,
+missing authorization/certificates, same-receipt science and cache substitution.
+The original legacy Results route still has the historical TM02 limitations above.
+
+Read cancellation/disconnect/partial write is not an execution ACK failure. The
+fresh reader guard holds writer locks through bounded delivery; genuine trusted
+storage faults fence custody even with concurrent cancellation. Causal component
+fixtures verify that distinction and stale-snapshot interleaving separately from
+the retained native experiment. They do not establish simultaneous active-job
+HTTP-failure isolation, deployed role/key/mount/network separation, hostile-host
+protection, Gateway ownership or complete V3 lifecycle/operator reconciliation.
+Same UID and trusted host/provider boundaries remain; TM02 stays open. See the
+[Results contract](ownership-results-contract.md) for limits and migration.
