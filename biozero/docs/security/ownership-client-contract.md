@@ -6,7 +6,8 @@ history; the subsequent [owner delivery adapter](ownership-delivery-contract.md)
 has a separate scope and preserves the signed job ID on an explicitly selected
 upload route. The historical upload path still assigns a different ID. Neither
 mutable spool nor transport ACK supplies owner authority, execution or result
-release. Gateway, worker, broker and Results integration remain TM02 gates.
+release. The [owner execution route](ownership-execution-contract.md) has separate
+worker/broker acceptance; Gateway and authoritative Results remain TM02 gates.
 
 ## Trusted configuration and private state
 
@@ -42,7 +43,7 @@ with that client's UID. It is separate from the upload-writable spool.
 | reserved | Original raw signed challenge | Prepare once with verified fresh challenge and local leaf |
 | prepared | Original ciphertext, decoded OAEP envelope and signed manifest | Explicit Finalize after publishing its intent |
 | finalizing | Original prepared bytes plus durable finalize phase | Recover by owner Get only; no ciphertext resend |
-| accepted | Verified historical acceptance matching every retained fact | Readback; subsequent execution integration remains pending |
+| accepted | Verified historical acceptance matching every retained fact | Readback; explicit owner worker/broker consumption has separate acceptance |
 
 The five small phase records are append-only and hash the preceding record.
 `client.intent` is synced before each phase publication. `prepare.intent` is

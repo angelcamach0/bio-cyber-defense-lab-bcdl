@@ -77,20 +77,22 @@ receipt for delivered work. Protected response Write/Flush occurs under fresh
 Store preflight; failure latches the live writer. A downstream relay losing a
 response after receiving an upstream200 does not prove an upstream ACK-write error.
 
-## Execution remains closed
+## Explicit execution boundary
 
 The new job cache uses the distinct
 `aes-256-gcm+rsa-oaep-sha256+owner-v1` algorithm and carries no legacy signature.
-The existing protected worker rejects it before decryption/custody/broker calls.
+The legacy-selected protected worker rejects it before decryption/custody/broker
+calls. The separate [owner worker/V3 broker](ownership-execution-contract.md) now
+verifies signed acceptance, actual envelope/body and mandatory AAD independently;
+its source-specific native execution evidence does not change transport receipts.
 A separately constructed adversarial fixture with a valid legacy signature must
 still fail the owner algorithm gate before reaching legacy nil-AAD decryption.
 That negative does not verify owner-v1 worker decryption or execution.
 
-Future worker/broker custody must bind the canonical acceptance hash, profile,
-original upload and actual envelope/AAD before reservation and every replay.
-Transport the bounded signed acceptance separately from existing bounded RPCs;
-do not silently increase journal capacity or insert a64KiB object into a64KiB
-request. Results needs signed-owner authorization before private bytes and a
+Owner worker/broker custody binds the canonical acceptance hash, profile,
+original upload and worker-verified envelope/AAD facts before reservation and
+query-only recovery. V3 transports the canonical acceptance through a separate
+read-only FD, preserving the64KiB JSON frame and separately bounded journals. Results needs signed-owner authorization before private bytes and a
 trusted, fixed receipt/status-only broker channel. It must not release mutable
 result JSON or acquire submission/cancellation rights. Authority GET remains
 owner-only; service consumers verify signed historical records offline with

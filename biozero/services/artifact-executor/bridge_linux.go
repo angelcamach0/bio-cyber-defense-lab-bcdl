@@ -64,6 +64,7 @@ type Broker struct {
 	released         bool
 	activeDone       chan struct{}
 	fault            func(string) error // private injection points, never wire fields
+	owner            *ownerBrokerState  // non-nil only for separately selected journal3
 }
 
 func (b *Broker) point(name string) error {
@@ -82,6 +83,11 @@ func (b *Broker) latch(code string) error {
 func (b *Broker) ready() error {
 	if b.closed || b.sticky {
 		return fail("artifact_bridge_unavailable")
+	}
+	if b.owner != nil {
+		if err := b.ownerPreflight(context.Background()); err != nil {
+			return err
+		}
 	}
 	s := b.coordinator.store
 	s.mu.Lock()
@@ -227,9 +233,16 @@ func (b *Broker) save() error {
 	if b.closed || b.sticky {
 		return fail("artifact_bridge_unavailable")
 	}
+	if b.owner != nil {
+		if err := b.ownerPreflight(context.Background()); err != nil {
+			return err
+		}
+	}
 	var raw []byte
 	var err error
-	if b.data.SchemaVersion == 2 {
+	if b.owner != nil {
+		raw, err = b.encodeOwnerJournal()
+	} else if b.data.SchemaVersion == 2 {
 		raw, err = jsonBytes(bridgeJournalV2{2, b.data.StoreID, b.data.PolicySHA256, b.data.ProfileSHA256, b.data.Records, b.analysisContexts})
 	} else {
 		raw, err = jsonBytes(b.data)
@@ -242,7 +255,7 @@ func (b *Broker) save() error {
 		return b.latch("artifact_bridge_history_invalid")
 	}
 	for _, x := range list {
-		if x.Name() != "instance.lock" && x.Name() != "journal.json" {
+		if x.Name() != "instance.lock" && x.Name() != "journal.json" && !(b.owner != nil && x.Name() == "acceptances") {
 			return b.latch("artifact_bridge_history_unaccounted")
 		}
 	}
@@ -389,6 +402,9 @@ func (b *Broker) HandleBridgeV2(ctx context.Context, q BridgeRequestV2, input *o
 	return r, f, e
 }
 func (b *Broker) handleBridge(ctx context.Context, q BridgeRequest, input *os.File, facts *AnalysisContext, version int) (BridgeResponse, *os.File, error) {
+	return b.handleBridgeOwned(ctx, q, input, facts, version, nil)
+}
+func (b *Broker) handleBridgeOwned(ctx context.Context, q BridgeRequest, input *os.File, facts *AnalysisContext, version int, owned *ownerInvocation) (BridgeResponse, *os.File, error) {
 	if ctx == nil || ctx.Err() != nil || validateBridgeRequest(q) != nil || (q.Operation == "submit") != (input != nil) {
 		return BridgeResponse{}, nil, fail("artifact_bridge_request_invalid")
 	}
@@ -402,7 +418,11 @@ func (b *Broker) handleBridge(ctx context.Context, q BridgeRequest, input *os.Fi
 		return BridgeResponse{}, nil, fail("artifact_bridge_profile_mismatch")
 	}
 	v, exists := b.data.Records[q.JobID]
-	if exists && (v.UploadSHA256 != q.UploadSHA256 || (q.Operation == "submit" && (v.ProcessedSHA256 != q.ProcessedSHA256 || v.ProcessedBytes != q.ProcessedBytes || v.OriginalName != q.OriginalName || (version == 2 && b.analysisContexts[q.JobID] != *facts)))) {
+	if version == 3 && (b.owner == nil || owned == nil || (exists && !b.ownerMatches(q.JobID, owned))) {
+		b.mu.Unlock()
+		return BridgeResponse{}, nil, fail("artifact_bridge_conflict")
+	}
+	if exists && (v.UploadSHA256 != q.UploadSHA256 || (q.Operation == "submit" && (v.ProcessedSHA256 != q.ProcessedSHA256 || v.ProcessedBytes != q.ProcessedBytes || v.OriginalName != q.OriginalName || (version >= 2 && b.analysisContexts[q.JobID] != *facts)))) {
 		b.mu.Unlock()
 		return BridgeResponse{}, nil, fail("artifact_bridge_conflict")
 	}
@@ -469,9 +489,15 @@ func (b *Broker) handleBridge(ctx context.Context, q BridgeRequest, input *os.Fi
 		b.mu.Unlock()
 		return BridgeResponse{}, nil, err
 	}
+	if version == 3 {
+		if err := b.publishOwner(ctx, q.JobID, owned); err != nil {
+			b.mu.Unlock()
+			return BridgeResponse{}, nil, err
+		}
+	}
 	v = bridgeBinding{JobID: q.JobID, UploadSHA256: q.UploadSHA256, ProcessedSHA256: q.ProcessedSHA256, ProcessedBytes: q.ProcessedBytes, OriginalName: q.OriginalName, Stage: "intent"}
 	b.data.Records[q.JobID] = v
-	if version == 2 {
+	if version >= 2 {
 		b.analysisContexts[q.JobID] = *facts
 	}
 	if err = b.save(); err != nil {
@@ -508,7 +534,7 @@ func (b *Broker) handleBridge(ctx context.Context, q BridgeRequest, input *os.Fi
 		return BridgeResponse{}, nil, err
 	}
 	var ref string
-	if version == 2 {
+	if version >= 2 {
 		ref, err = b.coordinator.registry.BindWithAnalysis(ctx, v.LeaseID, verified, v.ProcessedSHA256, v.ProcessedBytes, *facts)
 	} else {
 		ref, err = b.coordinator.registry.Bind(ctx, v.LeaseID, verified, v.ProcessedSHA256, v.ProcessedBytes)
@@ -614,6 +640,9 @@ func (b *Broker) AcknowledgeBridgeV2(ctx context.Context, q BridgeRequestV2, wri
 	return b.acknowledgeBridge(ctx, q.legacy(), write, &q.AnalysisContext, 2)
 }
 func (b *Broker) acknowledgeBridge(ctx context.Context, q BridgeRequest, write func() error, facts *AnalysisContext, version int) error {
+	return b.acknowledgeBridgeOwned(ctx, q, write, facts, version, nil)
+}
+func (b *Broker) acknowledgeBridgeOwned(ctx context.Context, q BridgeRequest, write func() error, facts *AnalysisContext, version int, owned *ownerInvocation) error {
 	if ctx == nil || ctx.Err() != nil || validateBridgeRequest(q) != nil || write == nil {
 		return fail("artifact_bridge_ack_invalid")
 	}
@@ -623,14 +652,22 @@ func (b *Broker) acknowledgeBridge(ctx context.Context, q BridgeRequest, write f
 		return err
 	}
 	v, ok := b.data.Records[q.JobID]
+	if version == 3 && (b.owner == nil || owned == nil || !b.ownerMatches(q.JobID, owned)) {
+		return fail("artifact_bridge_ack_invalid")
+	}
 	if version != b.data.SchemaVersion || !ok || v.UploadSHA256 != q.UploadSHA256 || q.ExpectedProfileSHA256 != b.data.ProfileSHA256 {
 		return fail("artifact_bridge_ack_invalid")
 	}
-	if q.Operation == "submit" && (v.ProcessedSHA256 != q.ProcessedSHA256 || v.ProcessedBytes != q.ProcessedBytes || v.OriginalName != q.OriginalName || (version == 2 && b.analysisContexts[q.JobID] != *facts)) {
+	if q.Operation == "submit" && (v.ProcessedSHA256 != q.ProcessedSHA256 || v.ProcessedBytes != q.ProcessedBytes || v.OriginalName != q.OriginalName || (version >= 2 && b.analysisContexts[q.JobID] != *facts)) {
 		return fail("artifact_bridge_ack_invalid")
 	}
 	if b.point("before_ack_store_lock") != nil {
 		return fail("artifact_bridge_ack_invalid")
+	}
+	if b.owner != nil {
+		if err := b.ownerPreflight(ctx); err != nil {
+			return err
+		}
 	}
 	s := b.coordinator.store
 	s.mu.Lock()
@@ -703,6 +740,9 @@ func (b *Broker) Wait(ctx context.Context) error {
 	s.mu.Unlock()
 	if err != nil {
 		return err
+	}
+	if b.owner != nil {
+		return b.releaseOwner()
 	}
 	b.released = true
 	a := b.lock.Close()

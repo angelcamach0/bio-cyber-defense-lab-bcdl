@@ -25,6 +25,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode/utf8"
 	"unsafe"
 )
 
@@ -48,6 +49,7 @@ var workerEnvironmentKeys = map[string]bool{
 	"BIOZERO_PIPELINE_MODE": true, "BIOZERO_SECURITY_EVENTS_DIR": true,
 	"BIOZERO_ARTIFACT_SOCKET": true, "BIOZERO_ARTIFACT_PROFILE_SHA256": true,
 	"BIOZERO_WORKER_CUSTODY_DIR": true, "BIOZERO_ARTIFACT_PROJECTION_POLICY": true, "BIOZERO_EXECUTION_BACKEND": true, "BIOZERO_PIPELINE_TIMEOUT": true,
+	"BIOZERO_WORKER_PROTOCOL": true, "BIOZERO_OWNER_WORKER_CONFIG": true,
 }
 
 func safePath(p string) bool {
@@ -67,6 +69,7 @@ func validSHA(s string) bool {
 func fixedEnvironment(in []string, tmpfs string) ([]string, error) {
 	env := []string{"LANG=C", "LC_ALL=C", "BIOZERO_DECRYPT_DIR=" + tmpfs}
 	seen := map[string]bool{}
+	protocol, ownerConfig := "", ""
 	for _, pair := range in {
 		k, v, ok := strings.Cut(pair, "=")
 		if !ok || strings.ContainsRune(v, 0) {
@@ -77,6 +80,21 @@ func fixedEnvironment(in []string, tmpfs string) ([]string, error) {
 		}
 		if seen[k] {
 			return nil, errors.New("worker_scope_environment_invalid")
+		}
+		if strings.IndexFunc(v, func(r rune) bool { return r < 32 || r == 127 }) >= 0 {
+			return nil, errors.New("worker_scope_environment_invalid")
+		}
+		if k == "BIOZERO_WORKER_PROTOCOL" {
+			if v != "legacy" && v != "owner-v1" {
+				return nil, errors.New("worker_scope_protocol_invalid")
+			}
+			protocol = v
+		}
+		if k == "BIOZERO_OWNER_WORKER_CONFIG" {
+			if !safePath(v) || !utf8.ValidString(v) {
+				return nil, errors.New("worker_scope_owner_config_invalid")
+			}
+			ownerConfig = v
 		}
 		if k == "BIOZERO_EXECUTION_BACKEND" && v != "capsule" {
 			return nil, errors.New("worker_scope_backend_invalid")
@@ -90,6 +108,16 @@ func fixedEnvironment(in []string, tmpfs string) ([]string, error) {
 
 		seen[k] = true
 		env = append(env, k+"="+v)
+	}
+	// Configuration selects only the trusted owner entry point. The worker loads
+	// its closed configuration and checks its StageDirectory against the launcher
+	// tmpfs; the launcher does not parse or acquire custody on its behalf.
+	if protocol == "owner-v1" {
+		if !seen["BIOZERO_OWNER_WORKER_CONFIG"] || ownerConfig == "" {
+			return nil, errors.New("worker_scope_owner_config_required")
+		}
+	} else if seen["BIOZERO_OWNER_WORKER_CONFIG"] {
+		return nil, errors.New("worker_scope_owner_protocol_required")
 	}
 	return env, nil
 }

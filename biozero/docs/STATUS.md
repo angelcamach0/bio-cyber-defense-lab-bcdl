@@ -500,13 +500,81 @@ requirement/decision/threat documentation and the public bundle are separate fro
 that snapshot. See the [public evidence](evidence/20261015-owner-upload-delivery/public/README.md)
 and [delivery contract](security/ownership-delivery-contract.md).
 
-Delivered means transport only. The existing worker rejects owner-v1 before
+Delivered means transport only. The legacy-selected worker rejects owner-v1 before
 legacy decryption/custody; a valid legacy signature cannot bypass the algorithm
 gate. Gateway, worker/broker acceptance-hash/AAD enforcement, receipt-based Results,
 deployed keys/mounts/network and integrated substitutions remain open under TM02.
 No Docker/image build, capsule analysis, model/dataset acquisition, deployment or
 scientific recomputation ran in this increment. The broader roadmap and prior
 scientific/economic conclusions are unchanged.
+
+## Owner-v1 worker and V3 broker execution
+
+The explicitly selected owner-v1 worker independently verifies signed acceptance,
+external pin/scope, actual ciphertext and decoded OAEP envelope, then authenticates
+GCM with mandatory signed-context AAD before plaintext staging or verified custody.
+It records canonical acceptance/credential/original-upload/processed-input facts
+before its sole Submit. The separate V3 broker receives two RO FDs, independently
+verifies canonical acceptance and preserves owner/context bindings before Reserve.
+It trusts the worker for the GCM-to-plaintext relationship and has no decrypt key.
+V1/V2 history is never adopted. Query-only recovery ignores mutable terminal jobs
+and result caches. Receipt projection is one shared package with the same source,
+science, detection and release rules; the owner cache is observability only.
+
+Fresh retained native acceptance passed53/53controls. Actual authority/CLI/upload,
+worker launcher, V3 broker and native capsules processed two valid synthetic
+three-SNP inputs with TP3/FP0/FN0 and1,171mapped SAM records each; the invalid FASTQ
+committed failed/withheld with only its execution receipt. Both valid normalized
+SNP callsets matched truth and each other. Nine exported files, manifests, keeper
+proofs, receipt/source/context hashes and actual read-only receipt FDs matched.
+The worker's actual tmpfs was32MiB/4096inode units with noexec/nosuid/nodev,
+NoNewPrivs1 and all capability sets zero. Native host files/same-UID writers remain
+trusted; this is not deployed key/mount isolation or hardware attestation.
+
+B obtained a legitimate mTLS challenge/acceptance after signing an exact copy of
+A's ciphertext and envelope. Transport delivered it, but the worker emitted its
+generic rejection without any observed tmpfs mutation or new worker/broker/Store
+record. Inotify had three positive staging controls; physical B input/binding
+facts matched and all execution-history bytes stayed identical. A separate real
+OAEP/GCM inspector opened the copied bytes with A's AAD and failed with B's AAD.
+The worker's particular GCM error is inferred from these controls and verified
+code order; it is not a specific error code observed in the process log.
+All four admitted inputs retain105,381,888logical bytes in EACH authority/upload
+store. Three execution slots retain42,922record bytes plus4,096header reserve,
+47,018total. These logical charges do not cap the complete physical filesystem.
+Four owned services ended with SIGTERM/Wait0 and unchanged execution-history bytes.
+
+Independent public-key-only readback passed96controls without rerunning execution
+or reading private keys/input plaintext; a separate five-control attribution
+review verified retained source copies and the later test-only change. Full race
+passed264principal/877subcases across artifact/worker modules with13explicit
+kernel/ownership skips. Runtime and race pin the same156Go/module inputs.
+Final make passed294Python (292passed/two opt-ins skipped), uncached ordinary Go
+tests and vet in nine modules over502unchanged source files. Its only delta from
+runtime is three keyed-field spellings in one receipt test: the extraction made
+SourcePin an external alias and vet refused the prior unkeyed literals. Values,
+assertions and production Go are unchanged; no runtime rebuild/repetition was
+needed for that test syntax. Post-validation documentation/exports are separate.
+
+Original failed/weaker receipts remain retained. Initial focused fixtures used
+subsecond authority time; the first race used private roots without explicit0700
+under ordinary umask022. The first native run passed18controls and real3SNP
+execution before a verifier used analysis instead of analysis_capture. Its eight
+retained binaries were reused only after exact source/hash/metadata checks in a
+fresh run with new stores and journals; no old execution was reset or adopted.
+The first make stopped at the unkeyed test vet error; its original source/logs
+remain. Temporary Go fixtures are distinct from the retained native workspaces.
+See [public evidence and source attribution](evidence/20261015-owner-worker-execution/public/README.md),
+[execution contract](security/ownership-execution-contract.md),
+[worker configuration](../services/enclave-runner/README-owner-worker.md) and
+[owner broker](../services/artifact-executor/README-owner-broker.md).
+
+TM02 remains open: authoritative owner Results before private bytes, a dedicated
+read-only broker channel, Gateway/UI and result/owner-substitution negatives,
+deployed key/network/mount separation and fresh V3 lifecycle fault acceptance.
+The owner loop does not automatically run the legacy SOC outbox. No image build,
+Docker acceptance, model inference, dataset acquisition or deployment ran in this
+increment. Regulatory scientific/economic conclusions and the full roadmap remain.
 
 ## Regulatory feasibility
 

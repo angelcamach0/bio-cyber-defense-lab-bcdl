@@ -55,12 +55,24 @@ configured tmpfs, and only these optional inherited worker fields:
 - BIOZERO_SECURITY_EVENTS_DIR, BIOZERO_ARTIFACT_SOCKET,
   BIOZERO_ARTIFACT_PROFILE_SHA256, BIOZERO_ARTIFACT_PROJECTION_POLICY and
   BIOZERO_WORKER_CUSTODY_DIR.
+- BIOZERO_WORKER_PROTOCOL and BIOZERO_OWNER_WORKER_CONFIG.
 
 BIOZERO_PIPELINE_TIMEOUT, when present, must be a positive duration of at most
 ten minutes. It selects no executable or provider policy. BIOZERO_EXECUTION_BACKEND
 may only select capsule here; legacy execution requires its separate explicit
 operator path outside this launcher. An absent selector retains the worker's
 capsule default.
+
+For owner execution, pass `BIOZERO_WORKER_PROTOCOL=owner-v1` together with an
+absolute clean `BIOZERO_OWNER_WORKER_CONFIG` path. Unknown/empty/duplicate protocol
+or config values and an owner config without the owner selector are rejected;
+config paths reject control characters and invalid UTF-8. The fixed environment
+passes only those two additional fields, not arbitrary config or credentials.
+The worker loads its own strict pinned config after exec and requires its
+`stage_directory` to equal the launcher's forced `BIOZERO_DECRYPT_DIR`. The launcher
+does not initialize custody or parse owner config. The [owner worker recipe](../../README-owner-worker.md)
+initializes a new journal separately, then starts the worker through this launcher.
+Existing legacy capsule selection remains separate; no owner error falls back.
 
 The launcher does not alter its parent's environment. Runtime SDK credentials,
 authentication variables, proxies, interpreter/loader hooks and PATH are not
@@ -110,13 +122,16 @@ and Compose tmpfs lifecycle need their own integrated recovery evidence.
 
 ## Verification scope
 
+The historical staging/launcher observations below predate the owner-selector
+extension. They do not establish actual owner-v1 worker/broker V3 acceptance.
+New selector tests and integrated execution require their own source-bound logs.
+
 The original staging/launcher unit snapshot passed 10 top-level functions and
 13 subcases without skips or failures, ordinary and race, with targeted vet exit0.
 Staging source remained unchanged during the subsequent launcher correction.
 File tests deliberately bypass only the tmpfs precondition to examine real
 read-only FD, inode, flock, release and uncertainty behavior. They do not establish
-mount enforcement. Private evidence is retained under
-`.biozero/worker-stage-scope-unit-20261015T015140.605256Z/`.
+mount enforcement. Original private test evidence is retained separately.
 
 The corrected launcher passed seven top-level functions and eight subcases without
 skips/failures in ordinary and race runs; targeted vet and static build exited0.
@@ -138,8 +153,7 @@ same failed acceptance's worker binary, policy and PKI read-only, with fresh
 private data/custody/staging roots. Relevant source/input pins and the original
 failed Store/broker/worker journals remained unchanged.
 
-Final probe evidence is private under
-`.biozero/worker-scope-diagnostic-20261015T021046.960023Z/`; summary SHA256
+The retained final probe summary has SHA256
 `55993255cc2fbd42d9d3a88a58f44324d8ab424778650208d50067d521559c93`.
 The tested new launcher was4,031,436bytes, SHA256
 `8e6d6ffd084163afe75d11d3edc8cbebcafe91371832159579f16e0fcb57276e`.

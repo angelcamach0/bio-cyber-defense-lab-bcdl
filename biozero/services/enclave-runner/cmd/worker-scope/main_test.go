@@ -48,6 +48,68 @@ func TestWorkerScopeEnvironmentHasOnlyIntendedWorkerFields(t *testing.T) {
 		}
 	}
 }
+func TestWorkerScopeOwnerProtocolPairIsExplicitAndBounded(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		in   []string
+	}{
+		{"historical_without_selector", []string{"BIOZERO_EXECUTION_BACKEND=capsule", "BIOZERO_JOB_KEY=synthetic-worker-key"}},
+		{"explicit_legacy", []string{"BIOZERO_WORKER_PROTOCOL=legacy", "BIOZERO_EXECUTION_BACKEND=capsule"}},
+		{"owner_pair", []string{"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner-worker.json"}},
+		{"owner_pair_reverse_order", []string{"BIOZERO_OWNER_WORKER_CONFIG=/private/owner-worker.json", "BIOZERO_WORKER_PROTOCOL=owner-v1"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			env, e := fixedEnvironment(tc.in, "/private/tmpfs")
+			if e != nil {
+				t.Fatal("valid explicit selection rejected", e)
+			}
+			for _, pair := range tc.in {
+				found := 0
+				for _, got := range env {
+					if got == pair {
+						found++
+					}
+				}
+				if found != 1 {
+					t.Fatal("intended selection dropped or duplicated")
+				}
+			}
+			if !strings.Contains(strings.Join(env, "\n"), "BIOZERO_DECRYPT_DIR=/private/tmpfs") {
+				t.Fatal("launcher tmpfs authority lost")
+			}
+		})
+	}
+	for name, in := range map[string][]string{
+		"owner_without_config":     {"BIOZERO_WORKER_PROTOCOL=owner-v1"},
+		"config_without_selector":  {"BIOZERO_OWNER_WORKER_CONFIG=/private/owner.json"},
+		"legacy_with_owner_config": {"BIOZERO_WORKER_PROTOCOL=legacy", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner.json"},
+		"unknown_protocol":         {"BIOZERO_WORKER_PROTOCOL=auto"},
+		"empty_protocol":           {"BIOZERO_WORKER_PROTOCOL="},
+		"empty_config":             {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG="},
+		"relative_config":          {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=private/owner.json"},
+		"unclean_config":           {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/private/../owner.json"},
+		"root_config":              {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/"},
+		"invalid_utf8_config":      {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/private/\xff"},
+		"duplicate_protocol":       {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner.json", "BIOZERO_WORKER_PROTOCOL=owner-v1"},
+		"duplicate_config":         {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner.json", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner.json"},
+		"nul_config":               {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner\x00.json"},
+		"lf_config":                {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner\n.json"},
+		"cr_config":                {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner\r.json"},
+		"tab_config":               {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner\t.json"},
+		"escape_config":            {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner\x1b.json"},
+		"delete_config":            {"BIOZERO_WORKER_PROTOCOL=owner-v1", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner\x7f.json"},
+		"protocol_control":         {"BIOZERO_WORKER_PROTOCOL=owner-v1\n", "BIOZERO_OWNER_WORKER_CONFIG=/private/owner.json"},
+		"historical_field_control": {"BIOZERO_JOB_KEY=synthetic\tprivate-key"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			env, e := fixedEnvironment(in, "/private/tmpfs")
+			if e == nil || env != nil || strings.Contains(e.Error(), "/private") || strings.Contains(e.Error(), "synthetic") {
+				t.Fatal("invalid selection accepted or private input disclosed")
+			}
+		})
+	}
+}
+
 func TestWorkerScopePinnedDescriptorRejectsUnsafeSources(t *testing.T) {
 	for _, kind := range []string{"valid", "pin_mismatch", "writable", "not_executable", "symlink", "hardlink", "fifo", "oversize"} {
 		t.Run(kind, func(t *testing.T) {

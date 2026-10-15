@@ -370,3 +370,31 @@ separate unit TCP-RST/SIGKILL controls do not establish deployed key separation,
 worker/broker AAD/acceptance-hash enforcement, Results authorization or scientific
 release. TM02 remains open. See the
 [delivery contract](ownership-delivery-contract.md).
+
+## Owner worker and V3 broker boundary
+
+The explicit owner worker verifies signed external pin/scope/job/profile and
+actual envelope/ciphertext before mandatory AAD decryption, Stage and custody.
+V3 passes canonical acceptance separately from plaintext and binds its owner facts
+before artifact Reserve. Broker trusts the worker's verified plaintext/context;
+it has no decryption key or original envelope. Query-only recovery ignores mutable
+terminal jobs/cache. Shared receipt projection validates retained science/source
+facts before that process releases its stage. Owner cache is observability only;
+the legacy SOC outbox does not automatically apply to the owner loop.
+
+[Native53 and independent96 controls](../evidence/20261015-owner-worker-execution/public/README.md)
+cover valid/repeat/invalid synthetic execution and real B acceptance over copied A
+ciphertext rejected without staging or new execution state. The generic worker
+log does not expose its specific GCM error; the causal AAD inspector and exact
+input/source controls support that inference. Full authority/upload promises and
+all prior failed/weaker work remain retained. Logical sidecar/journal/artifact
+bounds are not a complete physical filesystem quota.
+
+TM02 remains open for owner authorization before private Results bytes, a separate
+status/receipt-only reader socket, Gateway/UI and integrated owner/result relabel
+negatives, plus deployed UID/mount/network/key separation. Actual owner-V3
+response-loss, upstream ACK failure, execution-time broker death, process-only
+plaintext recovery and uncertain-storage operator reconciliation need their own
+acceptance. Same-host UID/root/provider/CA/authority/worker/broker trust, image build
+closure, physical/per-principal quotas, retention and attestation remain explicit.
+See the [execution contract](ownership-execution-contract.md).

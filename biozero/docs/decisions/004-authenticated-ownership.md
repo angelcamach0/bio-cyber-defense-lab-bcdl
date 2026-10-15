@@ -148,20 +148,21 @@ or claim their old results demonstrate the new protocol.
 
 | Deliverable | Required evidence | Status |
 | --- | --- | --- |
-| Cryptographic protocol component | Real TLS identities; strict parser boundaries; same-leaf signatures; ciphertext exact/+1 checks; invalid authorization rejected before Reader.Read; altered AAD fails actual GCM Open | Verified protocol and authority component; no upload/worker/broker/Results integration |
+| Cryptographic protocol component | Real TLS identities; strict parser boundaries; same-leaf signatures; ciphertext exact/+1 checks; invalid authorization rejected before Reader.Read; altered AAD fails actual GCM Open | Verified protocol/authority; explicit CLI/upload and worker/V3 broker have separate retained acceptance; Results remains pending |
 | Durable authority Reserve/Finalize/readback | Actual restart and injected transaction failures; retained charges; immutable owner; concurrent final-slot/duplicate-finalize behavior; no implicit legacy adoption | Linux Store and HTTPS/mTLS authority implemented; local RST/death/replay and separately compiled CLI verified; deployed isolation and consumers pending |
-| Client and gateway integration | Both use direct authenticated authority sessions, per-client signing and exact context-bound encryption; shared admission and cross-client replay denied | Shared HTTP/crypto/durable-operation component verified locally; CLI/gateway adapters, authoritative upload ID and shared-route acceptance pending |
-| Worker and broker integration | Accepted owner/context checked before crypto/execution; actual ciphertext rebinding rejected; recovery keeps original registry/lease/charges | Pending |
+| Client and gateway integration | Both use direct authenticated authority sessions, per-client signing and exact context-bound encryption; shared admission and cross-client replay denied | Shared client and direct CLI/upload preserve authoritative ID with retained acceptance; Gateway/shared-route acceptance pending |
+| Worker and broker integration | Accepted owner/context checked before crypto/execution; actual ciphertext rebinding rejected; recovery keeps original registry/lease/charges | Explicit owner worker/V3 broker native53 and independent96; query-only recovery component tested; actual V3 fault/restart acceptance still pending |
 | Result delivery and release | Direct and gateway owner reassignment denied; relabeled private result cannot be released; trusted receipt projection and nonowner denial before private read | Pending |
-| Reproducible protected acceptance | Fresh rebuilt services, local/Compose crypto/science/lifecycle regressions, independent retained-evidence review and source-specific CI | Pending |
+| Reproducible protected acceptance | Pinned services, local/Compose crypto/science/lifecycle regressions, independent retained-evidence review and source-specific CI | Owner native53/independent96 verified; original eight builds reused after exact checks; owner Compose/lifecycle/deployed acceptance remains pending |
 
 The [durable client component](../security/ownership-client-contract.md) now
 persists original operation identity before Reserve, exact encrypted payload before
 Finalize and its own finalizing intent before the network call. Recovery only
 queries the known job; ambiguous preparation/IO is retained. It fixes the actual
 OAEP44/empty-label envelope and mandatory GCM AAD framing for consumers. This does
-not activate current clients: upload still generates a different job ID, while
-the gateway persists runs after upload. Both contracts must change deliberately.
+not activate historical clients automatically. The explicit owner CLI/upload now
+preserves the signed job ID; the gateway still persists runs after upload and
+requires its own adapter.
 Local unit/process tests are not deployed key isolation or protected execution.
 
 A component milestone cannot close the requirement. The complete gate needs the
@@ -179,5 +180,16 @@ context or a committed execution receipt. Configuration includes external public
 pin/scope and TLS assets; it has no signing/decrypt-key enrollment field. See the
 [delivery contract](../security/ownership-delivery-contract.md) and
 [source-bound acceptance](../evidence/20261015-owner-upload-delivery/public/README.md).
-Gateway, worker/broker binding, protected result projection and deployed isolation
-remain required. The historical protocol is explicitly selected separately.
+The [owner execution contract](../security/ownership-execution-contract.md) now
+records independent worker/broker binding and private receipt projection. Gateway,
+authoritative Results release and deployed isolation remain required. The historical protocol is explicitly selected separately.
+
+## Owner execution increment
+
+The explicit worker/V3 broker route passed [native53 and independent96 controls](../evidence/20261015-owner-worker-execution/public/README.md).
+The worker verifies actual envelope/body/AAD before Stage/custody/Submit; broker
+verifies signed canonical acceptance on a second FD before Reserve, trusting the
+worker for authenticated plaintext facts. Fresh B acceptance over copied A bytes
+was delivered and rejected without new execution state. Existing Results/Gateway
+routes remain outside this verified scope. The complete substitution/release and
+V3 fault gates above remain open; historical failures and charges are preserved.

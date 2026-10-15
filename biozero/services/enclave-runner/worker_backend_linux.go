@@ -98,6 +98,17 @@ func loadWorkerProjectionPolicy(ctx context.Context, path, profile, mode string)
 	if err != nil {
 		return p, invalid
 	}
+	return decodeWorkerProjectionPolicy(ctx, raw, profile, mode)
+}
+
+// Parse the already measured private bytes; the owner runtime must not reread an
+// asset between hash pin verification and decoding.
+func decodeWorkerProjectionPolicy(ctx context.Context, raw []byte, profile, mode string) (workerProjectionPolicy, error) {
+	var p workerProjectionPolicy
+	invalid := errors.New("worker_projection_policy_invalid")
+	if !workerCustodyHex(profile, 64) {
+		return p, invalid
+	}
 	seen, err := validateMetadataJSON(ctx, raw, reflect.TypeOf(p))
 	if err != nil || len(seen) != 5 || json.Unmarshal(raw, &p) != nil || p.SchemaVersion != 1 || p.ProfileSHA256 != profile || p.PipelineMode != mode || (mode != "stats" && mode != "variants") || (p.CapsuleKind != "native" && p.CapsuleKind != "docker") || p.SourcePins == nil {
 		return p, invalid

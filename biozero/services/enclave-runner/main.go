@@ -30,6 +30,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"biozero/enclave-runner/receiptprojection"
 )
 
 // jobRecord captures upload metadata needed for processing and verification.
@@ -97,13 +99,7 @@ type resultRecord struct {
 }
 
 // detectionResult summarizes scoring, verdict, and detection signals.
-type detectionResult struct {
-	Score   float64        `json:"score"`
-	Reason  string         `json:"reason"`
-	Verdict string         `json:"verdict,omitempty"`
-	Reasons []string       `json:"reasons,omitempty"`
-	Signals map[string]any `json:"signals,omitempty"`
-}
+type detectionResult = receiptprojection.Detection
 
 // pipelineInfo extracts key fields from pipeline JSON output.
 type pipelineInfo struct {
@@ -150,6 +146,9 @@ func main() {
 }
 
 func runWorker() (runErr error) {
+	if handled, err := runOwnerWorkerSelected(); handled {
+		return err
+	}
 	if err := validateWorkerExecutionSelection(); err != nil {
 		return err
 	}
@@ -256,7 +255,9 @@ func processJobsContext(ctx context.Context, jobsDir, uploadDir, resultsDir, dec
 		log.Print("worker metadata error: metadata_jobs_scan_failed")
 		return
 	}
-	if backend != nil { backend.fenceUntrackedRunning(ctx, entries, jobsDir, resultsDir) }
+	if backend != nil {
+		backend.fenceUntrackedRunning(ctx, entries, jobsDir, resultsDir)
+	}
 	for _, entry := range entries {
 		if ctx.Err() != nil {
 			return

@@ -44,6 +44,7 @@ type BridgeUnixServer struct {
 	base      *UnixServer
 	handler   BridgeHandler
 	handlerV2 BridgeHandlerV2
+	handlerV3 BridgeHandlerV3
 	version   int
 }
 type bridgeUnusedV1 struct{}
@@ -255,6 +256,10 @@ func (s *BridgeUnixServer) writeError(conn *net.UnixConn, code string) {
 	}
 }
 func (s *BridgeUnixServer) serveConnection(parent context.Context, conn *net.UnixConn, cancel context.CancelFunc) {
+	if s.version == 3 {
+		s.serveOwnerConnection(parent, conn, cancel)
+		return
+	}
 	b := s.base
 	defer func() {
 		cancel()

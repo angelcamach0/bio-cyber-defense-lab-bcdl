@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-15",
+  "scope": "Explicit owner-v1 native synthetic authority/upload/worker/broker execution; private receipt projection. No authoritative Results/Gateway/deployment approval.",
+  "provenance": {
+    "baseline_commit": "4e8a2b0c0cc6b2198f4ecbb6433fc34ad7a0441f",
+    "dirty_at_runtime": true,
+    "runtime_source_count": 502,
+    "runtime_source_unchanged": true,
+    "go_module_inputs": 156,
+    "production_go_unchanged_since_race_runtime": true,
+    "final_make_test_only_delta": [
+      "biozero/services/enclave-runner/capsule_receipt_linux_test.go"
+    ],
+    "post_validation_document_count": 16
+  },
+  "native_acceptance": {
+    "status": "passed",
+    "controls": 53,
+    "report_sha256": "1c7bd12d765c0ad35458c15dbb4419ad1fddab4604ec5c7ca914cd15e91b1b8a",
+    "runtime_executables": 7,
+    "independent_payload_inspector": 1,
+    "new_builds_this_successful_attempt": 0,
+    "verified_reused_binary_pins": {
+      "artifact-owner-broker": {
+        "sha256": "cf6a11245d9d1d3aad25193e969c5695f5bd09967d03d8c938185493bd51780d",
+        "bytes": 7330037
+      },
+      "capsule-analysis": {
+        "sha256": "608c5cbfc89032da107e16782e588daf664e74c9587e0614f84a1e61b0a059c9",
+        "bytes": 3566444
+      },
+      "enclave-runner": {
+        "sha256": "2995ad15e8ff145c0c2439071a7bb09b226143b218b22e790a5598c489c0cec8",
+        "bytes": 7736265
+      },
+      "ownership-authority": {
+        "sha256": "d4aeb24526ea0b3b9440e00014dab67c9e4fdc32513b0b4d0284b309bab7616d",
+        "bytes": 9301357
+      },
+      "payload-inspector": {
+        "sha256": "fd6f417a8b460911319b5995965f48412ba9dc7e7cb6be3104e9209ec2b08e8f",
+        "bytes": 4255461
+      },
+      "upload-api": {
+        "sha256": "5d587d4449a34e580691621d0eb232570299d60252b50bdd6cb1c8142fa0dbec",
+        "bytes": 9590506
+      },
+      "uploader-cli": {
+        "sha256": "807c2e1ba2524c1bfbfff91e6b706c948a0f81c8f007689c81fd0286b510aa51",
+        "bytes": 9361569
+      },
+      "worker-scope": {
+        "sha256": "c0f1239d98fceaeccfbcd9aad409e5e5865485e18b5e57c412c5bd7523115d6c",
+        "bytes": 4033674
+      }
+    },
+    "original_build_report_sha256": "77ebc5e7394403ee6e8ccfae6d4cb4e9c226a1d8a5ac83183b7b5525fc414a41",
+    "original_build_attempt_status": "failed",
+    "explicit_new_state_for_successful_attempt": true,
+    "valid_execution_count": 2,
+    "invalid_failed_withheld_count": 1,
+    "retained_export_count": 9,
+    "scientific_fixture": {
+      "reference_bases": 6000,
+      "known_snps": 3,
+      "tp_each_valid": 3,
+      "fp_each_valid": 0,
+      "fn_each_valid": 0,
+      "normalized_snp_callsets_equal": true,
+      "mapped_sam_records_each_valid": 1171,
+      "sam_records_each_valid": 1171,
+      "scope": "Synthetic normalized SNP presence; no genotype/indel/WGS/clinical accuracy."
+    },
+    "worker_kernel_guards": {
+      "tmpfs_bytes": 33554432,
+      "inode_units": 4096,
+      "noexec_nosuid_nodev": true,
+      "no_new_privs": 1,
+      "all_capability_sets_zero": true
+    },
+    "copied_cipher_owner_negative": {
+      "real_b_reserve_finalize_and_delivery": true,
+      "exact_a_ciphertext_and_decoded_envelope_copied": true,
+      "independent_gcm_a_context_pass_b_context_fail": true,
+      "worker_log": "owner_worker_input_rejected",
+      "specific_worker_gcm_error_observed": false,
+      "stage_mutation_count": 0,
+      "positive_inotify_stage_controls": 3,
+      "new_execution_history_records": 0,
+      "execution_history_bytes_unchanged": true
+    },
+    "accounting": {
+      "authority_jobs": 4,
+      "authority_charge": 105381888,
+      "upload_jobs": 4,
+      "upload_charge": 105381888,
+      "execution_slots": 3,
+      "execution_record_charge": 42922,
+      "store_header_reserve": 4096,
+      "execution_total_with_header": 47018
+    },
+    "service_exit_codes": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "history_bytes_unchanged_after_wait": true
+  },
+  "independent_readback": {
+    "status": "passed",
+    "controls": 96,
+    "report_sha256": "55fb7a8b67fe54e686b178e2a7d0fd7eacd7c6d4605dd82e9bb22ded38fc46bd",
+    "scope": "Public-key-only signatures, sources/binaries/configuration, ciphertext and retained metadata/artifact hashes, accounting, copy rejection and post-Wait history. No acceptance rerun, private key or input plaintext read.",
+    "test_attribution_controls": 5,
+    "test_attribution_report_sha256": "aec4f927ed6e65c25556e1e8876506b7db017f9e36f6080e800a325eebea1e7a"
+  },
+  "race": {
+    "status": "passed",
+    "principal_tests": 264,
+    "subcases": 877,
+    "explicit_test_skips": 13,
+    "modules": [
+      "artifact-executor",
+      "enclave-runner"
+    ],
+    "report_sha256": "9d958ceb7f87f4a8b1833774d1679f8571beff8768a025b5267bc4e6499b42eb",
+    "scope": "Full ordinary module race suites; kernel/provider opt-ins excluded; before one test-only keyed-literal edit."
+  },
+  "make": {
+    "status": "passed",
+    "python_cases": 294,
+    "python_passed": 292,
+    "python_skipped": 2,
+    "go_modules": [
+      "biozero/services/artifact-executor",
+      "biozero/services/enclave-runner",
+      "biozero/services/ownership-authority",
+      "biozero/services/results-api",
+      "biozero/services/reviewer-gateway",
+      "biozero/services/upload-api",
+      "biozero/services/uploader-cli",
+      "biozero/services/zeroresponder",
+      "biozero/simulated-adversary"
+    ],
+    "scope": "Uncached ordinary Go tests and vet; no provider opt-ins/race/native acceptance rerun.",
+    "report_sha256": "af92d9aedbe917b3cc9d5d93c12648aa6f300600f20002a49f953baf7d5b70e0",
+    "source_count": 502,
+    "source_unchanged": true
+  },
+  "preserved_attempts": [
+    {
+      "kind": "initial_focused",
+      "report_sha256": "324f21e8d239dbcf123ac7226a01bab90775873f3aad6a9c5bd5c62f303995e6",
+      "reason": "Authority fixture used subsecond time before core cases; fixture timestamp corrected."
+    },
+    {
+      "kind": "initial_race",
+      "report_sha256": "499ab10ed256f0dfefb7f234bee904dbc7af7479afe9f957e2c5cf98c92aec51",
+      "reason": "Fixture private roots lacked explicit0700 under ordinary umask022; fixture modes corrected."
+    },
+    {
+      "kind": "initial_native",
+      "report_sha256": "77ebc5e7394403ee6e8ccfae6d4cb4e9c226a1d8a5ac83183b7b5525fc414a41",
+      "passed_controls_before_exception": 18,
+      "reason": "Verifier accessed analysis instead of existing analysis_capture field; original built binaries/state/logs retained."
+    },
+    {
+      "kind": "initial_make",
+      "report_sha256": "90e07c133f17e5b1743159567aa691b633d613c45071a7f4c56c218550462b3f",
+      "reason": "Vet rejected three historical unkeyed literals after SourcePin became an external alias; keyed spellings preserve values/assertions."
+    }
+  ],
+  "limits": [
+    "Owner cache is observability, not an authoritative Results endpoint; no Results/Gateway ownership release claim.",
+    "Broker verifies signed ciphertext/envelope facts but trusts worker for GCM-to-plaintext relationship.",
+    "Native trusted host/same UID, CA, authority, worker and broker boundaries remain; no deployed key/mount/network isolation or attestation.",
+    "Logical promises/managed charges and sidecar/journal bounds are not complete physical filesystem quotas.",
+    "V3 real response-loss/ACK-write, active broker death, process-only plaintext recovery and operator uncertainty reconciliation remain separate gates.",
+    "Temporary unit fixture directories were framework-cleaned; actual acceptance workspaces, binaries, private synthetic keys, journals, history and failures remain retained.",
+    "No image/container build, download, dataset acquisition, trained-model inference, deployment or regulatory recomputation occurred."
+  ]
+}

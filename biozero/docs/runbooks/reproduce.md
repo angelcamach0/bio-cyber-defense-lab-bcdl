@@ -221,3 +221,38 @@ ten-locus adapter receipt before 100 separate evaluation loci. CRC-checked 297,3
 source rows and technical SNVs are descriptive denominators, not completed cases.
 Zero biological loci have been inferred. The exact Synapse/DARTv2 access403 remains;
 the small Zenodo source is a separately reviewed alternative.
+
+## Explicit owner-v1 native execution
+
+Follow [worker configuration](../../services/enclave-runner/README-owner-worker.md)
+and [broker genesis](../../services/artifact-executor/README-owner-broker.md).
+Pin the broker profile before authority genesis, then provision its exact scope;
+initialize fresh broker and worker custody explicitly. Preserve exact worker config
+bytes across Open. Historical protocols and Results/Gateway remain separate.
+
+With UID/GID1000, compatible Linux namespaces and an existing verified tool prefix:
+
+```sh
+python3 -B biozero/infra/native/run_owner_worker.py   --run-dir /absolute/private/new-owner-acceptance   --tools-prefix /absolute/existing-tool-prefix
+```
+
+The run directory must be new. Eight executables are built offline, including the
+independent payload inspector. No tools/images/models/data are downloaded. Private
+short-path runtime roots, bins, synthetic credentials, ledgers, journals, receipts
+and logs remain retained; only owned Popen processes receive signals and Wait.
+No Results API is launched and the worker cache is not release authority.
+
+After a fixture-only correction, explicit `--reuse-build-report /absolute/private/original/report.json`
+can verify/copy the original eight bins into a new run. It requires identical
+complete initial/final Go/module inventories, exact hashes/sizes/UID/mode/link
+counts and stable source metadata before/after copy. Original build logs, report
+SHA, dirty commit and failed status stay recorded. Failure does not fall back to
+compilation. This never adopts old stores, journals, stages or execution history.
+A production/source change needs its own build and acceptance.
+
+The [recorded owner acceptance](../evidence/20261015-owner-worker-execution/public/README.md)
+passed53native controls and96independent readback controls; final local make has
+one test-only keyed-literal delta from the runtime snapshot. This is same-host
+synthetic SNP presence, not owner Compose/browser/cloud/image reproduction or
+clinical accuracy. Old interrupted/failed acceptance directories stay preserved.
+V3 lifecycle faults and full Results/Gateway/deployed isolation remain pending.

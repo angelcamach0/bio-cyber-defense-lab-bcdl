@@ -5,8 +5,9 @@ This standard-library Go package (`biozero/ownership-authority`, package
 [ADR 004](../../docs/decisions/004-authenticated-ownership.md). Its Linux Store
 persists reservations and signed accepted records. The new Linux
 `cmd/ownership-authority` serves a separate HTTPS/mTLS authority. The explicit
-owner-v1 CLI/upload adapter is described below. Gateway, worker, broker and
-Results ownership integration remains pending. The historical upload/results/
+owner-v1 CLI/upload adapter is described below. The separate
+[owner worker/V3 broker](../../docs/security/ownership-execution-contract.md) now
+has native execution acceptance. Gateway and authoritative Results remain pending. The historical upload/results/
 worker path does not acquire immutable ownership by importing this module.
 
 ## Public API and trust boundary
@@ -81,7 +82,8 @@ envelope before RSA-OAEP SHA256 unwrap. Finalize likewise does not decrypt data
 or prove that ciphertext is well-formed AES-GCM: execution must use the signed
 AAD on GCM Open. A credential can re-sign a copied ciphertext, but cannot make
 ciphertext encrypted with another job's AAD decrypt under its new AAD. This last
-gate remains pending until the real worker consumes this protocol.
+gate is exercised by the separate owner worker; historical paths are not upgraded.
+See the [source-specific execution evidence](../../docs/evidence/20261015-owner-worker-execution/public/README.md).
 
 | Field or resource | Limit or accepted value |
 | --- | --- |
@@ -102,7 +104,8 @@ coerced. Errors are stable codes and do not include certificate contents, raw
 reader errors, paths or secret values. The stateless authority measures opaque
 ciphertext; the durable client contract below now fixes owner-v1 GCM tag/body
 framing and the empty-label OAEP key/nonce envelope for future execution consumers.
-Their integration remains pending.
+The explicitly selected owner worker now consumes that framing; deployed
+isolation and authoritative Results/Gateway integration remain pending.
 
 ## Acceptance time and historical verification
 

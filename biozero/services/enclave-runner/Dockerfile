@@ -3,6 +3,7 @@ FROM golang:1.26-alpine AS build
 WORKDIR /src/enclave-runner
 # Build with biozero/services as context: the worker imports the local executor
 # client and keeps that dependency separate from its own module.
+COPY ownership-authority/ /src/ownership-authority/
 COPY artifact-executor/ /src/artifact-executor/
 COPY enclave-runner/ /src/enclave-runner/
 RUN CGO_ENABLED=0 go build -o /out/enclave-runner .
