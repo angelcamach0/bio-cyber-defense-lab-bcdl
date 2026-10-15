@@ -343,8 +343,9 @@ after marker unlink but failed parent sync need not preserve the marker, so
 universal cold rejection at that boundary is not claimed. No automatic refund,
 retry, repair, migration, hostile-host protection or antirollback is implemented.
 
-This remains an unintegrated library, with no new service/image build, Docker
-acceptance or model execution. Authority ingress/key isolation, actual envelope
+This remains an unintegrated library. No retained service/image artifacts were
+rebuilt, and no Docker acceptance or model execution ran. Go checks do compile
+test binaries and temporary service fixtures. Authority ingress/key isolation, actual envelope
 measurement/AAD enforcement, worker/broker binding and receipt-based release
 remain the next dependency chain. Existing services still have the reproduced
 TM02 weaknesses. See the [contract](../services/ownership-authority/README.md) and

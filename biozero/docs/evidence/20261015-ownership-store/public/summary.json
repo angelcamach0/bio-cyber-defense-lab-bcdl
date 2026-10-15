@@ -14,7 +14,7 @@
     "Pending history and full charges are retained; no retry, automatic refund, legacy adoption, migration or operator repair.",
     "After intent unlink and failed parent sync, actual crash may leave no intent; universal cold-start rejection at this boundary is not established.",
     "Signed acceptance authenticates declared envelope digest but does not measure actual OAEP bytes, unwrap or perform GCM decryption.",
-    "No antirollback, revocation, hostile-host protection, scientific approval, service/image build, Docker acceptance, model run or dataset acquisition."
+    "No antirollback, revocation, hostile-host protection or scientific approval. No retained service/image artifact rebuild, Docker acceptance, model run or dataset acquisition; Go checks compile test binaries and temporary service fixtures."
   ],
   "make": {
     "exit_code": 0,

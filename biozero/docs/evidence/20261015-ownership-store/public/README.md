@@ -79,7 +79,10 @@ the verified decision, followed by signing/commit; no before-expiry commit claim
 Next gates remain authority ingress and separate key custody, direct/gateway
 clients, actual envelope/AAD verification in worker/broker, protected receipt-based
 release and all integrated substitution/fault negatives. No antirollback,
-revocation, migration, hostile-host defense, scientific approval, service/image
-build, Docker acceptance, model execution or dataset acquisition follows.
+revocation, migration, hostile-host defense or scientific approval follows. No
+retained service/image artifacts were rebuilt, and no Docker acceptance, model
+execution or dataset acquisition ran. Go checks compile test binaries and
+temporary service fixtures; this is distinct from building retained runtime
+artifacts for the protected route.
 
 Validate this allowlist with `sha256sum -c SHA256SUMS` from this directory.

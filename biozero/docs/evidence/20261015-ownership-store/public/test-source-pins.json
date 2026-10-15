@@ -451,7 +451,7 @@
   },
   "post_original_snapshot_changes_before_public_bundle": {
     "biozero/docs/STATUS.md": {
-      "after_sha256": "51dd2cd872fd7f9115382afc0afdc02d3d8ea571ce85bd7f8eccaa66dd7bc7fc",
+      "after_sha256": "33178c63f08ca5c6c52b5fcac3712da90a82465ec2f684d3958713883976ae01",
       "test_snapshot_sha256": "8577cf7ebe8471ffd81f2393518ef95c0cf1219a40355c4f4719d45a9fd26be0"
     },
     "biozero/docs/decisions/004-authenticated-ownership.md": {
