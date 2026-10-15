@@ -1,7 +1,7 @@
 # Job and result metadata boundary
 
-Date: 2026-10-14. Contract owners: Chiquis, Atlas and Vale. QA: Lía; independent
-security review is separate from implementation. Native acceptance receipt
+Date: 2026-10-14. Independent security review is separate from implementation.
+Native acceptance receipt
 `../evidence/20261014T175423-175221Z/public/` passed 53 checks; the rebuilt
 four-service receipt `../evidence/20261014T175423-180461Z-reviewer-compose/public/`
 passed 30 checks. Historical receipts retain their original scope.

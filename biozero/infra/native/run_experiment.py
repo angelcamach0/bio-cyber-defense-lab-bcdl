@@ -155,7 +155,9 @@ def main():
         command(["bash", str(ROOT / "biozero/infra/PKI/gen-pki.sh"), str(pki)], env)
         command(["bash", str(ROOT / "biozero/infra/PKI/prepare-runtime.sh"), str(data)], env)
         for name in ["upload-api", "results-api", "enclave-runner", "uploader-cli"] + (["zeroresponder"] if args.soc else []):
-            command(["go", "build", "-o", str(binaries / name), "./..."], env, ROOT / "biozero/services" / name)
+            # One service executable per destination; modules may also contain
+            # libraries and separate commands. check_go.py tests/vets all packages.
+            command(["go", "build", "-o", str(binaries / name), "."], env, ROOT / "biozero/services" / name)
         upload_port, results_port = free_port(), free_port()
         upload_url, results_url = f"https://127.0.0.1:{upload_port}", f"https://127.0.0.1:{results_port}"
         shared = {"BIOZERO_DATA_DIR": str(data), "BIOZERO_SECURITY_MODE": "protected"}

@@ -71,7 +71,7 @@ signed/encrypted submissions, per-reviewer identity, backend ownership, withheld
 invalid input and container controls. Its real Firefox run passed 23 browser checks: verified TLS, 3-SNP report,
 invalid input withheld, A/B denial, desktop/mobile layout and delayed session
 callbacks; zero JavaScript errors. Four public screenshots were inspected.
-Lía independently repeated the native experiment in another checkout; evidence
+The native experiment was independently repeated in another checkout; evidence
 `20261014T150823-057533Z-independent-checkout/public/` records the exact snapshot
 and its original manifest limitations.
 Next: finish hosted CI and publication, then advance the bounded

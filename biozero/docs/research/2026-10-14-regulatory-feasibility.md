@@ -1,16 +1,16 @@
 # SCI01 — Viabilidad preliminar de Sei-LLRA
 
-Fecha: 2026-10-14. Responsable de investigación: Vera. Soporte de evidencia y preflight: Alba. Estado: **carga/inferencia entrenada verificada para un par sintético; piloto biológico pendiente**.
+Fecha: 2026-10-14. Estado: **carga/inferencia entrenada verificada para un par sintético; piloto biológico pendiente**.
 
 ## Qué se comprobó
 
 La revisión estática de Sei-LLRA se fijó al commit `217469410410e07b6663372da847426ffd172855` (2026-06-11), versión de paquete 1.5.9 según [pyproject.toml](https://github.com/kostkalab/seillra/blob/217469410410e07b6663372da847426ffd172855/pyproject.toml). El cacheversion de configuración es 1.5; son identificadores diferentes y no prueban incompatibilidad por sí solos. La configuración de CPU solicita `get_default_qconfig('fbgemm')` para tronco y head, sin fijar explícitamente el motor, en [get_models.py](https://github.com/kostkalab/seillra/blob/217469410410e07b6663372da847426ffd172855/dist/seillra/src/get_models.py). Esto deja la ejecución ARM por comprobar; no demuestra un fallo inevitable.
 
-El especialista reprodujo que una anotación `int | None` evaluada sin `from __future__ import annotations`, usada en [get_models.py](https://github.com/kostkalab/seillra/blob/217469410410e07b6663372da847426ffd172855/dist/seillra/src/get_models.py), falla en Python 3.9. Se requiere Python >= 3.10 para ese código tal como está publicado. El preflight marca la ejecución pendiente cuando el Python local no cumple ese requisito.
+Se reprodujo que una anotación `int | None` evaluada sin `from __future__ import annotations`, usada en [get_models.py](https://github.com/kostkalab/seillra/blob/217469410410e07b6663372da847426ffd172855/dist/seillra/src/get_models.py), falla en Python 3.9. Se requiere Python >= 3.10 para ese código tal como está publicado. El preflight marca la ejecución pendiente cuando el Python local no cumple ese requisito.
 
 La [licencia del código revisado](https://github.com/kostkalab/seillra/blob/217469410410e07b6663372da847426ffd172855/LICENSE.txt) es MIT. En la revisión inicial no se establecieron permisos específicos de los pesos, tamaños exactos de descargas ni hashes de esos archivos; el checkpoint posterior de adquisición aparece abajo. Los enlaces de descarga automáticos de Google Drive, gestionados por [download_from_gdrive.py](https://github.com/kostkalab/seillra/blob/217469410410e07b6663372da847426ffd172855/dist/seillra/src/download_from_gdrive.py), no se descargaron para esta revisión.
 
-Las estimaciones estáticas FP32 de parámetros son aproximadamente **320,389,300 bytes para rango 64** y **3,565,265,240 bytes para el modelo completo**, según el conteo del especialista a partir de las dimensiones de [sei_parts.py](https://github.com/kostkalab/seillra/blob/217469410410e07b6663372da847426ffd172855/dist/seillra/src/sei_parts.py). No son tamaños de checkpoint ni RSS: no incluyen todas las estructuras, buffers, activaciones, temporales o sobrecarga de ejecución. No bastan para concluir que el modelo cabe en RAM.
+Las estimaciones estáticas FP32 de parámetros son aproximadamente **320,389,300 bytes para rango 64** y **3,565,265,240 bytes para el modelo completo**, según el conteo estático a partir de las dimensiones de [sei_parts.py](https://github.com/kostkalab/seillra/blob/217469410410e07b6663372da847426ffd172855/dist/seillra/src/sei_parts.py). No son tamaños de checkpoint ni RSS: no incluyen todas las estructuras, buffers, activaciones, temporales o sobrecarga de ejecución. No bastan para concluir que el modelo cabe en RAM.
 
 ## Evidencia de ejecución local
 
@@ -20,7 +20,7 @@ Seis tests unitarios sin Torch pasaron: versión de Python incompatible, depende
 
 ### Actualización ejecutada: runtime CPU aislado
 
-El entorno observado se amplió con Python 3.11.17 y **Torch 2.14.1+cpu**, instalados únicamente en un prefijo aislado. La rueda CPU oficial mide 159,226,505 bytes; se comprobó su SHA256 publicado y sus dependencias antes de instalar. Se evitó la distribución CUDA, que no corresponde a este equipo. El bootstrap conserva 26 paquetes con artefactos de conda-forge fijados y once ruedas con SHA256; se recreó un segundo entorno desde esos locks. Véanse [instalación oficial](https://pytorch.org/get-started/locally/), [índice CPU oficial](https://download.pytorch.org/whl/cpu/torch/) y [bootstrap](../../infra/bootstrap/regulatory-tools.sh).
+El entorno observado se amplió con Python 3.11.17 y **Torch 2.14.1+cpu**, instalados únicamente en un prefijo aislado. La rueda CPU oficial mide 159,226,505 bytes; se comprobó su SHA256 publicado y sus dependencias antes de instalar. Se evitó la distribución CUDA, que no corresponde al hardware observado. El bootstrap conserva 26 paquetes con artefactos de conda-forge fijados y once ruedas con SHA256; se recreó un segundo entorno desde esos locks. Véanse [instalación oficial](https://pytorch.org/get-started/locally/), [índice CPU oficial](https://download.pytorch.org/whl/cpu/torch/) y [bootstrap](../../infra/bootstrap/regulatory-tools.sh).
 
 La ejecución real del modelo pequeño sin entrenar dio:
 
@@ -49,11 +49,11 @@ No se declara viabilidad, ventaja de costo ni compatibilidad ARM mientras falten
 - [model_loading.py](https://github.com/kostkalab/seillra/blob/217469410410e07b6663372da847426ffd172855/dist/seillra/src/model_loading.py): camino de carga a revisar antes del piloto con checkpoints.
 - [FBGEMM oficial](https://github.com/pytorch/FBGEMM) y [QNNPACK oficial](https://github.com/pytorch/QNNPACK): contexto de backends. Estos repositorios no prueban compatibilidad de un modelo concreto con este runtime.
 
-Las fuentes de Sei fueron inspeccionadas por Vera; Alba verificó también pyproject.toml. La consulta web independiente de Alba a LICENSE.txt expiró y el árbol src no fue accesible por ese canal, por lo que esos claims conservan atribución a la revisión del especialista. El commit fijado es el identificador de referencia; una rama main mutable no sustituye esa evidencia.
+Las fuentes de Sei fueron inspeccionadas; una revisión independiente verificó también pyproject.toml. La consulta web independiente a LICENSE.txt expiró y el árbol src no fue accesible por ese canal, por lo que esas afirmaciones se basan en la primera inspección estática y no en una segunda comprobación. El commit fijado es el identificador de referencia; una rama main mutable no sustituye esa evidencia.
 
 ## Checkpoint de adquisición de pesos
 
-Vera leyó la [configuración fijada](https://github.com/kostkalab/seillra/blob/217469410410e07b6663372da847426ffd172855/dist/seillra/dat/config.yaml) y midió tamaños mediante HEAD; los SHA publicados proceden de sus sidecars. El coordinador descargó los cinco componentes con [checkpoint_fetch.py](../../research/regulatory/checkpoint_fetch.py) y comprobó por separado los tamaños y hashes sobre los archivos locales. Total verificado: **400,312,985 bytes**, incluidos troncos y cabezas rank-64 FP32/CPU y una proyección FP32 compartida. [Manifiesto fijado](../../research/regulatory/checkpoints.json) y [evidencia de adquisición](../../research/regulatory/checkpoint-acquisition.json).
+Se leyó la [configuración fijada](https://github.com/kostkalab/seillra/blob/217469410410e07b6663372da847426ffd172855/dist/seillra/dat/config.yaml) y se midieron tamaños mediante HEAD; los SHA publicados proceden de sus sidecars. Posteriormente se descargaron los cinco componentes con [checkpoint_fetch.py](../../research/regulatory/checkpoint_fetch.py) y se comprobaron por separado los tamaños y hashes sobre los archivos locales. Total verificado: **400,312,985 bytes**, incluidos troncos y cabezas rank-64 FP32/CPU y una proyección FP32 compartida. [Manifiesto fijado](../../research/regulatory/checkpoints.json) y [evidencia de adquisición](../../research/regulatory/checkpoint-acquisition.json).
 
 El primer intento consumió 34,020,705 bytes observados y falló a los 180 segundos; la reserva interrumpida se conservó. El registro por ventanas redujo los fsync repetidos por fragmento y el reintento manual completó los cinco archivos. Cargo acumulado conservador: **435,387,199 bytes**, bajo el límite de 1 GiB, sin reset del ledger. Esta observación valida adquisición íntegra; no acredita aún carga ni inferencia del modelo entrenado.
 
@@ -61,9 +61,9 @@ La licencia [MIT del código Sei-LLRA](https://github.com/kostkalab/seillra/blob
 
 ## Ejecución entrenada y decisión de recursos
 
-Chiquis ejecutó rango 64 con state_dicts locales estrictos, weights_only=True,
+Se ejecutó rango 64 con state_dicts locales estrictos, weights_only=True,
 batch uno, un hilo y ambas orientaciones del wrapper fijado. La carga, salidas
-finitas, forma, repetición idéntica y presupuestos pasaron. Vera leyó los reportes
+finitas, forma, repetición idéntica y presupuestos pasaron. Una revisión independiente leyó los reportes
 y verificó el mismo hash de entrada. Las nuevas corridas FP32/QNNPACK fueron
 secuenciales en namespaces que solo contenían loopback; la anterior usó factories
 bloqueadas sin aislamiento de red del kernel.

@@ -1,9 +1,9 @@
 # TM01 artifact workspace and retained export contract
 
-Status: implementation contract accepted by Chiquis on 2026-10-14; phase A is
+Status: implementation contract accepted on 2026-10-14; phase A is
 implemented and tested. Phase B has a validated standalone Go storage/framing core
 plus private provider preflights. A Unix listener/client and scoped input/coordinator
-composition are independently reviewed by Vale and have passed standalone
+composition have independent review and have passed standalone
 test/vet/race acceptance. See the
 [server addon](../../services/artifact-executor/README-server.md) and
 [coordinator addon](../../services/artifact-executor/README-coordinator.md).
@@ -26,7 +26,6 @@ storage/channel acceptance; see [broker scope](../../services/artifact-executor/
 The extracted analysis CLI preserves detection within a future configured capsule
 boundary; its compiled standalone acceptance is separate from worker integration.
 Neither component is installed in the protected worker yet.
-Atlas authored the base contract; Chiquis integrates these additions with independent review.
 
 This contract complements admission/input-retention and bounded metadata. An input
 quota, a per-file limit, a free-space sensor, and a finite list of expected files do

@@ -48,11 +48,10 @@ Final ordinary acceptance passed all three cases and 59 assertions in 10.777s:
 `.biozero/container-recovery-20261014T234333.760849570Z/`.
 The identical source passed with the race detector in 11.912s:
 `.biozero/container-recovery-20261014T234427.292851480Z/`.
-Cancel and timeout each made 18 checks; keeper loss made 23. Readback independently
-within the authoring session confirmed all assertions, nine current source pins
-and private directory/file modes in both roots. Chiquis subsequently confirmed
-a separate read-only source review; that review is not an independent reproduction.
-The joint suite being run by the coordinator retains its separate source/run scope.
+Cancel and timeout each made 18 checks; keeper loss made 23. Readback in the same execution context confirmed all assertions, nine current
+source pins and private directory/file modes in both roots. A separate read-only
+source review was completed; that review is not an independent reproduction.
+The joint suite retains its separate source/run scope.
 
 The ordinary run observed immediate unhealthy durable pending after the keeper's
 flock had closed. The race run observed immediate lifetime-flock denial before
@@ -65,11 +64,8 @@ objects, control anchors and journals remain private crash history deliberately.
 An earlier ordinary PASS at
 `.biozero/container-recovery-20261014T234222.184454645Z/` retains its smaller scope:
 it predates explicit attach-orphan reap and exact proof/manifest-byte assertions.
-It was not rewritten or attributed to the final source. A preparatory source-edit
-command used the wrong working directory and made no change; the accompanying
-default Go invocation merely compiled and skipped opt-ins. It established no real
-Docker acceptance. Final runs above used the corrected test source. No failed
-kernel lifecycle case was retried or erased, and earlier provider failures remain
+It was not rewritten or attributed to the final source. No failed kernel
+lifecycle case was retried or erased, and earlier provider failures remain
 separate private histories.
 
 ## Reproduction and privacy

@@ -1,8 +1,8 @@
 # SCI02: small public caQTL source preflight
 
-Date: 2026-10-14; final HEAD observations checked by 18:29 UTC. Researcher: Nora;
-coordinator: Chiquis. Status: source metadata/access investigation, not a biological
-experiment. Nora acquired no dataset bodies or models, generated no normalized
+Date: 2026-10-14; final HEAD observations checked by 18:29 UTC.
+Status: source metadata/access investigation, not a biological
+experiment. This preflight acquired no dataset bodies or models, generated no normalized
 cases, changed no frozen protocol, and ran no inference. A subsequent acquisition
 must have its own receipt; this document does not establish dataset integrity.
 
@@ -93,7 +93,7 @@ No Synapse 403 or signed Dropbox denial was retried, and no credentials were sou
 Kumasaka is the stronger **metadata candidate**, because its dictionary explicitly
 orients Beta. Both individual files fit the 50 MiB transfer ceiling by published
 size; that does not approve their decoded size, schema or scientific compatibility.
-Chiquis plans one bounded acquisition of the Kumasaka file plus README with a
+The acquisition plan covers one bounded download of the Kumasaka file plus README with a
 dataset ledger preserving the prior 4,251-byte UCSC control charge. Acquisition,
 digest verification and bounded decoding must precede header/schema approval.
 Keep the [SCI02 protocol](../experiments/002-regulatory-biological-baseline.md)
@@ -102,15 +102,15 @@ unchanged until source normalization, build/context/peak semantics, selection an
 training-overlap review are frozen. Retain the first ten biological adapter slots,
 then 100 separate evaluation slots, all failures and the original denominators.
 
-## Subsequent root acquisition and schema review
+## Subsequent acquisition and schema review
 
-After the preflight above, Root reported acquiring the complete 10,497,915-byte
+After the preflight above, the acquisition record reported the complete 10,497,915-byte
 gzip and 5,043-byte README, matching their published MD5s. Dataset SHA256:
 `b7a1e169153eff1fbf700270260bc7225f0c4585b1066ab2e2a65583c33a5d2e`.
-Nora independently checked the cached README's size/SHA256/MD5; all matched above.
+Independent readback checked the cached README's size/SHA256/MD5; all matched above.
 The private dataset ledger reports 10,512,921 charged bytes under 50 MiB, preserving
 the prior 4,251-byte UCSC charge. This is separate from the checkpoint ledger.
-Root read this exact 12-column gzip header, without a biological inference:
+Inspection of the acquired gzip found this exact 12-column header, without a biological inference:
 `Peak Chr Pos RsID Ref Alt AF Inside_Peak P_Lead Beta SE Log10_BF`.
 It differs from README names `Rs_ID`, `Allele_0`, `Allele_1`, and `Var_Loc`.
 **Proposed correspondence, not an approved alias/freeze:** `RsID`→`Rs_ID`,
@@ -134,12 +134,13 @@ Their zero-collapse rule must not replace SCI02's exact-zero metrics. Keep locat
 as a categorical integer, not a Boolean; review unexpected values and ties explicitly.
 This evidence supports a reviewed mapping proposal, not row-level validation,
 GRCh37→hg38 normalization, track compatibility, frozen selection or biological completion.
-Root subsequently reported a complete CRC-checked decode under a 512 MiB expansion
+The subsequent decode report records a complete CRC-checked decode under a 512 MiB expansion
 cap and 8,192-byte line cap: 297,308 rows / 29,004,438 decoded bytes, zero column/type
 errors; location counts 0:78,801, 1:171,528, 2:46,979. Source aggregates include
 226,346 technical SNV rows, 199,326 unique loci, 11,000 loci with multiple peaks,
 277,128 peaks and 8,442 peaks with multiple lead rows; Beta/SE were finite and SE positive.
-These are coordinator-reported source counts, not counts of approved prediction cases.
+These are decoder-reported source counts; this review did not independently
+recount them, and they do not count approved prediction cases.
 
 ## Original Sei training split: evidence and limit
 

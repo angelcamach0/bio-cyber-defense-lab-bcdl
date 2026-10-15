@@ -1,6 +1,6 @@
 # Docker capsule aggregate byte and inode quota acceptance
 
-Nora owns this test and document; the container provider/helper remain unchanged.
+The container provider/helper remain unchanged by these quota tests.
 The two opt-in cases use the actual ContainerProvider, InputRegistry, Coordinator
 and Store with a pinned synthetic stats pipeline. They use the cached image
 sha256:1ca8e95c2f5679ab2001f856549c634f0b9daeeeb1492b8610814b96cf30fa7d,
@@ -8,8 +8,8 @@ individual read-only source mounts and the registered read-only input descriptor
 No model, external network request, image pull/build or historical deletion is
 part of these cases. Go test compilation is ordinary test preparation.
 
-Observed2026-10-14: both real Docker cases passed with the race detector after
-CPU coordination. The byte case took1.01s and the inode case0.90s; Go reported
+Observed2026-10-14: both real Docker cases passed with the race detector.
+The byte case took1.01s and the inode case0.90s; Go reported
 2.933s for the package. No case failed or was retried in this quota run. The
 earlier container-provider smoke attempts retain their separate history.
 
@@ -56,7 +56,7 @@ Store/flock and provider references until process exit, with its persistent
 fixture for review. No timeout, process marker or force-removal substitutes for
 quiescence. This cleanup guard does not itself inject uncertain-Wait failures.
 
-From the artifact-executor module, after coordinating one active test at a time:
+From the artifact-executor module, run one active test at a time:
 
 ```sh
 BIOZERO_RUN_CONTAINER_QUOTA_ACCEPTANCE=1 go test -race \

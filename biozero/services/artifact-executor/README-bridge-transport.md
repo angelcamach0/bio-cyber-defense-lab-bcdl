@@ -79,9 +79,8 @@ wrong receipt digest/size/presence and handler-error privacy; wrong peer UID,
 scoped concurrent cancellation and FD-count readback over 20 rejected transfers.
 
 The initial functional run compiled the broker too but failed positive roundtrips
-because this transport compared wrapped EOF directly to io.EOF. A safe diagnostic
-of n/count/flags/error identified net.OpError wrapping; errors.Is fixed that defect
-and the temporary diagnostic was removed. Negative cases from the failed run are
+because this transport compared wrapped EOF directly to io.EOF. Using errors.Is
+fixed net.OpError-wrapped EOF handling. Negative cases from the failed run are
 not treated as evidence that the final positive path worked. The final functional
 TestBridge run passed 8 top-level functions and their subcases in 0.365s. The same
 transport passed with the race detector in 1.394s; go vet ./...
@@ -93,23 +92,24 @@ Frozen transport SHA256:
 `f489e88851fb25675e36bca1696bd61c8c6912b8cec9eed7619022da4b41fdca`.
 Test SHA256:
 `258f73db0b8ec561d06b1a44e270c95dd250e055a0a6b70844f7ada22d65536e`.
-Chiquis subsequently reviewed the transport and tests by reading, with no concrete
-blocking defect reported. Vale reviewed the broker's journal layout, committed
-readback and ACK-lock corrections separately. Real protected-worker integration
+The transport and tests received independent source review, with no concrete
+blocking defect reported. The broker's journal layout, committed readback and
+ACK-lock corrections were reviewed separately. Real protected-worker integration
 remains pending.
 
-After the shared Store ACK helper changed, Chiquis executed the complete module
+After the shared Store ACK helper changed, the complete module was executed
 with the race detector and six native/Docker opt-ins: 90 top-level PASS plus
-subcases, two internal keeper entries skipped only in the parent, 23.847s. Vale
-read the private JSON event log and summary without rerunning tests: eight
-TestBridge and nine TestBroker top-level cases passed, zero failures, exit 0;
+subcases, two internal keeper entries skipped only in the parent, 23.847s.
+Independent readback of the private JSON event log and summary, without rerunning
+tests, confirmed eight TestBridge and nine TestBroker top-level cases passed,
+zero failures, exit 0;
 the log SHA and 33/33 source pins match. Evidence root:
 `.biozero/bridge-composed-race-20261015T001622.113158Z/`.
 This composition validates the revised Store/broker/transport alongside existing
 real provider tests, but the broker fixtures themselves use fake providers. It
 does not establish bridge plus worker crypto plus real provider end-to-end
 acceptance. The later full repository make/vet gate remains separately recorded
-by the coordinator; earlier published capsule CI does not cover this new source.
+with its own evidence; earlier published capsule CI does not cover this new source.
 
 From this module:
 

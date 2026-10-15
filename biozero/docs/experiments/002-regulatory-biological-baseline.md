@@ -1,6 +1,6 @@
 # SCI02: biological regulatory baseline protocol draft
 
-Date: 2026-10-14. Science reviewer: Vera. Coordinator: Chiquis.
+Date: 2026-10-14.
 Status: head/context/score/selection configuration and offline adapter implemented;
 one instrumentation control executed; no biological dataset or effects evaluated.
 
@@ -19,8 +19,8 @@ agreement. [SCI01 aggregate evidence](../../research/regulatory/runtime-feasibil
 ## Candidate and conditions to freeze before scoring
 
 Candidate: DART-Eval African caQTLs on GRCh38, lymphoblastoid accessibility, with
-a corresponding Sei GM12878 ATAC-seq track from the 21,907-output head. Vera checked
-the pinned target annotations contain GM12878 ATAC-seq/DNase entries. This remains
+a corresponding Sei GM12878 ATAC-seq track from the 21,907-output head. Inspection
+of the pinned target annotations confirmed GM12878 ATAC-seq/DNase entries. This remains
 a proposed match until exact assay, allele orientation, track and data terms are
 recorded. [DART-Eval methods/data](https://openreview.net/pdf?id=qR0x6H5WUX) and
 [official task 5](https://github.com/kundajelab/DART-Eval#task-5-chromatin-activity-variant-effect-prediction).
@@ -68,7 +68,7 @@ mark this biological experiment completed.
 
 ## Source/access preflight observed 2026-10-14
 
-Vera verified `Afr.CaQTLS.tsv`, Synapse `syn60756043` version 2 (modified
+Metadata inspection verified `Afr.CaQTLS.tsv`, Synapse `syn60756043` version 2 (modified
 2026-05-19; file handle 173808988). Anonymous version metadata succeeded, but
 file and filehandles endpoints returned HTTP 403. Actual TSV bytes, header,
 size and SHA256 remain unverified. Acquisition requires authorized Synapse access
@@ -125,7 +125,7 @@ count among the ten/hundred biological loci. The [public runtime receipt](../../
 omits DNA/vectors; full reports remain private. See the
 [adapter commands](../../research/regulatory/README.md) for reconstruction.
 
-Vera checked an [author-linked AFGR distribution](https://github.com/smontgomlab/AFGR/blob/26ddc2b02e0735065c140690f6765b05bccfdb5b/README.md).
+An [author-linked AFGR distribution](https://github.com/smontgomlab/AFGR/blob/26ddc2b02e0735065c140690f6765b05bccfdb5b/README.md) was inspected.
 Its archive declares35,612,374,185 bytes; no individual small file was verified.
 The response body was not downloaded. The author-linked source does not prove
 an exact copy of the DART v2 table or its terms. A

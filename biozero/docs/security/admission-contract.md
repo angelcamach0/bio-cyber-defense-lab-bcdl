@@ -1,7 +1,6 @@
 # Admission, retained inputs and command-output budgets
 
 Date: 2026-10-14. Source: TM-01 and the adopted platform roadmap.
-Owners: Atlas (UploadAPI), Chiquis (worker/integration), Luci (independent review).
 Implemented subgate; executed acceptance and remaining limits are recorded below.
 
 ## Scope and identity
@@ -146,13 +145,13 @@ The first pre-fix native78 receipt remains historical. The corresponding Compose
 run failed after ten controls: cross-mount hardlinks returned EXDEV despite equal
 device IDs. Staging was split into destination-local directories; no wider mount
 or copied payload was introduced. [Distinct-mount regression](../evidence/20261014T192234-593374Z-admission-mount/public/mount-regression.json)
-records Atlas's executed real Docker handler/restart test and eight source hashes;
+records an executed real Docker handler/restart test and eight source hashes;
 it does not establish TLS or scientific inference by itself. The native/Compose
 receipts above establish the corrected candidate's integration separately.
 
 Fresh make test passed86 Python cases and test/vet across seven Go modules.
-Atlas reported corrected upload test/race/vet PASS, including six actual SIGKILL
-transitions and the split-stage cleanup regression. Root's worker tests cover
+Corrected upload test/race/vet checks passed, including six actual SIGKILL
+transitions and the split-stage cleanup regression. Worker tests cover
 exact/+1 captures, leader-exit descendants, withholding and serialized-result
 fallback; its race run passed. The explicit mount test skips in ordinary/hosted
 Go suites and was run separately in the cited Docker regression.

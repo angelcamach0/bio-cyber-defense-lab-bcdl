@@ -11,7 +11,7 @@ tracks, seed and score remain in the unchanged frozen baseline protocol.
 
 ## Actual preparation and denominators
 
-Chiquis executed Vera's frozen `prepare_precandidates` on the pinned private
+The frozen `prepare_precandidates` was executed on the pinned private
 lead, peak and official chain files. Both tables were completely CRC-decoded
 through bounded reads, with private-file checks and two compressed-byte hashes.
 The chain parser loaded 1,278 chains and 53,950 blocks with its required SHA pin.
@@ -117,8 +117,8 @@ causality, clinical usefulness, rank64 training exclusion or economic feasibilit
 
 ## Subsequent reference acquisition
 
-After Vera's independent pre-reference review and Luci's orchestration review,
-Chiquis executed the bounded request plan. All **512** GET responses were verified
+After independent pre-reference and request-orchestration reviews,
+the bounded request plan was executed. All **512** GET responses were verified
 and all **256** fixed candidates normalized; no replacement, retry, denial or
 phase stop occurred. The prospective plan was published under the same ledger
 flock before acquisition, and each attempt retains its plan SHA. A prior cached-only
@@ -134,7 +134,7 @@ Reference pool SHA:
 22,575,143 charged bytes and 521 HTTP exchanges, exactly nine earlier exchanges
 plus 512 reference queries. Model/checkpoint accounting was not changed.
 
-Vera's earlier pre-reference review verified the entire qualification gzip CRC
+The earlier independent pre-reference review verified the entire qualification gzip CRC
 (227,453,968 expanded bytes), all 256 rank keys and chain mappings, exact journal
 bindings, and samples of 16 original variant and 16 original peak rows. Among
 15,257 initially eligible chr8/9 source rows, 24 tie exclusions, nine source/peak
@@ -151,8 +151,8 @@ count remains **zero** at this checkpoint.
 
 ## Execution resource scope
 
-Atlas's phase A pipeline limits are frozen and tested separately. Chiquis ran the
-current wrapper with locked tools: `make science
+The phase A pipeline limits are frozen and tested separately. The
+current wrapper was run with locked tools: `make science
 BIOZERO_TOOLS_PREFIX=/tmp/biozero-bio-tools-locked` recovered the same three synthetic
 SNPs twice (TP3/FP0/FN0) and rejected the controlled invalid input. Receipt:
 `biozero/docs/evidence/science/bz-exp001-7ur5_oht/evidence.json`. An earlier call using
@@ -163,7 +163,7 @@ remain in the [artifact contract](../security/artifact-workspace-contract.md).
 
 ## Reviewed input freeze and completed biological adapter
 
-After acquisition, Vera independently verified all 512 cached response bodies,
+After acquisition, independent review verified all 512 cached response bodies,
 their hashes, exact genome/coordinates/URLs, one verified attempt per response,
 and the prospective request-plan binding. All 256 normalized candidates matched
 the source, reference and effect-orientation rules. The reviewed input receipt
@@ -171,8 +171,8 @@ is `dd8232c2a9d28a067edc4d435690536a4672e02dd6b4c83b5a3d46295fa294f0`.
 It approves source/reference inputs only, not predictive accuracy or exclusion
 from rank64 training. Dataset history was unchanged during offline review.
 
-Chiquis froze the final 110 windows from the complete ordered 256-candidate
-denominator. Vera independently reproduced the ordering and greedy disjoint
+The final 110 windows were frozen from the complete ordered 256-candidate
+denominator. Independent review reproduced the ordering and greedy disjoint
 selection, and checked all 5,995 selected-window pairs. One overlapping candidate
 was excluded before the first110; no effect magnitude or prediction influenced
 selection. The split was fixed before inference: ten adapter cases, then100
@@ -193,7 +193,7 @@ descriptively to the fixed GM12878 ATAC head. Disjoint windows do not establish
 LD independence. Chr8/9 selection reduces known original Sei backbone training
 overlap; it does not establish the rank64 head's training/calibration exclusion.
 
-Chiquis executed the actual adapter10 using the locked Python3.11.17/Torch2.14.1
+The actual adapter10 was executed using the locked Python3.11.17/Torch2.14.1
 CPU environment inside a user/network namespace with only loopback. No datasets
 or weights were downloaded during inference. The pinned source, fixed FP32
 rank64 head, full21,907 outputs, nine GM12878 ATAC tracks, both-strand upstream
@@ -218,9 +218,9 @@ scale. Scientific feasibility remains pending, and no100-case biological result
 is claimed at this checkpoint. This head/input run does not revise the earlier
 comparable61-class FP32/QNNPACK cost finding.
 
-Before binding evaluation, Vale found that the first receipt binder accepted
-altered parent/configuration metadata and missing prediction vectors. Chiquis
-corrected it to require the pinned original ten-case ledger, its frozen parents,
+Before binding evaluation, independent review found that the first receipt binder accepted
+altered parent/configuration metadata and missing prediction vectors. The binder
+was corrected to require the pinned original ten-case ledger, its frozen parents,
 source commit, ACGT/both-strand configuration, ready flag and supervisor success;
 each record must match its original normalized effect/slot and have nine finite,
 bounded probabilities, exact ALT-minus-REF deltas and the writer's mean score.
@@ -237,15 +237,15 @@ CI, full TLS/Compose/browser acceptance or100-case inference is asserted here.
 
 ## Evaluation launch after receipt review
 
-Vale independently rejected12/12 receipt mutations, passed7/7 binder tests, and
+Independent validation rejected12/12 receipt mutations, passed7/7 binder tests, and
 verified the real report against the original private ten-case parent. Both
 parent validation and the bound100-case validation were ready, with cases/order
-unchanged. Chiquis then ran `attach_adapter_receipt.py` with the explicit pinned
+unchanged. `attach_adapter_receipt.py` was then run with the explicit pinned
 adapter and evaluation ledgers. The immutable derivative100 ledger SHA is
 `904236014cac74d617b2937a08e51a3cfbd3bf0851cc13ef9232d40ce7c1841f`.
 The original100 ledger remains unchanged. Binding is not inference.
 
-At approximately21:50UTC, Chiquis started the actual100-case evaluation in a
+At approximately21:50UTC, the actual100-case evaluation started in a
 user/network namespace using the same locked environment and frozen protocol.
 The private launch handoff is `.biozero/kumasaka-evaluation-live-handoff.json`;
 it records the execution session, source hashes and fixed parents. The private
@@ -265,7 +265,7 @@ finite outputs and identical repeats. Independent review confirmed that the boun
 ledger still contains the original100 cases in the same order.
 
 Descriptive primary and secondary sign agreement are61/100; average-tied-rank
-Spearman correlation is0.1840864086408641 over100 pairs. Nora's independent stdlib
+Spearman correlation is0.1840864086408641 over100 pairs. An independent stdlib
 oracle exactly reproduced these metrics. All100 source SEs were retained, with
 zero supplied confidence intervals. MAE was not calculated because source Beta
 and model probability deltas have no established common scale. Controller elapsed
@@ -287,7 +287,7 @@ for frozen parent/report hashes, public aggregate links, privacy checks and limi
 The reviewed59-file source/aggregate snapshot was published as
 [28918a9](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/commit/28918a96484dcb2a015c71540f853d29e34a9836)
 to [draft PR21](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/21).
-Nora independently verified its head and open/draft/unmerged state, and
+Independent readback verified its head and open/draft/unmerged state, and
 [hosted ARM CI run38651583022](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38651583022)
 with [job116151397770](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/actions/runs/38651583022/job/116151397770)
 completed successfully. Checkout used merge ref

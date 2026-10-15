@@ -70,7 +70,7 @@ Use an explicitly pinned Go toolchain and GOOS/GOARCH; hash the resulting binary
 and record sources/build configuration. Go module dependencies are stdlib only;
 this creates no image-build claim. The subsequent local builds below also fixed
 GOENV=off, empty GOFLAGS, GOMAXPROCS1 and GOPROXY/GOSUMDB=off.
-Observed2026-10-15UTC after CPU coordination and the panel-presence correction:
+Observed2026-10-15UTC after the panel-presence correction:
 the CLI core's4 tests/11 subcases passed ordinarily(0.024s) and with the race
 detector(1.041s). These include both incoherences, both-empty configuration and
 nonempty remapping through a synthetic shell alignment producer. The analysis
@@ -82,18 +82,18 @@ from the subsequent standalone execution below.
 
 ## Subsequent actual binary and alignment
 
-Root's private receipt recorded two independent-cache builds with the same local
+The private build receipt recorded two independent-cache builds with the same local
 Go1.26.7(Red Hat1.26.7-2.el9_8) toolchain on Linux/ARM64. Both exited0 and produced
 byte-identical3,565,542-byte ELF binaries with SHA256:
 `cb95d52dcf6c601039a4f801fd4b1ca02fa16a8c89b7a87706ffbc553fd1edf6`.
 Receipt SHA256:
 `1dcd571b5daf550fde94156d8fe420decd31760cbdd93a106f77ab01e3714edf`.
-Nora independently verified byte equality, both hashes/sizes, all11 source/go.mod
+Independent readback verified byte equality, both hashes/sizes, all11 source/go.mod
 pins and the current Go executable hash by reading existing files, without a
 build rerun. This is same-environment binary repeatability; cross-host/toolchain,
 AMD64 and bit-identical OCI reconstruction remain untested.
 
-Root then ran the compiled CLI with actual minimap2 2.31-r1302 and the public
+The compiled CLI was then run with actual minimap2 2.31-r1302 and the public
 variant-smoke fixture, synthetic rules and synthetic caller crypto facts.
 Observed:1,171 mapped/1,171 total SAM records, one target, score0.9/high with
 threat_panel_hit. Readback matched private output aggregates and all binary,

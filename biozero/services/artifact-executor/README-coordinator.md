@@ -1,6 +1,6 @@
 # Scoped inputs and trusted coordinator
 
-Status: standalone Linux implementation, independently reviewed by Vale. Local
+Status: standalone Linux implementation with independent review. Local
 test/vet passed; the complete module race suite passed with the native opt-in
 enabled (64 top-level test functions with subcases, 4.847 seconds). Registry and
 coordinator unit providers are synthetic; the separate native test executed a

@@ -1,15 +1,15 @@
 # BioZero local threat model
 
-Date: 2026-10-14. Author/reviewer: Lía, engineering support and QA.
+Date: 2026-10-14.
 Inspection base: `afbb354b8406ce6095be402f9e31194896b2c284`, plus the current
 working tree at the initial review. The post-review section below records the
-subsequently executed security handoff; older receipts retain their own scope.
+subsequently executed security-event delivery; older receipts retain their own scope.
 
 This model covers the demonstrated local synthetic reviewer profile, the native
 experiment and the bounded regulatory research tools. It distinguishes inspected
-code from executed acceptance evidence. The [requirements and gates](../team/requirements-and-gates.md),
-[current status](../STATUS.md), [state decision](../decisions/001-job-states.md)
-and [network decision](../decisions/002-local-container-network.md) govern scope.
+code from executed acceptance evidence. The [current status](../STATUS.md),
+[state decision](../decisions/001-job-states.md) and
+[network decision](../decisions/002-local-container-network.md) govern scope.
 Changing the deployment, identities, data, mounts or event path requires a new
 review and acceptance run.
 
@@ -152,10 +152,10 @@ Update this model after an independently reviewed change to any boundary above.
 Record source snapshot, executed receipt, affected risk IDs and remaining limits;
 new code or a green historical test does not close a threat by itself.
 
-## Post-review security handoff evidence
+## Post-review security-event evidence
 
-Chiquis integrated Atlas's worker outbox, Vale's responder and the separate relay;
-Luci reviewed the canonical/identity/storage contracts and verified three fixes
+The worker outbox, responder and separate relay were integrated. Independent
+review of the canonical/identity/storage contracts verified three fixes
 (numeric-zero versus false, receipt-parent fsync and precise TLS negative tests).
 Native receipt `../evidence/20261014T165148-344656Z/public/` passed22 assertions,
 including12 security-event cases. The chain binds a persisted protected rejected
@@ -166,7 +166,7 @@ redelivery, conflict/authentication/strict-input rejection and no effective list
 Four-service Compose receipt
 `../evidence/20261014T164550-385353Z-reviewer-compose/public/` passed30 checks
 with exact outbox mount and worker network none. The earlier mount-allowlist
-verifier failure is preserved in STATUS. Lía's optional responder container receipt
+verifier failure is preserved in STATUS. The optional responder container receipt
 `../evidence/20261014T165334-020175Z-soc-container/public/` passed13 assertions
 and cleanup, including parent/result binding, HTTPS/authentication/restart replay,
 private receipt permissions, scoped TLS keys, container controls and loopback entry.

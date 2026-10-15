@@ -73,7 +73,7 @@ used a synthetic original-input digest and separately verified plaintext; it did
 not exercise TLS, signature/decryption entry, the real Unix client or the installed
 worker. Its ACK callback was a local test callback, not a network delivery claim.
 
-Nora's separate helper acceptance passed21/21 tests, including two actual namespace
+Separate helper acceptance passed21/21 tests, including two actual namespace
 tests, with zero skips. It verified tool capabilities zero/NNP, closure of FD3/4,
 receipt FD survival after sender/namespace exit and aggregate exhaustion with
 multiple individually permitted files: capsule_workspace_full/failed/withheld,

@@ -1,7 +1,6 @@
 # SCI02 Kumasaka source normalization contract
 
-Date: 2026-10-14. Scientific reviewer: Vera. Coordinator: Chiquis;
-implementation: Atlas/Chiquis; independent QA: Luci/Alba.
+Date: 2026-10-14.
 
 **Decision:** the acquired Kumasaka source can support a prospective, descriptive
 LCL transfer pilot under the rules below. This approves the source dictionary and
@@ -25,7 +24,7 @@ caQTL v2. The file body stays in private research storage.
 | `README.txt` | 5,043 bytes; SHA256 `a3a7255678894553c3bc9ea99a1bc814a9d2104521f5d62e417e0a0ddebc18dd` |
 | Frozen `baseline-protocol.json` | SHA256 `8c3f80a5b59eb3d165764bb5596e1b0451248bd2b0641d430fa6378b73a9126c` |
 
-Vera independently rehashed the cached gzip and streamed its table, without
+Independent review rehashed the cached gzip and streamed its table, without
 creating a plaintext copy or running predictions. Its exact header is:
 
 ```text
@@ -185,7 +184,7 @@ charged to the dataset ledger. Independently cap each response, use verified TLS
 and bounded timeouts, and stop before a read would exceed the aggregate ceiling.
 With 256 candidates, at most 512 normal sequence requests are planned; no raw
 genotypes, full reference, individual-level counts or further caQTL distributions
-are needed. Chiquis reported 10,512,921 dataset bytes charged before the peak/chain
+are needed. The acquisition record reported 10,512,921 dataset bytes charged before the peak/chain
 acquisitions. `peaks.bed.gz` is publicly listed as 10,705,038 bytes, publisher MD5
 `edfc80787bd9efb90ea6c259de14d70f`; actual SHA/size and chain receipts remain required.
 Do not treat publisher checksums or estimated transfer size as verified bodies.
@@ -218,14 +217,13 @@ selection, Beta MAE or 61-class substitutes after seeing predictions. Any measur
 association is exploratory; results and negative findings must describe this
 frozen source/context/sampling scope.
 
-## Review handoff and remaining gates
+## Evidence scope and remaining gates
 
-Vera's work observed cached source bytes and primary documentation only. She did
-not download dataset/model artifacts, generate cases or run inference. This file
-is the sole new artifact authorized for this review. Alba can check citations,
-evidence labels and limits; Luci should check bounded reads and provenance;
-Atlas/Chiquis should verify effect swaps, minus-strand mapping, peak boundaries,
-ambiguous/gapped chains, tie exclusions and no-replenishment with meaningful tests.
+This review inspected cached source bytes and primary documentation only; it did
+not acquire dataset/model artifacts, generate cases or run inference. Remaining
+checks cover citations, evidence labels, bounded reads and provenance, together
+with tests of effect swaps, minus-strand mapping, peak boundaries, ambiguous/gapped
+chains, tie exclusions and no-replenishment.
 
 Before biology: pin/hash peak and chain bodies; check actual peak schema and
 membership; freeze the presample; acquire/account all bounded sequence outcomes;

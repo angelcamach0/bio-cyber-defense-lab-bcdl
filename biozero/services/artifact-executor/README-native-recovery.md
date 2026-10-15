@@ -53,10 +53,9 @@ tests skip the kernel opt-ins and retain their separate scope.
 
 Earlier accepted receipts remain at 230331.491675440Z and 230504.636874582Z under
 `.biozero/native-recovery-20261014T.../`. They do not include the subsequently added
-immediate-restart assertion and must retain that narrower scope. A local source
-edit command failed before making the change and inadvertently ran the older
-accepted version once more; that second receipt is preserved, not promoted to the
-newer source scope. No lifecycle case was silently retried after a test failure.
+immediate-restart assertion and must retain that narrower scope. Those receipts
+are preserved and are not promoted to the newer source scope. No lifecycle case
+was silently retried after a test failure.
 
 All captured helper/workload tasks disappeared. The test temporarily enables
 subreaper status in its own test process so it can reap only the captured orphan

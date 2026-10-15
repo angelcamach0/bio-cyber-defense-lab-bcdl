@@ -70,23 +70,23 @@ No success result is truncated to fit a wire budget.
 Tests are scoped to pure scoring/parsing, strict configuration/JSON/privacy, and
 small synthetic shell producers. They do not exercise a real minimap2 build,
 capsule kernel boundaries, host crypto, protected-worker integration or science.
-Observed2026-10-15UTC after coordinated CPU release: the analysis package's11
+Observed2026-10-15UTC: the analysis package's11
 top-level tests with25 subcases passed ordinarily(0.783s) and with Go's race
 detector(1.850s). The CLI's separate4 tests/11 subcases passed too, including
 the corrected panel-presence guard and nonempty host-to-capsule path mapping. Explicit
 `go vet ./analysis ./cmd/capsule-analysis` exited0. Commands used GOMAXPROCS1,
 GOTOOLCHAIN=local, GOPROXY=off and GOSUMDB=off; no dependency/network acquisition.
-These tests do not launch a standalone compiled CLI binary. Vale subsequently
-read the corrected panel guard without rerunning tests and identified no further
+These tests do not launch a standalone compiled CLI binary. Independent source review
+subsequently checked the corrected panel guard without rerunning tests and identified no further
 blocker. Package/CLI integration into the worker or capsule remains separate.
 
 ## Subsequent compiled-binary checkpoint
 
-Root recorded two Linux/ARM64 builds on2026-10-15UTC with separate initially empty
+The build receipt records two Linux/ARM64 builds on2026-10-15UTC with separate initially empty
 GOCACHE directories, Go1.26.7(Red Hat1.26.7-2.el9_8), CGO_ENABLED0,
 GOTOOLCHAIN=local, GOENV=off, empty GOFLAGS, GOPROXY/GOSUMDB=off,
 `-trimpath -buildvcs=false -ldflags=-buildid=` and GOMAXPROCS1.
-Both exited0(14.839s/13.929s). Nora independently read both ELF binaries:
+Both exited0(14.839s/13.929s). Independent readback verified both ELF binaries:
 3,565,542 bytes each, ARM64 machine183, byte-identical SHA256
 `cb95d52dcf6c601039a4f801fd4b1ca02fa16a8c89b7a87706ffbc553fd1edf6`.
 The private build receipt SHA256 is
@@ -96,11 +96,11 @@ hash. This proves local binary repeatability in one toolchain/environment;
 initial cache state is recorded execution evidence, not independently recreated.
 There is no cross-host, second-toolchain, AMD64 or OCI-image reproduction claim.
 
-Root also executed that standalone CLI with real minimap2 2.31-r1302 against
+That standalone CLI was also executed with real minimap2 2.31-r1302 against
 the public variant-smoke reads/reference and synthetic rules/context. The output
 records1,171 mapped SAM records out of1,171 total, one target, score0.9/high and
 threat_panel_hit. These are record metrics, not unique-read or biological-accuracy
-claims. Nora independently matched the private output to its aggregate summary,
+claims. Independent readback matched the private output to its aggregate summary,
 binary/tool/rules/input/reference pins and source; no alignment was rerun.
 Summary SHA256:
 `b6f8fbdb9da354f9ee5fa47d2f2085aa5f1676eb230a2d57e216b3bf9bfcd696`.

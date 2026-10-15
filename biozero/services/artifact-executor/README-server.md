@@ -1,7 +1,6 @@
 # Linux Unix listener and client addon
 
-Status: implementation with observed Go module acceptance on 2026-10-14,
-after the coordinator confirmed its separate biological evaluation had finished.
+Status: implementation with observed Go module acceptance on 2026-10-14.
 `go test -race ./...` and `go vet ./...` passed in artifact-executor: 60 test
 functions including subcases, of which 16 exercise the Unix listener/client.
 The existing core/contract documentation retains its prior source and scope.

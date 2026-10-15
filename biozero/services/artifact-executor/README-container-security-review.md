@@ -2,17 +2,14 @@
 
 Status: source review, positive receipt readback and separate recovery/quota
 readbacks completed; attach/removal fault injection and worker integration pending.
-Root owns container_provider_linux.go/tests;
-Nora owns capsule/container_capsule.py/tests. Vale owns only this review note.
-Vale's code review and readback of Root's positive and Nora's quota receipts were
-read-only, with no Docker/test execution as part of those reviews. Vale separately
-authored and executed the later actual Docker lifecycle recovery cases, documented
-in [the recovery README](README-container-recovery.md). No image build/pull, model
-or external network operation was performed in these tasks. At the initial
-inspection the runtime files did not yet exist.
+The code review and readback of positive and quota receipts were read-only,
+with no Docker/test execution as part of those reviews. The later actual Docker
+lifecycle recovery cases were executed separately and are documented in
+[the recovery README](README-container-recovery.md). No image build/pull, model
+or external network operation was performed in these acceptance tasks.
 Native and earlier Docker prototype receipts retain their separate source scope.
 
-Reported by the coordinator: Docker 29.9, local root-owned Docker CLI/socket and
+Recorded runtime profile: Docker 29.9, local root-owned Docker CLI/socket and
 cached image sha256:1ca8e95c2f5679ab2001f856549c634f0b9daeeeb1492b8610814b96cf30fa7d.
 These are required inputs, not readiness observations independently rerun here.
 The configured host orchestrator has existing sudo/Docker authority. Capsule
@@ -140,7 +137,7 @@ accuracy follows from design review or native standalone acceptance.
 
 ## Second source readback
 
-Vale reviewed the following source snapshots without executing Go, Python tests,
+The following source snapshots were reviewed without executing Go, Python tests,
 Docker, tools, models or network operations:
 
 - `container_provider_linux.go`: SHA256
@@ -148,8 +145,8 @@ Docker, tools, models or network operations:
 - `capsule/container_capsule.py`: SHA256
   `56b2a3883d5201f3d227dc58fe4edf0577c0136b4ea707542491ed32c0a29ac8`.
 
-The authors were still writing tests at this readback. These hashes identify the
-reviewed bytes, not a runtime freeze or passing acceptance result.
+Tests had not yet run at this readback. These hashes identify the reviewed
+bytes, not a runtime freeze or passing acceptance result.
 
 | Earlier finding | Readback of the correction | Remaining evidence |
 | --- | --- | --- |
@@ -174,26 +171,26 @@ neither a response frame nor disappeared processes alone establish custody.
 
 ## Real positive acceptance and final template readback
 
-Root executed `TestContainerProviderActualSyntheticUnix` on 2026-10-14 with the
+`TestContainerProviderActualSyntheticUnix` executed on 2026-10-14 with the
 opt-in real local Docker profile. The first attempt failed before start because
 the inspect template called `len` on a nil optional Docker field. It did not
 transfer input or execute tools. The private first history remains `executing`
 with full export-plus-publication reservation, intent and exact returned ID, and
-without manifest or proof. Vale verified those retained files by reading; no old
+without manifest or proof. Readback verified those retained files; no old
 container was adopted or a ledger reset used to turn this failure into success.
 
-Root changed only four optional count encodings: `CapAdd`, `Devices`,
+Only four optional count encodings changed: `CapAdd`, `Devices`,
 `PortBindings` and image `Volumes` now produce zero when nil/empty, and `len` when
-nonempty. Vale read the final template and unchanged zero-count predicates. An
-added capability, device, published port or inherited image volume still fails
+nonempty. Readback confirmed the final template and unchanged zero-count
+predicates. An added capability, device, published port or inherited image volume still fails
 inspection. This fixes serialization availability rather than relaxing the
 configured boundary. The reviewed/accepted Go source SHA256 is now
 `36d6e1be27026588a8280def67f72610a7b3bf30fc2fff4ecc8cd64c06c76e1f`;
 the helper remains `56b2a3883d5201f3d227dc58fe4edf0577c0136b4ea707542491ed32c0a29ac8`.
 
-The second attempt used a separate new private history. Root reported the real
-acceptance PASS, with 1.39s test body and 2.413s race-instrumented invocation.
-Vale did not rerun it, but independently read its persisted artifacts:
+The second attempt used a separate new private history. The recorded real
+acceptance passed, with 1.39s test body and 2.413s race-instrumented invocation.
+Independent readback checked its persisted artifacts without rerunning it:
 
 - Four exports have matching actual sizes and SHA256s; manifest and proof bind
   the same store/lease/input/policy, and the proof hashes the exact manifest bytes.
@@ -207,9 +204,9 @@ Vale did not rerun it, but independently read its persisted artifacts:
   source bytes. Receipt SHA256 is
   `a6c28358abc21e72b7a611212e2a56c6ccaf0e2e03b8699d3e2dbb6f8b384a73`.
 - The positive control directory is empty and retained evidence directories/files
-  use 0700/0600. Root reports removal of its newly created container after verified
-  wait; Vale made no daemon query. The acceptance test checks commit/proof before
-  the actual Unix reply callback; this ordering is Root's executed-test evidence,
+  use 0700/0600. The acceptance records removal of its newly created container
+  after verified wait; readback made no daemon query. The test checks commit/proof
+  before the actual Unix reply callback; this ordering is executed-test evidence,
   not something receipt flags alone independently prove.
 
 This demonstrates the configured standalone Docker/Unix/coordinator/Store path
@@ -226,15 +223,15 @@ separate from positive evidence and cannot be silently retried or refunded.
 
 The [recovery acceptance](README-container-recovery.md) subsequently passed three
 actual Docker cases/59 assertions, ordinary and race-instrumented, on unchanged
-Go provider/helper sources above. Chiquis confirmed a separate source review.
+Go provider/helper sources above. A separate source review was completed.
 The normal and immediate restart gates preserve failed custody or durable pending
 authority as appropriate; lost keeper history is not adopted or silently retried.
 That source review is distinct from executing an independent reproduction.
 
-Vale independently read Nora's [quota tests and receipts](README-container-quota.md)
+Independent readback checked the [quota tests and receipts](README-container-quota.md)
 without executing Docker, test suites, tools or models. Reviewed quota test SHA256:
 `ebc7d42f89d087b85d12b39eb733381e0f4ebc7446cbda7d9e001d2183dbfbdc`;
-quota document SHA256:
+Reviewed quota documentation snapshot SHA256:
 `ac131faefc6da76b2c2d4b564718ead5a36f235d3680ef4092e49a5da99abc7f`.
 No blocking defect was identified by this readback:
 
@@ -255,7 +252,7 @@ No blocking defect was identified by this readback:
 - Each quota acceptance contains five matching source pins: container helper,
   native helper, prepared fixture, resource module and quota test. The provider
   Go hash is not embedded in that JSON; its frozen source matches the reviewed
-  `36d6e1be…` snapshot and coordinator execution context. This is trusted-host
+  `36d6e1be…` snapshot and recorded execution context. This is trusted-host
   provenance, not independent binary attestation. Kernel receipts also match
   the configured capabilities, root/tmpfs/FSIZE and private cgroup-v2 profile.
 
@@ -264,6 +261,6 @@ cases do not inject attach/removal/Wait uncertainty. The general
 [provider README](README-container.md), read at SHA256
 `d624a425ab791e7d712299711a4446adedfa4979f2bce5fb2dddaa735182465c`,
 correctly separates standalone acceptance from worker/deployment and total-host
-quota claims; its pending-document wording was reported to its owner for update.
+quota claims.
 These new container files/evidence were still unpublished at this review. Joint
-checks run by Chiquis retain their own dated source and execution scope.
+checks retain their own dated source and execution scope.

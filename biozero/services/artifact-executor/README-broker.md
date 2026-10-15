@@ -106,7 +106,7 @@ functions plus subcases,23.847s, zero failures. Two internal keeper entry functi
 skip in the parent and execute in their spawned subprocesses. The synthetic real
 native/Docker provider tests in that suite retain their own scope; the new broker
 tests use fake providers and do not combine bridge+worker crypto+real provider.
-Vale independently reviewed the journal/ACK corrections and transport. Earlier
+The journal/ACK corrections and transport received independent review. Earlier
 narrow broker eight-test runs predate the final ACK fix and ninth barrier test.
 
 Fresh make test on the final source passed252Python cases (250passed/two helper
@@ -121,16 +121,20 @@ The compiled CLI ran actual minimap2 2.31-r1302 against the public synthetic fix
 1,171mapped/1,171SAM records, one target and expected configured score0.9/high.
 Crypto facts were synthetic caller context. This is standalone analysis, without
 broker, capsule or protected entry. Target names and raw output remain private.
-Nora independently read source/build/binary/result bindings without rerunning.
+Independent readback verified source/build/binary/result bindings without rerunning.
 This demonstrates repeatability in one toolchain/host, not cross-host or OCI builds.
 See [analysis scope](../enclave-runner/analysis/README.md) and
 [CLI scope](../enclave-runner/cmd/capsule-analysis/README.md).
 
 No model was rerun, dataset downloaded or image built/pulled for these checks.
 Existing native/container crash histories and quota receipts remain preserved.
-New bridge/analysis source remains local and unpublished at this recording;
-[PR22](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/22) and its
-successful CI at commit bba2637 cover the earlier capsule snapshot only.
+Bridge/analysis source was published at0dd7384 in
+[PR22](https://github.com/angelcamach0/bio-cyber-defense-lab-bcdl/pull/22).
+Its CI38660550112 passed unit/PKI and scientific repeat, then failed before
+protected-service startup because a recursive build selected multiple packages
+for one output. The harness now selects each service executable explicitly and
+fresh local protected acceptance passed78assertions. The corrected publication
+needs its own CI; the earlier successful bba2637 CI covers its own snapshot only.
 
 Next integration must carry per-job analysis context into both providers, pin the
 analysis executable/rules/panel, run evaluation and optional alignment inside the
